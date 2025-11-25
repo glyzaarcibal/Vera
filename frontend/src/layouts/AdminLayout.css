@@ -1,0 +1,18 @@
+.admin-layout {
+  min-height: 100vh;
+  display: flex;
+  background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
+}
+
+.admin-content {
+  flex: 1;
+  padding: 32px 24px;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    padding: 24px 16px;
+  }
+}
