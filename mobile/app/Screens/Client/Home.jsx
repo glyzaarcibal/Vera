@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
+
 import axiosInstance from '../../utils/axios.instance'
 import DailyMoodModal from '../../components/DailyMoodModal'
 import { useSelector } from 'react-redux'
@@ -134,16 +134,9 @@ const Home = ({ navigation }) => {
               onPress={() => navigation.navigate('Register')}
               className="flex-1 max-w-[200px]"
             >
-              <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="px-8 py-3.5 rounded-xl shadow-lg"
-              >
-                <Text className="text-white text-base font-semibold text-center">
-                  Get Started
-                </Text>
-              </LinearGradient>
+              <Text className="text-white text-base font-semibold text-center">
+                Get Started
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity

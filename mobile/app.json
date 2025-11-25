@@ -7,10 +7,7 @@
     "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "assetBundlePatterns": [
-      "assets/*",
-      "image/*"
-    ],
+    "assetBundlePatterns": ["assets/*", "image/*"],
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -42,9 +39,7 @@
       "favicon": "./assets/icon.png"
     },
     "owner": "solyrasystems",
-    "plugins": [
-      "expo-image-picker"
-    ],
+    "plugins": ["expo-image-picker", "expo-av"],
     "extra": {
       "eas": {
         "projectId": "7a65fb39-fb5f-4c4b-a9de-74748670fbe7"

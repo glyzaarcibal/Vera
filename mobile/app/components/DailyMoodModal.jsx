@@ -1,7 +1,6 @@
 import { View, Text, Pressable, Modal } from 'react-native'
 import React, { useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 
 const DailyMoodModal = ({ visible, onClose, onSave }) => {
   const [selectedMood, setSelectedMood] = useState(null)
@@ -100,16 +99,9 @@ const DailyMoodModal = ({ visible, onClose, onSave }) => {
               disabled={!selectedMood}
               className={`${!selectedMood ? 'opacity-50' : ''}`}
             >
-              <LinearGradient
-                colors={['#667eea', '#764ba2']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="py-4 rounded-xl shadow-lg"
-              >
-                <Text className="text-white text-base font-semibold text-center">
-                  Save Mood
-                </Text>
-              </LinearGradient>
+              <Text className="text-white text-base font-semibold text-center">
+                Save Mood
+              </Text>
             </Pressable>
 
             <Pressable
