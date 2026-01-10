@@ -783,7 +783,7 @@ const Profile = ({ navigation }) => {
   )
 
   return (
-    <View className="flex-1 mt-10 bg-gray-100">
+    <View className="flex-1 bg-gray-100">
       <View className="flex-1 bg-white rounded-t-3xl overflow-hidden">
         <TabGroup
           tabs={[

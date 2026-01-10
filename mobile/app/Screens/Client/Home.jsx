@@ -132,9 +132,9 @@ const Home = ({ navigation }) => {
           <View className="flex-row gap-4 justify-center items-center px-4 w-full">
             <TouchableOpacity
               onPress={() => navigation.navigate('Register')}
-              className="flex-1 max-w-[200px]"
+              className="px-8 py-3.5 bg-white border-2 border-indigo-500 rounded-xl flex-1 max-w-[200px]"
             >
-              <Text className="text-white text-base font-semibold text-center">
+              <Text className="text-indigo-500 text-base font-semibold text-center">
                 Get Started
               </Text>
             </TouchableOpacity>

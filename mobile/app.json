@@ -7,7 +7,11 @@
     "icon": "./assets/adaptive-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["assets/*", "image/*"],
+    "assetBundlePatterns": [
+      "assets/*",
+      "image/*",
+      "node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/*.ttf"
+    ],
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -39,7 +43,12 @@
       "favicon": "./assets/icon.png"
     },
     "owner": "solyrasystems",
-    "plugins": ["expo-image-picker", "expo-av"],
+    "plugins": [
+      "expo-image-picker",
+      "expo-av",
+      "expo-asset",
+      "expo-font"
+    ],
     "extra": {
       "eas": {
         "projectId": "7a65fb39-fb5f-4c4b-a9de-74748670fbe7"

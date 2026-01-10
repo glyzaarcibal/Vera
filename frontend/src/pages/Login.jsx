@@ -30,6 +30,7 @@ const Login = () => {
       navigate("/");
     } catch (e) {
       alert(e.response.data.message || "Internal Server Error");
+      console.log(e);
     }
   };
 

@@ -146,6 +146,7 @@ const VoiceAI = () => {
       )
 
       const result = await response.json()
+      console.log(result)
       return result.text
     } catch (error) {
       console.error('Error transcribing audio:', error)
@@ -319,7 +320,10 @@ const VoiceAI = () => {
           setMessages(prev => [...prev, userMessage])
 
           // Fetch bot response with audio base64
-          const botResponse = await fetchBotResponse(userMessage, audioBase64)
+          const botResponse = await fetchBotResponse(
+            userMessage.text,
+            audioBase64,
+          )
 
           if (botResponse) {
             // Add bot message to messages array

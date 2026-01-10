@@ -99,9 +99,11 @@ const DailyMoodModal = ({ visible, onClose, onSave }) => {
               disabled={!selectedMood}
               className={`${!selectedMood ? 'opacity-50' : ''}`}
             >
-              <Text className="text-white text-base font-semibold text-center">
-                Save Mood
-              </Text>
+              <View className="px-8 py-3.5 bg-white border-2 border-indigo-500 rounded-xl">
+                <Text className="text-indigo-500 text-base font-semibold text-center">
+                  Save Mood
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable

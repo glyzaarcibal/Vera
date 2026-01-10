@@ -21,7 +21,6 @@ export async function generateResponse(message, conversationHistory = []) {
     ];
 
     const chatCompletion = await client.chatCompletion({
-      provider: "fireworks-ai",
       model: "meta-llama/Llama-3.1-8B-Instruct",
       messages,
     });
