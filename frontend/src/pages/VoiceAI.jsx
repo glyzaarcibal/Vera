@@ -53,10 +53,12 @@ const VoiceAI = () => {
   const [messages, setMessages] = useState([]);
   const [conversationMode, setConversationMode] = useState("listening");
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
+  const [speechError, setSpeechError] = useState(null);
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const recognitionStartedRef = useRef(false);
 
   useEffect(() => {
     let interval;
@@ -98,20 +100,33 @@ const VoiceAI = () => {
       recognitionInstance.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         setIsRecording(false);
+        const message =
+          event.error === "network"
+            ? "Check your internet connection. Speech recognition needs network access."
+            : event.error === "not-allowed"
+            ? "Microphone access was denied."
+            : event.error === "no-speech"
+            ? "No speech detected. Try again."
+            : event.error === "audio-capture"
+            ? "No microphone found."
+            : `Speech recognition error: ${event.error}. You can still type below.`;
+        setSpeechError(message);
       };
 
       recognitionInstance.onend = () => {
+        recognitionStartedRef.current = false;
         setIsRecording(false);
       };
 
       setRecognition(recognitionInstance);
-    }
 
-    return () => {
-      if (recognition) {
-        recognition.stop();
-      }
-    };
+      return () => {
+        recognitionStartedRef.current = false;
+        try {
+          recognitionInstance.stop();
+        } catch (_) {}
+      };
+    }
   }, []);
 
   const initializeSession = async () => {
@@ -124,7 +139,13 @@ const VoiceAI = () => {
       setSessionId(session.id);
       return session;
     } catch (e) {
-      alert(e.response.data.message || "Internal Server Error");
+      const message = e.response?.data?.message || e.message || "Internal Server Error";
+      const status = e.response?.status;
+      if (status === 503) {
+        alert("Service temporarily unavailable. " + message);
+      } else {
+        alert(message);
+      }
     }
   };
 
@@ -224,9 +245,19 @@ const VoiceAI = () => {
     if (!isCallActive) {
       setIsListening(true);
       setTranscript("");
+      setSpeechError(null);
       if (recognition) {
-        recognition.start();
-        setIsRecording(true);
+        try {
+          if (!recognitionStartedRef.current) {
+            recognition.start();
+            recognitionStartedRef.current = true;
+          }
+          setIsRecording(true);
+        } catch (err) {
+          if (err.name === "InvalidStateError") {
+            recognitionStartedRef.current = false;
+          }
+        }
       }
 
       // Start MediaRecorder for audio capture
@@ -250,6 +281,7 @@ const VoiceAI = () => {
       setIsListening(false);
       setIsMuted(false);
       if (recognition && isRecording) {
+        recognitionStartedRef.current = false;
         recognition.stop();
         setIsRecording(false);
       }
@@ -270,6 +302,7 @@ const VoiceAI = () => {
     if (isRecording) {
       console.log("Stopping recording...");
       // Stop both Web Speech API and MediaRecorder temporarily
+      recognitionStartedRef.current = false;
       recognition.stop();
 
       if (
@@ -334,8 +367,18 @@ const VoiceAI = () => {
       }
     } else {
       console.log("Starting recording...");
-      // Restart Web Speech API and MediaRecorder
-      recognition.start();
+      setSpeechError(null);
+      // Restart Web Speech API and MediaRecorder (guard against already started)
+      try {
+        if (!recognitionStartedRef.current) {
+          recognition.start();
+          recognitionStartedRef.current = true;
+        }
+      } catch (err) {
+        if (err.name === "InvalidStateError") {
+          recognitionStartedRef.current = false;
+        }
+      }
 
       if (
         mediaRecorderRef.current &&
@@ -510,6 +553,25 @@ const VoiceAI = () => {
               )}
             </p>
           </div>
+
+          {isCallActive && speechError && (
+            <div className="w-full max-w-lg bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex items-start gap-3">
+              <span className="text-amber-500 shrink-0 mt-0.5" aria-hidden>⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-800 m-0">Speech recognition unavailable</p>
+                <p className="text-sm text-amber-700 mt-1 m-0">{speechError}</p>
+                <p className="text-xs text-amber-600 mt-2 m-0">Try again after checking your connection, or use another network/browser.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSpeechError(null)}
+                className="text-amber-600 hover:text-amber-800 text-sm font-medium shrink-0"
+                aria-label="Dismiss"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
 
           {isCallActive && (
             <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-sm mt-4">

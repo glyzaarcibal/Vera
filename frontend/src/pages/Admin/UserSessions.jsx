@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
+import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday } from "react-icons/md";
 import axiosInstance from "../../utils/axios.instance";
 import Skeleton from "../../components/Skeleton";
 import RiskBadge from "../../components/RiskBadge";
@@ -16,7 +16,8 @@ const UserSessions = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [view, setView] = useState("card");
-  const [sortOrder, setSortOrder] = useState("desc"); // desc = highest risk first
+  const [sortOrder, setSortOrder] = useState("desc"); // desc = newest / highest risk first
+  const [sortBy, setSortBy] = useState("date"); // "date" = recent to past, "risk" = by risk score
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -29,7 +30,7 @@ const UserSessions = () => {
   });
 
   // Filter state
-  const [typeFilter, setTypeFilter] = useState(["voice", "text"]);
+  const [typeFilter, setTypeFilter] = useState(["voice", "text", "Avatar"]);
   const [riskFilters, setRiskFilters] = useState([]);
 
   // Resource assignment state
@@ -96,7 +97,7 @@ const UserSessions = () => {
       );
       const { sessions: fetchedSessions, pagination: paginationData } = res.data;
       console.log(fetchedSessions, paginationData);
-      setSessions(sortSessionsByRisk(fetchedSessions, sortOrder));
+      setSessions(sortSessions(fetchedSessions, sortBy, sortOrder));
       setPagination(paginationData);
     } catch (e) {
       console.error("Error fetching sessions:", e);
@@ -104,18 +105,28 @@ const UserSessions = () => {
     }
   };
 
-  const sortSessionsByRisk = (sessionList, order) => {
+  const sortSessions = (sessionList, by, order) => {
     return [...sessionList].sort((a, b) => {
+      if (by === "date") {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return order === "desc" ? dateB - dateA : dateA - dateB;
+      }
       const scoreA = a.risk_score ?? -1;
       const scoreB = b.risk_score ?? -1;
       return order === "desc" ? scoreB - scoreA : scoreA - scoreB;
     });
   };
 
-  const handleSortToggle = () => {
+  const handleSortByChange = (by) => {
+    setSortBy(by);
+    setSessions(sortSessions(sessions, by, sortOrder));
+  };
+
+  const handleSortOrderToggle = () => {
     const newOrder = sortOrder === "desc" ? "asc" : "desc";
     setSortOrder(newOrder);
-    setSessions(sortSessionsByRisk(sessions, newOrder));
+    setSessions(sortSessions(sessions, sortBy, newOrder));
   };
 
   const handleTypeFilterToggle = (value) => {
@@ -123,7 +134,7 @@ const UserSessions = () => {
       if (prev.includes(value)) {
         const newFilters = prev.filter((f) => f !== value);
         // Keep at least one or reset to both
-        return newFilters.length === 0 ? ["voice", "text"] : newFilters;
+        return newFilters.length === 0 ? ["voice", "text", "Avatar"] : newFilters;
       } else {
         return [...prev, value];
       }
@@ -528,14 +539,43 @@ const UserSessions = () => {
           <h2 className="text-2xl font-bold text-gray-800">
             Sessions ({pagination.totalSessions})
           </h2>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Sort by:</span>
+              <button
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  sortBy === "date"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
+                }`}
+                onClick={() => handleSortByChange("date")}
+              >
+                <MdCalendarToday className="text-lg" />
+                Date
+              </button>
+              <button
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  sortBy === "risk"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
+                }`}
+                onClick={() => handleSortByChange("risk")}
+              >
+                <MdSort className="text-lg" />
+                Risk
+              </button>
+            </div>
             <button
               className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-lg text-gray-600 text-sm font-medium border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500 transition-all"
-              onClick={handleSortToggle}
+              onClick={handleSortOrderToggle}
             >
               <MdSort className="text-lg" />
               <span>
-                {sortOrder === "desc"
+                {sortBy === "date"
+                  ? sortOrder === "desc"
+                    ? "Newest first"
+                    : "Oldest first"
+                  : sortOrder === "desc"
                   ? "Highest Risk First"
                   : "Lowest Risk First"}
               </span>
@@ -550,6 +590,7 @@ const UserSessions = () => {
             filters={[
               { label: "Voice", value: "voice" },
               { label: "Text", value: "text" },
+              { label: "Avatar", value: "Avatar" },
             ]}
             activeFilters={typeFilter}
             onFilterToggle={handleTypeFilterToggle}

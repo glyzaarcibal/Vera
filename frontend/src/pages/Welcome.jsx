@@ -78,14 +78,7 @@ const Welcome = () => {
           Your AI-powered companion for mental well-being, offering support through
           voice recognition, predictive analytics, and emotional tracking.
         </p>
-        <div className="hero-actions">
-          <Link to="/register" className="btn-primary">
-            Get Started
-          </Link>
-          <Link to="/login" className="btn-secondary">
-            Login
-          </Link>
-        </div>
+        
       </div>
 
       <div className="features-grid">

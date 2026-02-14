@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { User, Box, PawPrint, MessageSquare } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { User, PawPrint, MessageSquare, PhoneOff } from 'lucide-react';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
+import './Welcome.css';
 
 export default function AvatarAI() {
   const [selectedAvatar, setSelectedAvatar] = useState(null);
@@ -41,125 +42,144 @@ export default function AvatarAI() {
     setTranscripts([]);
   };
 
+  const endCall = () => {
+    setSelectedAvatar(null);
+    setTranscripts([]);
+  };
+
+  const conversationEndRef = useRef(null);
+  useEffect(() => {
+    conversationEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [transcripts]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-white mb-1">Avatar AI Selector</h1>
-          <p className="text-sm text-gray-400">Choose your preferred avatar type</p>
-        </div>
+    <div className="welcome-container">
+      <div className="welcome-hero">
+        <div className="hero-badge">Avatar AI</div>
+        <h1 className="hero-title">
+          Choose Your <span className="gradient-text">Avatar</span>
+        </h1>
+        <p className="hero-subtitle">Select an avatar type to start your AI-powered conversation</p>
+      </div>
 
-        {/* Avatar Selection Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {avatarOptions.map((option) => {
-            const Icon = option.icon;
-            const isSelected = selectedAvatar === option.id;
-            
-            return (
-              <button
-                key={option.id}
-                onClick={() => setSelectedAvatar(option.id)}
-                className={`p-4 rounded-xl transition-all duration-300 ${
-                  isSelected
-                    ? 'bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg shadow-blue-500/50 scale-105'
-                    : 'bg-gray-800 hover:bg-gray-700 border border-gray-700'
-                }`}
-              >
-                <Icon 
-                  size={48} 
-                  className={`mx-auto mb-2 ${isSelected ? 'text-white' : 'text-gray-400'}`} 
-                />
-                <h3 className={`text-xl font-bold mb-1 ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                  {option.name}
-                </h3>
-                <p className={`text-xs ${isSelected ? 'text-gray-100' : 'text-gray-500'}`}>
-                  {option.description}
-                </p>
-                {isSelected && (
-                  <div className="mt-2 text-xs text-white bg-white/20 rounded px-3 py-1 inline-block">
-                    Active
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Selected Avatar Component */}
-        {selectedAvatar && SelectedComponent && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Avatar Display */}
-            <div className="lg:col-span-2 bg-gray-800 rounded-xl overflow-hidden border border-gray-700">
-              <div className="h-[500px]">
-                <SelectedComponent onTranscript={handleTranscript} />
+      {/* Avatar Selection Grid - same style as Welcome feature cards */}
+      <div className="features-grid" style={{ marginBottom: 24 }}>
+        {avatarOptions.map((option) => {
+          const Icon = option.icon;
+          const isSelected = selectedAvatar === option.id;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setSelectedAvatar(option.id)}
+              className={`feature-card text-left cursor-pointer border-2 transition-all duration-300 ${
+                isSelected
+                  ? 'border-[#667eea] shadow-lg shadow-[rgba(102,126,234,0.25)] ring-2 ring-[#667eea]/30'
+                  : 'border-transparent hover:border-gray-200'
+              }`}
+            >
+              <div className={`feature-icon ${isSelected ? '!bg-[#667eea] !text-white' : ''}`}>
+                <Icon size={24} className="shrink-0" />
               </div>
-            </div>
+              <h3 className="feature-title">{option.name}</h3>
+              <p className="feature-description">{option.description}</p>
+              {isSelected && (
+                <span className="inline-block mt-3 px-3 py-1 text-xs font-semibold text-[#667eea] bg-[#f5f5ff] rounded-full">
+                  Active
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-            {/* Conversation Transcript Panel */}
-            <div className="bg-gray-800 rounded-xl border border-gray-700 flex flex-col">
-              <div className="p-3 border-b border-gray-700 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare size={18} className="text-blue-400" />
-                  <h3 className="text-base font-bold text-white">Conversation</h3>
+      {/* Selected Avatar Component - conversation panel first on mobile so AI chat is visible on screen */}
+      {selectedAvatar && SelectedComponent && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Conversation panel - first on mobile (order-1), right on desktop (lg:order-2) */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col overflow-hidden order-1 lg:order-2 min-h-[280px]">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="feature-icon w-9 h-9 flex items-center justify-center">
+                  <MessageSquare size={18} className="text-[#667eea]" />
                 </div>
+                <h3 className="text-base font-bold text-[#1a1a1a]">Conversation</h3>
+              </div>
+              <div className="flex items-center gap-2">
                 {transcripts.length > 0 && (
                   <button
+                    type="button"
                     onClick={clearTranscripts}
-                    className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                    className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
                   >
                     Clear
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={endCall}
+                  className="text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
+                >
+                  <PhoneOff size={14} />
+                  End call
+                </button>
               </div>
+            </div>
               
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-[440px]">
-                {transcripts.length === 0 ? (
-                  <div className="text-center text-gray-500 py-6">
-                    <MessageSquare size={40} className="mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">No messages yet</p>
-                    <p className="text-xs mt-1">Start chatting with your avatar</p>
-                  </div>
-                ) : (
-                  transcripts.map((transcript) => (
-                    <div
-                      key={transcript.id}
-                      className={`p-2 rounded-lg ${
-                        transcript.author === 'User'
-                          ? 'bg-blue-900/30 ml-4'
-                          : 'bg-gray-700/50 mr-4'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold ${
-                          transcript.author === 'User' ? 'text-blue-300' : 'text-green-300'
-                        }`}>
-                          {transcript.author}
-                        </span>
-                        <span className="text-xs text-gray-500">{transcript.timestamp}</span>
-                      </div>
-                      <p className="text-xs text-gray-200 break-words">{transcript.text}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {transcripts.length > 0 && (
-                <div className="p-2 border-t border-gray-700 text-xs text-gray-400 text-center">
-                  {transcripts.length} message{transcripts.length !== 1 ? 's' : ''}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[440px]">
+              {transcripts.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <MessageSquare size={40} className="mx-auto mb-2 opacity-30 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-600">No messages yet</p>
+                  <p className="text-xs mt-1">Start chatting with your avatar</p>
                 </div>
+              ) : (
+                transcripts.map((transcript) => (
+                  <div
+                    key={transcript.id}
+                    className={`p-3 rounded-xl text-left ${
+                      transcript.author === 'User'
+                        ? 'bg-[#f5f5ff] ml-2 border border-[#e8e8ff]'
+                        : 'bg-gray-50 mr-2 border border-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs font-semibold ${
+                        transcript.author === 'User' ? 'text-[#667eea]' : 'text-gray-700'
+                      }`}>
+                        {transcript.author}
+                      </span>
+                      <span className="text-xs text-gray-500">{transcript.timestamp}</span>
+                    </div>
+                    <p className="text-sm text-gray-700 break-words">{transcript.text}</p>
+                    </div>
+                ))
               )}
+              <div ref={conversationEndRef} />
             </div>
+            {transcripts.length > 0 && (
+              <div className="p-3 border-t border-gray-100 text-xs text-gray-500 text-center bg-gray-50/50">
+                {transcripts.length} message{transcripts.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
-        )}
 
-        {!selectedAvatar && (
-          <div className="text-center py-8">
-            <div className="text-gray-500 text-base">
-              ðŸ‘† Select an avatar to get started
+          {/* Avatar / video - second on mobile (order-2), left on desktop (lg:order-1) */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 order-2 lg:order-1">
+            <div className="h-[500px] min-h-[320px]">
+              <SelectedComponent onTranscript={handleTranscript} />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {!selectedAvatar && (
+        <div className="text-center py-12">
+          <p className="text-gray-600">
+            Select an avatar above to get started
+          </p>
+        </div>
+      )}
     </div>
   );
 }

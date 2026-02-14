@@ -52,10 +52,21 @@ export async function transcribeAudio(audioBase64, messageId) {
 
     return response.data;
   } catch (error) {
-    console.error(
-      "Speech-to-text error:",
-      error.response?.data || error.message
-    );
-    throw new Error(`Failed to transcribe audio: ${error.message}`);
+    const data = error.response?.data;
+    const status = error.response?.status;
+    console.error("Speech-to-text error:", data || error.message);
+
+    if (status === 403 && data?.code === "FORBIDDEN") {
+      console.warn(
+        "[SpeechToText] Hugging Face 403: Your token may lack 'Inference Endpoints' permission. " +
+          "Chat and message saving still work; only audio emotion analysis is skipped. " +
+          "See https://huggingface.co/settings/tokens to add the required scope, or use a dedicated Inference Endpoint with the correct access."
+      );
+      return null;
+    }
+
+    // Don't crash the app: log and return null so message flow continues
+    console.warn("[SpeechToText] Transcription failed, continuing without emotion-from-audio:", error.message);
+    return null;
   }
 }

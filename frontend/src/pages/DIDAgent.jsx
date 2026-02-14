@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Globe } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Mic, MicOff } from 'lucide-react';
+import './Welcome.css';
 import womanAmericaVideo from '../assets/Unleash+yo.mp4';
 import manAmericaVideo from '../assets/_Removed+D.mp4';
 import womanFilipinoVideo from '../assets/pinoywomen.mp4';
@@ -289,6 +290,12 @@ export default function DIDAgent({ onTranscript }) {
 
         setMessages((prev) => [...prev, botMessage]);
 
+        // Show AI reply in parent conversation panel
+        onTranscript?.(aiResponse, {
+          author: avatarType ? AVATAR_LABELS[avatarType] : 'AI',
+          source: 'did',
+        });
+
         // Save to backend
         if (sessionId) {
           try {
@@ -375,17 +382,21 @@ export default function DIDAgent({ onTranscript }) {
   const sendText = async () => {
     if (!input.trim()) return;
 
+    const text = input.trim();
     const userMessage = {
       id: messages.length + 1,
       type: 'user',
-      text: input.trim(),
+      text,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
 
-    await getAIResponse(userMessage.text);
+    // Show user message in parent conversation panel
+    onTranscript?.(text, { author: 'User', source: 'did' });
+
+    await getAIResponse(text);
   };
 
   // Toggle listening
@@ -406,80 +417,40 @@ export default function DIDAgent({ onTranscript }) {
   const currentLang = languages.find((lang) => lang.code === language);
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-black overflow-hidden">
-      {/* Avatar Selection Screen */}
+    <div className="relative w-full h-full min-h-[500px] bg-[#fafbfc] overflow-hidden">
+      {/* Avatar Selection Screen - same style as Welcome */}
       {!avatarType && (
         <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
           <div className="text-center max-w-4xl w-full space-y-8">
-            <div className="space-y-3">
-              <h1 className="text-4xl md:text-5xl font-bold text-white">
-                Choose Your Avatar Agent
-              </h1>
-              <p className="text-lg text-gray-300">
-                Select an avatar to begin your AI-powered conversation
-              </p>
-            </div>
+            <div className="hero-badge">Human Agent</div>
+            <h1 className="hero-title">
+              Choose Your <span className="gradient-text">Avatar</span>
+            </h1>
+            <p className="hero-subtitle">
+              Select an avatar to begin your AI-powered conversation
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* American Woman */}
-              <button
-                onClick={() => handleAvatarSelect('woman-america')}
-                className="group relative bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-2xl p-4 transition-all hover:scale-105 hover:shadow-xl border-2 border-transparent hover:border-pink-400"
-              >
-                <div className="text-center space-y-2">
-                  <div className="text-5xl">👩</div>
-                  <h2 className="text-base font-bold text-white">American Woman</h2>
-                  <p className="text-gray-300 text-xs">Professional female voice</p>
-                  <div className="px-4 py-2 bg-pink-500 rounded-full text-white text-xs font-semibold group-hover:bg-pink-600 transition-colors">
+              {[
+                { type: 'woman-america', emoji: '👩', label: 'American Woman', desc: 'Professional female voice', accent: 'pink' },
+                { type: 'man-america', emoji: '👨', label: 'American Man', desc: 'Professional male voice', accent: 'blue' },
+                { type: 'woman-filipino', emoji: '👩', label: 'Filipino Woman', desc: 'Warm female voice', accent: 'purple' },
+                { type: 'man-filipino', emoji: '👨', label: 'Filipino Man', desc: 'Friendly male voice', accent: 'indigo' }
+              ].map(({ type, emoji, label, desc, accent }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleAvatarSelect(type)}
+                  className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-lg"
+                >
+                  <div className="text-4xl mb-3">{emoji}</div>
+                  <h3 className="feature-title">{label}</h3>
+                  <p className="feature-description text-sm">{desc}</p>
+                  <span className="inline-block mt-3 px-4 py-2 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
                     Choose
-                  </div>
-                </div>
-              </button>
-
-              {/* American Man */}
-              <button
-                onClick={() => handleAvatarSelect('man-america')}
-                className="group relative bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-2xl p-4 transition-all hover:scale-105 hover:shadow-xl border-2 border-transparent hover:border-blue-400"
-              >
-                <div className="text-center space-y-2">
-                  <div className="text-5xl">👨</div>
-                  <h2 className="text-base font-bold text-white">American Man</h2>
-                  <p className="text-gray-300 text-xs">Professional male voice</p>
-                  <div className="px-4 py-2 bg-blue-500 rounded-full text-white text-xs font-semibold group-hover:bg-blue-600 transition-colors">
-                    Choose
-                  </div>
-                </div>
-              </button>
-
-              {/* Filipino Woman */}
-              <button
-                onClick={() => handleAvatarSelect('woman-filipino')}
-                className="group relative bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-2xl p-4 transition-all hover:scale-105 hover:shadow-xl border-2 border-transparent hover:border-purple-400"
-              >
-                <div className="text-center space-y-2">
-                  <div className="text-5xl">👩</div>
-                  <h2 className="text-base font-bold text-white">Filipino Woman</h2>
-                  <p className="text-gray-300 text-xs">Warm female voice</p>
-                  <div className="px-4 py-2 bg-purple-500 rounded-full text-white text-xs font-semibold group-hover:bg-purple-600 transition-colors">
-                    Choose
-                  </div>
-                </div>
-              </button>
-
-              {/* Filipino Man */}
-              <button
-                onClick={() => handleAvatarSelect('man-filipino')}
-                className="group relative bg-white/10 backdrop-blur-md hover:bg-white/20 rounded-2xl p-4 transition-all hover:scale-105 hover:shadow-xl border-2 border-transparent hover:border-green-400"
-              >
-                <div className="text-center space-y-2">
-                  <div className="text-5xl">👨</div>
-                  <h2 className="text-base font-bold text-white">Filipino Man</h2>
-                  <p className="text-gray-300 text-xs">Friendly male voice</p>
-                  <div className="px-4 py-2 bg-green-500 rounded-full text-white text-xs font-semibold group-hover:bg-green-600 transition-colors">
-                    Choose
-                  </div>
-                </div>
-              </button>
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -500,19 +471,17 @@ export default function DIDAgent({ onTranscript }) {
             onError={(e) => console.error('Video load error:', e)}
           />
 
-          {/* Avatar Badge */}
-          <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
-            <span className="text-white font-semibold">{AVATAR_LABELS[avatarType]}</span>
-            <span className="text-xs bg-white/20 px-2 py-1 rounded text-white">
-              {currentLang?.name}
-            </span>
+          {/* Avatar Badge - light theme like Welcome */}
+          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-full flex items-center gap-2 border border-gray-100">
+            <span className="text-gray-900 font-semibold">{AVATAR_LABELS[avatarType]}</span>
             <button
+              type="button"
               onClick={() => {
                 setAvatarType(null);
                 setSessionId(null);
                 setMessages([]);
               }}
-              className="ml-2 text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-white transition-colors"
+              className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
             >
               Change
             </button>
@@ -520,59 +489,38 @@ export default function DIDAgent({ onTranscript }) {
 
           {/* Speaking indicator overlay */}
           {isSpeaking && (
-            <div className="absolute inset-0 border-8 border-green-400 animate-pulse pointer-events-none"></div>
+            <div className="absolute inset-0 border-4 border-[#667eea] animate-pulse pointer-events-none rounded-2xl"></div>
           )}
 
           {/* Processing indicator */}
           {isProcessing && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/80 px-6 py-3 rounded-full text-white text-sm font-semibold">
-              🤔 Thinking...
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg px-6 py-3 rounded-full text-gray-800 text-sm font-semibold border border-gray-100">
+              Thinking...
             </div>
           )}
 
           {/* Error Display */}
           {error && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-600/90 px-6 py-3 rounded-lg text-white text-sm font-semibold max-w-md">
-              ⚠️ {error}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 px-6 py-3 rounded-lg text-red-700 text-sm font-semibold max-w-md">
+              {error}
             </div>
           )}
         </div>
       )}
 
-      {/* Floating Controls at Bottom */}
+      {/* Floating Controls at Bottom - voice only */}
       {avatarType && (
         <div className="absolute bottom-0 left-0 right-0 w-full">
-          <div className="bg-black/80 backdrop-blur-md p-4 space-y-3">
-            {/* Language Selector */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              <Globe size={16} className="text-gray-400" />
-              <span className="text-xs text-gray-400">Language:</span>
-              <div className="flex gap-2 flex-wrap">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLanguageChange(lang.code)}
-                    disabled={isProcessing || isSpeaking}
-                    className={`px-3 py-1 text-xs rounded transition-all ${language === lang.code
-                        ? 'bg-blue-600 text-white font-semibold'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {lang.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Voice Control */}
+          <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg p-4">
             <div className="flex items-center justify-center gap-3">
               <button
+                type="button"
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
                 className={`p-4 rounded-full transition-all ${isListening
-                    ? 'bg-red-600 hover:bg-red-700 animate-pulse'
-                    : 'bg-green-600 hover:bg-green-700'
-                  } disabled:opacity-50 disabled:cursor-not-allowed shadow-lg`}
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                    : 'bg-[#667eea] hover:bg-[#5a6fd6]'
+                  } disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-white`}
                 title={isListening ? 'Stop listening' : 'Start listening'}
               >
                 {isListening ? (
@@ -582,38 +530,14 @@ export default function DIDAgent({ onTranscript }) {
                 )}
               </button>
 
-              <div className="text-white">
-                <div className="font-semibold">
-                  {isListening ? '🎤 Listening...' : isSpeaking ? '🔊 Speaking...' : isProcessing ? '⏳ Processing...' : '💬 Ready to chat'}
+              <div className="text-gray-800">
+                <div className="font-semibold text-sm">
+                  {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Processing...' : 'Ready to chat'}
                 </div>
-                <div className="text-xs text-gray-300">
-                  {isListening ? `Speak now in ${currentLang?.name}` : 'Click mic or type below'}
+                <div className="text-xs text-gray-600">
+                  {isListening ? 'Speak now' : 'Click mic to speak'}
                 </div>
               </div>
-            </div>
-
-            {/* Text Input */}
-            <div className="flex gap-2 max-w-4xl mx-auto">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 p-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Type your message..."
-                onKeyDown={(e) => { if (e.key === 'Enter') sendText(); }}
-                disabled={isProcessing || isSpeaking}
-              />
-              <button
-                onClick={sendText}
-                disabled={isProcessing || isSpeaking || !input.trim()}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
-              >
-                Send
-              </button>
-            </div>
-
-            {/* Footer */}
-            <div className="text-xs text-gray-400 text-center">
-              💡 Powered by ElevenLabs Scribe v2 - Multilingual Speech Recognition
             </div>
           </div>
         </div>
