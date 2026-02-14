@@ -20,6 +20,9 @@ import UserManagement from "./pages/Admin/UserManagement";
 import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
 import Resources from "./pages/Admin/Resources";
+import AvatarAI from "./pages/Avatar";
+import CheckEmail from "./pages/CheckEmail";
+import EmailVerified from "./pages/EmailVerified";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -37,6 +40,7 @@ const App = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/chat" element={<ChatAI />} />
         <Route path="/voice" element={<VoiceAI />} />
+        <Route path="/avatar" element={<AvatarAI />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
@@ -47,6 +51,8 @@ const App = () => {
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/check-email" element={<CheckEmail />} />
+      <Route path="/email-verified" element={<EmailVerified />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
     </Routes>

@@ -50,6 +50,12 @@ const Header = () => {
           >
             Voice AI
           </Link>
+          <Link
+            to="/avatar"
+            className={`header-link ${isActive("/avatar") ? "active" : ""}`}
+          >
+            Avatar AI
+          </Link>
           {user?.role === "admin" && (
             <Link
               to="/admin"

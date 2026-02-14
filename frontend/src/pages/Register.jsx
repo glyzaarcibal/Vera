@@ -31,6 +31,7 @@ const Register = () => {
     try {
       const res = await axiosInstance.post("/auth/register", formData);
       console.log(res);
+      navigate("/check-email");
     } catch (e) {
       alert(e.response.data.message || "Internal Server Error");
     }

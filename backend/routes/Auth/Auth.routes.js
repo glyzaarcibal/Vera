@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser } from "../../controllers/Auth/Register.controller.js";
+import { registerUser, resendVerification, verifyAccount } from "../../controllers/Auth/Register.controller.js";
 import { signIn } from "../../controllers/Auth/Login.controller.js";
 import {
   requestPasswordReset,
@@ -13,6 +13,8 @@ import upload from "../../middleware/upload.middleware.js";
 const router = express.Router();
 
 router.post("/register", registerUser);
+router.post("/verify-account", verifyAccount);
+router.post("/resend-verification", resendVerification);
 router.post("/login", signIn);
 router.post("/forgot-password", requestPasswordReset);
 router.get("/fetch-profile", setSupabaseSession, retrieveProfileInformation);
