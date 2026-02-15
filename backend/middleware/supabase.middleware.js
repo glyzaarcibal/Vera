@@ -25,9 +25,22 @@ export async function refreshToken(req, res, next) {
 
     next();
   } catch (e) {
+    const isSupabaseUnreachable =
+      e.message === "fetch failed" ||
+      e.code === "ENOTFOUND" ||
+      (e.cause && (e.cause.code === "ENOTFOUND" || e.cause.code === "UND_ERR_CONNECT_TIMEOUT"));
+
+    if (isSupabaseUnreachable) {
+      return res.status(503).json({
+        message:
+          "Authentication service is temporarily unreachable. Check your internet connection. If you use Supabase, ensure your project is not paused.",
+        code: "SERVICE_UNAVAILABLE",
+      });
+    }
+
     return res.status(500).json({
       message: "Invalid or expired token",
-      error: "Missing access or refresh token",
+      error: e.message || "Missing access or refresh token",
     });
   }
 }
@@ -63,11 +76,24 @@ export async function setSupabaseSession(req, res, next) {
 
     next();
   } catch (e) {
-    // console.error("Auth session error:", e.message);
+    const isSupabaseUnreachable =
+      e.message === "fetch failed" ||
+      e.code === "ENOTFOUND" ||
+      (e.cause && (e.cause.code === "ENOTFOUND" || e.cause.code === "UND_ERR_CONNECT_TIMEOUT"));
+
+    if (isSupabaseUnreachable) {
+      console.warn("[Auth] Supabase unreachable, returning 503. Check connection or restore paused project.");
+      return res.status(503).json({
+        message:
+          "Authentication service is temporarily unreachable. Check your internet connection. If you use Supabase, ensure your project is not paused.",
+        code: "SERVICE_UNAVAILABLE",
+      });
+    }
+
     console.error("Auth session error:", e.message);
     return res.status(401).json({
       message: "Invalid or expired token",
-      error: "Missing access or refresh token",
+      error: e.message || "Missing access or refresh token",
     });
   }
 }
@@ -75,19 +101,35 @@ export async function setSupabaseSession(req, res, next) {
 export async function checkIfAdmin(req, res, next) {
   const id = req.userId;
 
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("role")
-    .eq("id", id)
-    .single();
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", id)
+      .single();
 
-  if (error) {
-    return res.status(500).json({ message: "Server error" });
+    if (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+
+    if (data.role != "admin") {
+      return res.status(403).json({ message: "Not Admin" });
+    }
+
+    next();
+  } catch (e) {
+    const isSupabaseUnreachable =
+      e.message === "fetch failed" ||
+      e.code === "ENOTFOUND" ||
+      (e.cause && (e.cause.code === "ENOTFOUND" || e.cause.code === "UND_ERR_CONNECT_TIMEOUT"));
+
+    if (isSupabaseUnreachable) {
+      return res.status(503).json({
+        message:
+          "Authentication service is temporarily unreachable. Check your internet connection.",
+        code: "SERVICE_UNAVAILABLE",
+      });
+    }
+    throw e;
   }
-
-  if (data.role != "admin") {
-    return res.status(403).json({ message: "Not Admin" });
-  }
-
-  next();
 }

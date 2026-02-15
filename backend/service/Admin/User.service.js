@@ -16,14 +16,14 @@ export async function getAllUsers(params = {}) {
     throw error;
   }
 
-  // Fetch profiles for all users in parallel
+  // Fetch profiles for all users in parallel (maybeSingle: no row = null, no error)
   const usersWithProfiles = await Promise.all(
     data.users.map(async (user) => {
       const { data: profile, error: profileError } = await supabaseAdmin
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         throw profileError;
@@ -31,7 +31,7 @@ export async function getAllUsers(params = {}) {
 
       return {
         ...user,
-        profile,
+        profile: profile ?? null,
       };
     })
   );

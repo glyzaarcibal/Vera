@@ -38,7 +38,11 @@ export const processMessage = async (req, res) => {
       console.log(messageId.id);
       if (audioBase64 && messageId.id != null) {
         console.log("Audio base64 received, transcribing...");
-        transcribeAudio(audioBase64, messageId.id);
+        try {
+          await transcribeAudio(audioBase64, messageId.id);
+        } catch (err) {
+          console.warn("[processMessage] Transcribe failed (non-fatal):", err.message);
+        }
       }
     }
 

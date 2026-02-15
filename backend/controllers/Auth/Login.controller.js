@@ -62,6 +62,14 @@ export const signIn = async (req, res) => {
     } else if (e.message === "account_inactive") {
       message = "Your account is inactive. Please contact support.";
       statusCode = 403;
+    } else if (
+      e.message === "fetch failed" ||
+      e.code === "ENOTFOUND" ||
+      (e.cause && (e.cause.code === "ENOTFOUND" || e.cause.code === "UND_ERR_CONNECT_TIMEOUT"))
+    ) {
+      message =
+        "Authentication service is temporarily unreachable. Check your internet connection. If you use Supabase, ensure your project is not paused.";
+      statusCode = 503;
     }
 
     return res.status(statusCode).json({ message, error: e.message, code: e.code });
