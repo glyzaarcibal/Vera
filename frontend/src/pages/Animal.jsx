@@ -351,41 +351,41 @@ export default function AnimalAI({ onTranscript }) {
     };
 
     return (
-        <div className="h-full min-h-[500px] flex flex-col items-center justify-center relative bg-[#fafbfc]">
-            {/* Avatar Selection Screen - same style as Welcome */}
+        <div className="relative w-full h-full min-h-0 flex flex-col flex-1 bg-[#fafbfc]">
+            {/* Avatar Selection Screen - compact like DIDAgent */}
             {!animalType && (
-                <div className="absolute inset-0 flex items-center justify-center p-8 z-50">
-                    <div className="text-center max-w-4xl w-full space-y-8">
-                        <div className="hero-badge">Animal AI</div>
-                        <h1 className="hero-title">
+                <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 overflow-auto min-h-0">
+                    <div className="text-center max-w-2xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
+                        <div className="hero-badge text-xs py-1.5 px-3">Animal AI</div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
                             Choose Your <span className="gradient-text">Companion</span>
                         </h1>
-                        <p className="hero-subtitle">
+                        <p className="text-sm text-gray-600 mb-1">
                             Select an avatar to chat with
                         </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-md mx-auto">
                             <button
                                 type="button"
                                 onClick={() => handleAnimalSelect('cat')}
-                                className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-lg"
+                                className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-3"
                             >
-                                <div className="text-6xl mb-4">🐱</div>
-                                <h3 className="feature-title">Cat</h3>
-                                <p className="feature-description">Playful and sassy feline friend with purr-fect personality</p>
-                                <span className="inline-block mt-4 px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
+                                <div className="text-4xl sm:text-5xl mb-2">🐱</div>
+                                <h3 className="text-sm font-semibold text-[#1a1a1a]">Cat</h3>
+                                <p className="text-xs text-gray-600 mt-0.5">Playful and sassy feline friend</p>
+                                <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
                                     Choose Cat
                                 </span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleAnimalSelect('dog')}
-                                className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-lg"
+                                className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-3"
                             >
-                                <div className="text-6xl mb-4">🐶</div>
-                                <h3 className="feature-title">Dog</h3>
-                                <p className="feature-description">Enthusiastic and loyal canine companion with endless energy</p>
-                                <span className="inline-block mt-4 px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
+                                <div className="text-4xl sm:text-5xl mb-2">🐶</div>
+                                <h3 className="text-sm font-semibold text-[#1a1a1a]">Dog</h3>
+                                <p className="text-xs text-gray-600 mt-0.5">Enthusiastic and loyal canine companion</p>
+                                <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
                                     Choose Dog
                                 </span>
                             </button>
@@ -396,11 +396,11 @@ export default function AnimalAI({ onTranscript }) {
 
             {/* Video - Full Screen */}
             {animalType && (
-                <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full">
                     <video
                         ref={videoRef}
                         src={VIDEO_MAP[animalType]}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full min-h-0 object-contain"
                         loop
                         muted
                         playsInline

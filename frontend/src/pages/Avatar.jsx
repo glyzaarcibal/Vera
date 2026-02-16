@@ -53,17 +53,17 @@ export default function AvatarAI() {
   }, [transcripts]);
 
   return (
-    <div className="welcome-container">
-      <div className="welcome-hero">
-        <div className="hero-badge">Avatar AI</div>
-        <h1 className="hero-title">
+    <div className="welcome-container max-w-4xl">
+      <div className="text-center mb-6">
+        <div className="hero-badge text-xs py-1.5 px-3 inline-block">Avatar AI</div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] mt-3 mb-1">
           Choose Your <span className="gradient-text">Avatar</span>
         </h1>
-        <p className="hero-subtitle">Select an avatar type to start your AI-powered conversation</p>
+        <p className="text-sm text-gray-600">Select an avatar type to start your AI-powered conversation</p>
       </div>
 
-      {/* Avatar Selection Grid - same style as Welcome feature cards */}
-      <div className="features-grid" style={{ marginBottom: 24 }}>
+      {/* Avatar Selection Grid - compact cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-5">
         {avatarOptions.map((option) => {
           const Icon = option.icon;
           const isSelected = selectedAvatar === option.id;
@@ -72,19 +72,19 @@ export default function AvatarAI() {
               key={option.id}
               type="button"
               onClick={() => setSelectedAvatar(option.id)}
-              className={`feature-card text-left cursor-pointer border-2 transition-all duration-300 ${
+              className={`bg-white rounded-xl border-2 p-4 sm:p-5 text-left cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md ${
                 isSelected
-                  ? 'border-[#667eea] shadow-lg shadow-[rgba(102,126,234,0.25)] ring-2 ring-[#667eea]/30'
+                  ? 'border-[#667eea] shadow-md shadow-[rgba(102,126,234,0.2)] ring-2 ring-[#667eea]/30'
                   : 'border-transparent hover:border-gray-200'
               }`}
             >
-              <div className={`feature-icon ${isSelected ? '!bg-[#667eea] !text-white' : ''}`}>
-                <Icon size={24} className="shrink-0" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#667eea] text-white' : 'bg-gray-100 text-[#667eea]'}`}>
+                <Icon size={20} className="shrink-0" />
               </div>
-              <h3 className="feature-title">{option.name}</h3>
-              <p className="feature-description">{option.description}</p>
+              <h3 className="text-base font-semibold text-[#1a1a1a] mt-3">{option.name}</h3>
+              <p className="text-sm text-gray-600 mt-0.5">{option.description}</p>
               {isSelected && (
-                <span className="inline-block mt-3 px-3 py-1 text-xs font-semibold text-[#667eea] bg-[#f5f5ff] rounded-full">
+                <span className="inline-block mt-2 px-2.5 py-0.5 text-xs font-semibold text-[#667eea] bg-[#f5f5ff] rounded-full">
                   Active
                 </span>
               )}
@@ -165,8 +165,8 @@ export default function AvatarAI() {
           </div>
 
           {/* Avatar / video - second on mobile (order-2), left on desktop (lg:order-1) */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 order-2 lg:order-1">
-            <div className="h-[500px] min-h-[320px]">
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 order-2 lg:order-1 flex flex-col min-h-[360px] max-h-[44vh]">
+            <div className="flex-1 flex flex-col min-h-[320px]">
               <SelectedComponent onTranscript={handleTranscript} />
             </div>
           </div>
