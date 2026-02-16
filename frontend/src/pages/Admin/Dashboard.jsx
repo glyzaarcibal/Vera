@@ -1,21 +1,94 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MdPeople, MdCheckCircle, MdWifi, MdVerified, MdAdd, MdBarChart, MdSettings, MdNotifications } from "react-icons/md";
+import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
 const Dashboard = () => {
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Helper function to format time ago - MUST be defined before useEffect
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  };
+
+  useEffect(() => {
+    const fetchUsersData = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get("/admin/users/get-all-users", {
+          params: {
+            limit: 1000,
+            page: 1,
+          },
+        });
+
+        console.log("Users data response:", response.data);
+
+        const usersData = response.data.users || [];
+        const totalCount = response.data.pagination?.totalUsers || 0;
+
+        setTotalUsers(totalCount);
+
+        // Sort users by created_at (most recent first) and get last 5
+        const sortedUsers = usersData
+          .sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return dateB - dateA;
+          })
+          .slice(0, 5);
+
+        // Format recent activity
+        const activities = sortedUsers.map((user) => ({
+          user: user.profile?.username || user.email || "Unknown",
+          action: "User registered",
+          time: formatTimeAgo(new Date(user.created_at)),
+          email: user.email,
+        }));
+
+        setRecentActivity(activities);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        console.error("Error details:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+        });
+        setError(`Failed to fetch users data: ${err.response?.data?.message || err.message || "Unknown error"}`);
+        // Keep default data on error
+        setRecentActivity([
+          { user: "john_doe", action: "Logged in", time: "2 minutes ago" },
+          { user: "jane_smith", action: "Updated profile", time: "15 minutes ago" },
+          { user: "admin", action: "Created new user", time: "1 hour ago" },
+          { user: "alice_wonder", action: "Changed password", time: "2 hours ago" },
+          { user: "bob_builder", action: "Logged out", time: "3 hours ago" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsersData();
+  }, []);
+
   const stats = [
-    { label: "Total Users", value: "1,234", icon: <MdPeople />, change: "+12%" },
+    { label: "Total Users", value: totalUsers.toLocaleString(), icon: <MdPeople />, change: "+12%" },
     { label: "Active Sessions", value: "89", icon: <MdCheckCircle />, change: "+5%" },
     { label: "API Calls Today", value: "15.2K", icon: <MdWifi />, change: "+23%" },
     { label: "System Status", value: "Healthy", icon: <MdVerified />, change: "100%" },
-  ];
-
-  const recentActivity = [
-    { user: "john_doe", action: "Logged in", time: "2 minutes ago" },
-    { user: "jane_smith", action: "Updated profile", time: "15 minutes ago" },
-    { user: "admin", action: "Created new user", time: "1 hour ago" },
-    { user: "alice_wonder", action: "Changed password", time: "2 hours ago" },
-    { user: "bob_builder", action: "Logged out", time: "3 hours ago" },
   ];
 
   return (
@@ -23,6 +96,7 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <h1 className="dashboard-title">Dashboard</h1>
         <p className="dashboard-subtitle">Welcome back! Here's what's happening today.</p>
+        {error && <p style={{ color: "#ff6b6b", marginTop: "10px" }}>{error}</p>}
       </div>
 
       <div className="dashboard-stats">
@@ -31,7 +105,7 @@ const Dashboard = () => {
             <div className="stat-icon">{stat.icon}</div>
             <div className="stat-info">
               <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
+              <div className="stat-value">{loading && stat.label === "Total Users" ? "..." : stat.value}</div>
               <div className="stat-change positive">{stat.change}</div>
             </div>
           </div>
@@ -40,15 +114,21 @@ const Dashboard = () => {
 
       <div className="dashboard-content">
         <div className="activity-card">
-          <h2 className="activity-title">Recent Activity</h2>
+          <h2 className="activity-title">Recent Activity - New Users</h2>
           <div className="activity-list">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="activity-item">
-                <div className="activity-user">{activity.user}</div>
-                <div className="activity-action">{activity.action}</div>
-                <div className="activity-time">{activity.time}</div>
-              </div>
-            ))}
+            {recentActivity.length > 0 ? (
+              recentActivity.map((activity, index) => (
+                <div key={index} className="activity-item">
+                  <div className="activity-user">{activity.user}</div>
+                  <div className="activity-action">{activity.action}</div>
+                  <div className="activity-time">{activity.time}</div>
+                </div>
+              ))
+            ) : loading ? (
+              <p style={{ padding: "20px", textAlign: "center" }}>Loading recent users...</p>
+            ) : (
+              <p style={{ padding: "20px", textAlign: "center" }}>No recent users found</p>
+            )}
           </div>
         </div>
 
