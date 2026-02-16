@@ -5,6 +5,16 @@ import womanAmericaVideo from '../assets/Unleash+yo.mp4';
 import manAmericaVideo from '../assets/_Removed+D.mp4';
 import womanFilipinoVideo from '../assets/pinoywomen.mp4';
 import manFilipinoVideo from '../assets/pinoyman.mp4';
+import americanGirlImg from '../assets/american-girl.png';
+import americanBoyImg from '../assets/american-boy.png';
+import filipinoGirlImg from '../assets/filipino-girl.png';
+import filipinoGirl1 from '../assets/filipino-girl-1.png';
+import filipinoGirl2 from '../assets/filipino-girl-2.png';
+import filipinoGirl3 from '../assets/filipino-girl-3.png';
+import filipinoBoyImg from '../assets/filipino-boy.png';
+import filipinoBoy1 from '../assets/filipino-boy-1.png';
+import filipinoBoy2 from '../assets/filipino-boy-2.png';
+import filipinoBoy3 from '../assets/filipino-boy-3.png';
 import axiosInstance from '../utils/axios.instance';
 
 /**
@@ -26,6 +36,10 @@ export default function DIDAgent({ onTranscript }) {
   const [language, setLanguage] = useState('fil'); // Filipino
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [showOutfitPicker, setShowOutfitPicker] = useState(false);
+  const [outfitPickerFor, setOutfitPickerFor] = useState(null); // 'woman-filipino' | 'man-filipino'
+  const [selectedFilipinoOutfit, setSelectedFilipinoOutfit] = useState('default');
+  const [selectedFilipinoBoyOutfit, setSelectedFilipinoBoyOutfit] = useState('default');
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -51,6 +65,30 @@ export default function DIDAgent({ onTranscript }) {
     'man-america': manAmericaVideo,
     'woman-filipino': womanFilipinoVideo,
     'man-filipino': manFilipinoVideo
+  };
+
+  // Avatar selection images (replacing icon/emoji)
+  const AVATAR_IMAGES = {
+    'woman-america': americanGirlImg,
+    'man-america': americanBoyImg,
+    'woman-filipino': filipinoGirlImg,
+    'man-filipino': filipinoBoyImg
+  };
+
+  // Filipino Woman outfit options (choose outfit when user picks Filipino Woman)
+  const FILIPINO_OUTFITS = {
+    default: { img: filipinoGirlImg, label: 'Default' },
+    '1': { img: filipinoGirl1, label: 'Casual' },
+    '2': { img: filipinoGirl2, label: 'Professional' },
+    '3': { img: filipinoGirl3, label: 'Sweater' }
+  };
+
+  // Filipino Boy outfit options (choose outfit when user picks Filipino Man)
+  const FILIPINO_BOY_OUTFITS = {
+    default: { img: filipinoBoyImg, label: 'Default' },
+    '1': { img: filipinoBoy1, label: 'Casual' },
+    '2': { img: filipinoBoy2, label: 'Professional' },
+    '3': { img: filipinoBoy3, label: 'Sweater' }
   };
 
   // Avatar labels
@@ -93,10 +131,36 @@ export default function DIDAgent({ onTranscript }) {
     }
   };
 
-  // Handle avatar selection
+  // Handle avatar selection (for Filipino Woman/Man, show outfit picker first)
   const handleAvatarSelect = async (type) => {
+    if (type === 'woman-filipino') {
+      setOutfitPickerFor('woman-filipino');
+      setShowOutfitPicker(true);
+      return;
+    }
+    if (type === 'man-filipino') {
+      setOutfitPickerFor('man-filipino');
+      setShowOutfitPicker(true);
+      return;
+    }
     setAvatarType(type);
     await initializeSession(type);
+  };
+
+  const handleOutfitSelect = async (outfitKey) => {
+    if (outfitPickerFor === 'woman-filipino') {
+      setSelectedFilipinoOutfit(outfitKey);
+      setShowOutfitPicker(false);
+      setOutfitPickerFor(null);
+      setAvatarType('woman-filipino');
+      await initializeSession('woman-filipino');
+    } else if (outfitPickerFor === 'man-filipino') {
+      setSelectedFilipinoBoyOutfit(outfitKey);
+      setShowOutfitPicker(false);
+      setOutfitPickerFor(null);
+      setAvatarType('man-filipino');
+      await initializeSession('man-filipino');
+    }
   };
 
   // Convert blob to base64
@@ -417,36 +481,84 @@ export default function DIDAgent({ onTranscript }) {
   const currentLang = languages.find((lang) => lang.code === language);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] bg-[#fafbfc] overflow-hidden">
+    <div className="relative w-full h-full min-h-0 flex flex-col flex-1 bg-[#fafbfc]">
+      {/* Choose outfit (Filipino Woman or Filipino Boy) */}
+      {!avatarType && showOutfitPicker && (
+        <div className="flex-1 flex flex-col items-center justify-center p-4 z-20 overflow-auto min-h-0">
+          <div className="text-center max-w-2xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => { setShowOutfitPicker(false); setOutfitPickerFor(null); }}
+              className="text-sm text-gray-500 hover:text-[#667eea] font-medium mb-2"
+            >
+              ← Back to avatars
+            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
+              Choose <span className="gradient-text">Outfit</span>
+            </h1>
+            <p className="text-sm text-gray-600 mb-1">
+              {outfitPickerFor === 'woman-filipino'
+                ? 'Pick an outfit for your Filipino Woman avatar'
+                : 'Pick an outfit for your Filipino Man avatar'}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {Object.entries(outfitPickerFor === 'man-filipino' ? FILIPINO_BOY_OUTFITS : FILIPINO_OUTFITS).map(([key, { img, label }]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleOutfitSelect(key)}
+                  className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-2"
+                >
+                  <div className="mb-1.5 flex justify-center">
+                    <img
+                      src={img}
+                      alt={label}
+                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full border border-gray-200"
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-[#1a1a1a]">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Avatar Selection Screen - same style as Welcome */}
-      {!avatarType && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
-          <div className="text-center max-w-4xl w-full space-y-8">
-            <div className="hero-badge">Human Agent</div>
-            <h1 className="hero-title">
+      {!avatarType && !showOutfitPicker && (
+        <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 overflow-auto min-h-0">
+          <div className="text-center max-w-3xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
+            <div className="hero-badge text-xs py-1.5 px-3">Human Agent</div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
               Choose Your <span className="gradient-text">Avatar</span>
             </h1>
-            <p className="hero-subtitle">
+            <p className="text-sm text-gray-600 mb-1">
               Select an avatar to begin your AI-powered conversation
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
               {[
-                { type: 'woman-america', emoji: '👩', label: 'American Woman', desc: 'Professional female voice', accent: 'pink' },
-                { type: 'man-america', emoji: '👨', label: 'American Man', desc: 'Professional male voice', accent: 'blue' },
-                { type: 'woman-filipino', emoji: '👩', label: 'Filipino Woman', desc: 'Warm female voice', accent: 'purple' },
-                { type: 'man-filipino', emoji: '👨', label: 'Filipino Man', desc: 'Friendly male voice', accent: 'indigo' }
-              ].map(({ type, emoji, label, desc, accent }) => (
+                { type: 'woman-america', label: 'American Woman', desc: 'Professional female voice', accent: 'pink' },
+                { type: 'man-america', label: 'American Man', desc: 'Professional male voice', accent: 'blue' },
+                { type: 'woman-filipino', label: 'Filipino Woman', desc: 'Warm female voice', accent: 'purple' },
+                { type: 'man-filipino', label: 'Filipino Man', desc: 'Friendly male voice', accent: 'indigo' }
+              ].map(({ type, label, desc, accent }) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => handleAvatarSelect(type)}
-                  className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-lg"
+                  className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md py-3 px-2"
                 >
-                  <div className="text-4xl mb-3">{emoji}</div>
-                  <h3 className="feature-title">{label}</h3>
-                  <p className="feature-description text-sm">{desc}</p>
-                  <span className="inline-block mt-3 px-4 py-2 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
+                  <div className="mb-1.5 flex justify-center">
+                    <img
+                      src={AVATAR_IMAGES[type]}
+                      alt={label}
+                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full border border-gray-200"
+                    />
+                  </div>
+                  <h3 className="text-sm font-semibold text-[#1a1a1a]">{label}</h3>
+                  <p className="text-xs text-gray-600 mt-0.5">{desc}</p>
+                  <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
                     Choose
                   </span>
                 </button>
@@ -458,11 +570,11 @@ export default function DIDAgent({ onTranscript }) {
 
       {/* Video - Full Screen */}
       {avatarType && (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full">
           <video
             ref={videoRef}
             src={VIDEO_MAP[avatarType]}
-            className="w-full h-full object-contain"
+            className="w-full h-full min-h-0 object-contain"
             loop
             muted
             playsInline
@@ -473,6 +585,20 @@ export default function DIDAgent({ onTranscript }) {
 
           {/* Avatar Badge - light theme like Welcome */}
           <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-full flex items-center gap-2 border border-gray-100">
+            {avatarType === 'woman-filipino' && (
+              <img
+                src={FILIPINO_OUTFITS[selectedFilipinoOutfit].img}
+                alt="Outfit"
+                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+              />
+            )}
+            {avatarType === 'man-filipino' && (
+              <img
+                src={FILIPINO_BOY_OUTFITS[selectedFilipinoBoyOutfit].img}
+                alt="Outfit"
+                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+              />
+            )}
             <span className="text-gray-900 font-semibold">{AVATAR_LABELS[avatarType]}</span>
             <button
               type="button"
@@ -480,6 +606,8 @@ export default function DIDAgent({ onTranscript }) {
                 setAvatarType(null);
                 setSessionId(null);
                 setMessages([]);
+                setShowOutfitPicker(false);
+                setOutfitPickerFor(null);
               }}
               className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
             >
