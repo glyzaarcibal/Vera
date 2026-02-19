@@ -1,12 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff } from 'lucide-react';
 import './Welcome.css';
 import womanAmericaVideo from '../assets/Unleash+yo.mp4';
+import americanGirlVideo from '../assets/american-girl.mp4';
+import americanGirl1Video from '../assets/american-girl-1.mp4';
+import americanGirl1ThinkingVideo from '../assets/american-girl-1-thinking.mp4';
+import americanGirl2Video from '../assets/american-girl-2.mp4';
+import americanGirl3Video from '../assets/american-girl-3.mp4';
 import manAmericaVideo from '../assets/_Removed+D.mp4';
 import womanFilipinoVideo from '../assets/pinoywomen.mp4';
 import manFilipinoVideo from '../assets/pinoyman.mp4';
 import americanGirlImg from '../assets/american-girl.png';
+import americanGirl1 from '../assets/american-girl-1.png';
+import americanGirl2 from '../assets/american-girl-2.png';
+import americanGirl3 from '../assets/american-girl-3.png';
 import americanBoyImg from '../assets/american-boy.png';
+import americanBoy1 from '../assets/american-boy-1.png';
+import americanBoy2 from '../assets/american-boy-2.png';
+import americanBoy3 from '../assets/american-boy-3.png';
 import filipinoGirlImg from '../assets/filipino-girl.png';
 import filipinoGirl1 from '../assets/filipino-girl-1.png';
 import filipinoGirl2 from '../assets/filipino-girl-2.png';
@@ -37,9 +48,12 @@ export default function DIDAgent({ onTranscript }) {
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [showOutfitPicker, setShowOutfitPicker] = useState(false);
-  const [outfitPickerFor, setOutfitPickerFor] = useState(null); // 'woman-filipino' | 'man-filipino'
+  const [outfitPickerFor, setOutfitPickerFor] = useState(null); // 'woman-america' | 'woman-filipino' | 'man-filipino' | 'man-america'
+  const [selectedAmericanGirlOutfit, setSelectedAmericanGirlOutfit] = useState('default');
   const [selectedFilipinoOutfit, setSelectedFilipinoOutfit] = useState('default');
   const [selectedFilipinoBoyOutfit, setSelectedFilipinoBoyOutfit] = useState('default');
+  const [selectedAmericanBoyOutfit, setSelectedAmericanBoyOutfit] = useState('default');
+  const [detectedEmotion, setDetectedEmotion] = useState(null); // { emotion, score } from Emotion-Detection-By-Voice
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -67,12 +81,47 @@ export default function DIDAgent({ onTranscript }) {
     'man-filipino': manFilipinoVideo
   };
 
+  // American Girl outfit videos (talking; outfit 1 also has thinking video)
+  const AMERICAN_GIRL_VIDEOS = {
+    default: americanGirlVideo,
+    '1': americanGirl1Video,
+    '2': americanGirl2Video,
+    '3': americanGirl3Video
+  };
+
+  const getAmericanGirlThinkingVideo = () => {
+    if (selectedAmericanGirlOutfit === '1') return americanGirl1ThinkingVideo;
+    return AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit] || americanGirlVideo;
+  };
+
+  // Get current video based on avatar type, outfit, and state
+  const getCurrentVideo = () => {
+    if (avatarType === 'woman-america') {
+      if (isSpeaking) {
+        return AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit] || americanGirlVideo;
+      }
+      if (isProcessing) {
+        return getAmericanGirlThinkingVideo();
+      }
+      return AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit] || americanGirlVideo;
+    }
+    return VIDEO_MAP[avatarType] || womanAmericaVideo;
+  };
+
   // Avatar selection images (replacing icon/emoji)
   const AVATAR_IMAGES = {
     'woman-america': americanGirlImg,
     'man-america': americanBoyImg,
     'woman-filipino': filipinoGirlImg,
     'man-filipino': filipinoBoyImg
+  };
+
+  // American Girl outfit options (choose outfit when user picks American Woman)
+  const AMERICAN_GIRL_OUTFITS = {
+    default: { img: americanGirlImg, label: 'Default' },
+    '1': { img: americanGirl1, label: 'Casual' },
+    '2': { img: americanGirl2, label: 'Professional' },
+    '3': { img: americanGirl3, label: 'Sweater' }
   };
 
   // Filipino Woman outfit options (choose outfit when user picks Filipino Woman)
@@ -89,6 +138,14 @@ export default function DIDAgent({ onTranscript }) {
     '1': { img: filipinoBoy1, label: 'Casual' },
     '2': { img: filipinoBoy2, label: 'Professional' },
     '3': { img: filipinoBoy3, label: 'Sweater' }
+  };
+
+  // American Boy outfit options (choose outfit when user picks American Man)
+  const AMERICAN_BOY_OUTFITS = {
+    default: { img: americanBoyImg, label: 'Default' },
+    '1': { img: americanBoy1, label: 'Casual' },
+    '2': { img: americanBoy2, label: 'Professional' },
+    '3': { img: americanBoy3, label: 'Sweater' }
   };
 
   // Avatar labels
@@ -131,8 +188,13 @@ export default function DIDAgent({ onTranscript }) {
     }
   };
 
-  // Handle avatar selection (for Filipino Woman/Man, show outfit picker first)
+  // Handle avatar selection (for American Woman/Man, Filipino Woman/Man: show outfit picker first)
   const handleAvatarSelect = async (type) => {
+    if (type === 'woman-america') {
+      setOutfitPickerFor('woman-america');
+      setShowOutfitPicker(true);
+      return;
+    }
     if (type === 'woman-filipino') {
       setOutfitPickerFor('woman-filipino');
       setShowOutfitPicker(true);
@@ -143,23 +205,65 @@ export default function DIDAgent({ onTranscript }) {
       setShowOutfitPicker(true);
       return;
     }
+    if (type === 'man-america') {
+      setOutfitPickerFor('man-america');
+      setShowOutfitPicker(true);
+      return;
+    }
     setAvatarType(type);
     await initializeSession(type);
   };
 
+  const getOutfitsForPicker = () => {
+    if (outfitPickerFor === 'woman-america') return AMERICAN_GIRL_OUTFITS;
+    if (outfitPickerFor === 'woman-filipino') return FILIPINO_OUTFITS;
+    if (outfitPickerFor === 'man-america') return AMERICAN_BOY_OUTFITS;
+    if (outfitPickerFor === 'man-filipino') return FILIPINO_BOY_OUTFITS;
+    return FILIPINO_OUTFITS;
+  };
+
+  const getOutfitPickerSubtitle = () => {
+    if (outfitPickerFor === 'woman-america') return 'Change outfit — pick one for your avatar';
+    if (outfitPickerFor === 'woman-filipino') return 'Pick an outfit for your Filipino Woman avatar';
+    if (outfitPickerFor === 'man-filipino') return 'Pick an outfit for your Filipino Man avatar';
+    if (outfitPickerFor === 'man-america') return 'Pick an outfit for your American Man avatar';
+    return '';
+  };
+
   const handleOutfitSelect = async (outfitKey) => {
-    if (outfitPickerFor === 'woman-filipino') {
+    const isChangingOutfit = avatarType === outfitPickerFor; // already in session, just changing outfit
+    if (outfitPickerFor === 'woman-america') {
+      setSelectedAmericanGirlOutfit(outfitKey);
+      setShowOutfitPicker(false);
+      setOutfitPickerFor(null);
+      if (!isChangingOutfit) {
+        setAvatarType('woman-america');
+        await initializeSession('woman-america');
+      }
+    } else if (outfitPickerFor === 'woman-filipino') {
       setSelectedFilipinoOutfit(outfitKey);
       setShowOutfitPicker(false);
       setOutfitPickerFor(null);
-      setAvatarType('woman-filipino');
-      await initializeSession('woman-filipino');
+      if (!isChangingOutfit) {
+        setAvatarType('woman-filipino');
+        await initializeSession('woman-filipino');
+      }
     } else if (outfitPickerFor === 'man-filipino') {
       setSelectedFilipinoBoyOutfit(outfitKey);
       setShowOutfitPicker(false);
       setOutfitPickerFor(null);
-      setAvatarType('man-filipino');
-      await initializeSession('man-filipino');
+      if (!isChangingOutfit) {
+        setAvatarType('man-filipino');
+        await initializeSession('man-filipino');
+      }
+    } else if (outfitPickerFor === 'man-america') {
+      setSelectedAmericanBoyOutfit(outfitKey);
+      setShowOutfitPicker(false);
+      setOutfitPickerFor(null);
+      if (!isChangingOutfit) {
+        setAvatarType('man-america');
+        await initializeSession('man-america');
+      }
     }
   };
 
@@ -276,6 +380,27 @@ export default function DIDAgent({ onTranscript }) {
         // Convert audio to base64 for backend storage
         const audioBase64 = await convertBlobToBase64(audioBlob);
 
+        // Emotion-Detection-By-Voice via Hugging Face (non-blocking) — label visible so you know it's working
+        axiosInstance.post('/emotion-from-voice', { audioBase64 })
+          .then((res) => {
+            const data = res.data;
+            const source = data?.source || 'Hugging Face';
+            if (data?.emotion) {
+              setDetectedEmotion({
+                emotion: data.emotion,
+                score: data.score ?? 0,
+                source,
+              });
+            } else if (data?.error) {
+              setDetectedEmotion({ emotion: null, score: 0, source, error: data.error });
+            }
+          })
+          .catch((err) => {
+            const msg = err?.response?.data?.message || err?.response?.data?.error || err.message;
+            console.warn('Emotion detection (Hugging Face) skipped:', msg);
+            setDetectedEmotion({ emotion: null, score: 0, source: 'Hugging Face', error: msg });
+          });
+
         // Create user message
         const userMessage = {
           id: messages.length + 1,
@@ -372,7 +497,7 @@ export default function DIDAgent({ onTranscript }) {
           }
         }
 
-        // Text-to-speech
+        // Text-to-speech - don't set isProcessing to false yet, let speakText handle the transition
         await speakText(aiResponse);
       }
     } catch (err) {
@@ -380,13 +505,17 @@ export default function DIDAgent({ onTranscript }) {
       setError(`AI error: ${err.message}`);
       setTimeout(() => setError(null), 3000);
     } finally {
-      setIsProcessing(false);
+      // Only set isProcessing to false if we're not speaking (in case speakText failed or hasn't started)
+      if (!isSpeaking) {
+        setIsProcessing(false);
+      }
     }
   };
 
-  // Text-to-speech using ElevenLabs
+  // Text-to-speech using ElevenLabs — when ready, start video and speech together (sabay)
   const speakText = async (text) => {
-    setIsSpeaking(true);
+    setIsProcessing(false);
+    // Don't set isSpeaking(true) yet — wait until we have audio and start both together
 
     try {
       const voiceId = VOICE_IDS[avatarType];
@@ -417,14 +546,42 @@ export default function DIDAgent({ onTranscript }) {
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.play();
+      if (!audioRef.current) return;
 
-        // Play video while speaking
-        if (videoRef.current) {
-          videoRef.current.play();
+      // Set audio source first
+      audioRef.current.src = audioUrl;
+
+      const video = videoRef.current;
+
+      // Start video and speech at the same time (sabay) — set isSpeaking only when we actually start
+      const startBoth = () => {
+        setIsSpeaking(true);
+        audioRef.current?.play().catch(e => console.error('Audio play error:', e));
+        videoRef.current?.play().catch(e => console.error('Video play error:', e));
+      };
+
+      // American Girl outfits 1/2/3: set talking video and wait for it to be ready, then start both together (sabay)
+      const americanGirlTalkingVideo = AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit];
+      if (video && avatarType === 'woman-america' && americanGirlTalkingVideo) {
+        video.src = americanGirlTalkingVideo;
+        video.load();
+        let started = false;
+        const startOnce = () => {
+          if (started) return;
+          started = true;
+          startBoth();
+        };
+        if (video.readyState >= 2) {
+          startOnce();
+        } else {
+          video.addEventListener('canplay', startOnce, { once: true });
         }
+      } else if (video) {
+        // Other avatars: video already loaded, start audio and video together (sabay)
+        startBoth();
+      } else {
+        setIsSpeaking(true);
+        audioRef.current.play().catch(e => console.error('Audio play error:', e));
       }
     } catch (err) {
       console.error('TTS error:', err);
@@ -480,10 +637,38 @@ export default function DIDAgent({ onTranscript }) {
 
   const currentLang = languages.find((lang) => lang.code === language);
 
+  // Update video source when state changes (for American Girl outfits 1, 2, 3)
+  useEffect(() => {
+    if (videoRef.current && avatarType === 'woman-america') {
+      const newVideoSrc = getCurrentVideo();
+      const currentSrc = videoRef.current.currentSrc || videoRef.current.src || '';
+      const newSrcString = typeof newVideoSrc === 'string' 
+        ? newVideoSrc 
+        : newVideoSrc?.default || newVideoSrc;
+      
+      const currentFilename = currentSrc.split('/').pop() || '';
+      const newFilename = newSrcString.split('/').pop() || '';
+      
+      if (currentFilename !== newFilename && newFilename) {
+        const wasPlaying = !videoRef.current.paused;
+        videoRef.current.src = newVideoSrc;
+        videoRef.current.load();
+        
+        if (wasPlaying || isSpeaking || isProcessing) {
+          videoRef.current.play().catch(err => console.error('Video play error:', err));
+        }
+      } else if (isSpeaking || isProcessing) {
+        if (videoRef.current.paused) {
+          videoRef.current.play().catch(err => console.error('Video play error:', err));
+        }
+      }
+    }
+  }, [isProcessing, isSpeaking, avatarType, selectedAmericanGirlOutfit]);
+
   return (
     <div className="relative w-full h-full min-h-0 flex flex-col flex-1 bg-[#fafbfc]">
-      {/* Choose outfit (Filipino Woman or Filipino Boy) */}
-      {!avatarType && showOutfitPicker && (
+      {/* Choose outfit — shown when first picking avatar OR when clicking "Change Outfit" */}
+      {showOutfitPicker && outfitPickerFor && (
         <div className="flex-1 flex flex-col items-center justify-center p-4 z-20 overflow-auto min-h-0">
           <div className="text-center max-w-2xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
             <button
@@ -491,18 +676,16 @@ export default function DIDAgent({ onTranscript }) {
               onClick={() => { setShowOutfitPicker(false); setOutfitPickerFor(null); }}
               className="text-sm text-gray-500 hover:text-[#667eea] font-medium mb-2"
             >
-              ← Back to avatars
+              {avatarType ? '← Back' : '← Back to avatars'}
             </button>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
               Choose <span className="gradient-text">Outfit</span>
             </h1>
             <p className="text-sm text-gray-600 mb-1">
-              {outfitPickerFor === 'woman-filipino'
-                ? 'Pick an outfit for your Filipino Woman avatar'
-                : 'Pick an outfit for your Filipino Man avatar'}
+              {getOutfitPickerSubtitle()}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              {Object.entries(outfitPickerFor === 'man-filipino' ? FILIPINO_BOY_OUTFITS : FILIPINO_OUTFITS).map(([key, { img, label }]) => (
+              {Object.entries(getOutfitsForPicker()).map(([key, { img, label }]) => (
                 <button
                   key={key}
                   type="button"
@@ -568,12 +751,12 @@ export default function DIDAgent({ onTranscript }) {
         </div>
       )}
 
-      {/* Video - Full Screen */}
-      {avatarType && (
+      {/* Video - Full Screen (hidden when outfit picker is open) */}
+      {avatarType && !showOutfitPicker && (
         <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full">
           <video
             ref={videoRef}
-            src={VIDEO_MAP[avatarType]}
+            src={getCurrentVideo()}
             className="w-full h-full min-h-0 object-contain"
             loop
             muted
@@ -585,6 +768,13 @@ export default function DIDAgent({ onTranscript }) {
 
           {/* Avatar Badge - light theme like Welcome */}
           <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-full flex items-center gap-2 border border-gray-100">
+            {avatarType === 'woman-america' && (
+              <img
+                src={AMERICAN_GIRL_OUTFITS[selectedAmericanGirlOutfit].img}
+                alt="Outfit"
+                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+              />
+            )}
             {avatarType === 'woman-filipino' && (
               <img
                 src={FILIPINO_OUTFITS[selectedFilipinoOutfit].img}
@@ -599,7 +789,24 @@ export default function DIDAgent({ onTranscript }) {
                 className="w-8 h-8 rounded-full object-cover border border-gray-200"
               />
             )}
+            {avatarType === 'man-america' && (
+              <img
+                src={AMERICAN_BOY_OUTFITS[selectedAmericanBoyOutfit].img}
+                alt="Outfit"
+                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+              />
+            )}
             <span className="text-gray-900 font-semibold">{AVATAR_LABELS[avatarType]}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setOutfitPickerFor(avatarType);
+                setShowOutfitPicker(true);
+              }}
+              className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
+            >
+              Change Outfit
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -609,9 +816,9 @@ export default function DIDAgent({ onTranscript }) {
                 setShowOutfitPicker(false);
                 setOutfitPickerFor(null);
               }}
-              className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
+              className="ml-1 text-xs bg-[#667eea] hover:bg-[#5a6fd6] text-white px-2 py-1 rounded transition-colors font-medium"
             >
-              Change
+              Choose Avatar
             </button>
           </div>
 
@@ -636,8 +843,8 @@ export default function DIDAgent({ onTranscript }) {
         </div>
       )}
 
-      {/* Floating Controls at Bottom - voice only */}
-      {avatarType && (
+      {/* Floating Controls at Bottom - voice only (hidden when outfit picker is open) */}
+      {avatarType && !showOutfitPicker && (
         <div className="absolute bottom-0 left-0 right-0 w-full">
           <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg p-4">
             <div className="flex items-center justify-center gap-3">
@@ -665,6 +872,29 @@ export default function DIDAgent({ onTranscript }) {
                 <div className="text-xs text-gray-600">
                   {isListening ? 'Speak now' : 'Click mic to speak'}
                 </div>
+                {detectedEmotion && (
+                  <div className="mt-1 text-xs font-medium">
+                    <span className="text-[#667eea]">
+                      {detectedEmotion.source || 'Hugging Face'}:{' '}
+                      {detectedEmotion.emotion
+                        ? (
+                            <>
+                              {detectedEmotion.emotion}
+                              {detectedEmotion.score > 0 && (
+                                <span className="text-gray-500 ml-1">
+                                  ({Math.round(detectedEmotion.score * 100)}%)
+                                </span>
+                              )}
+                            </>
+                          )
+                        : (
+                            <span className="text-amber-600">
+                              {detectedEmotion.error || 'No emotion detected'}
+                            </span>
+                          )}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,4 +1,15 @@
 import { getAllUsers, getUserInfo } from "../../service/Admin/User.service.js";
+import { getAvatarRiskStats } from "../../service/Chat/Session.service.js";
+
+export const fetchAvatarRiskStats = async (req, res) => {
+  try {
+    const stats = await getAvatarRiskStats();
+    return res.status(200).json(stats);
+  } catch (e) {
+    console.error("Error fetching avatar risk stats:", e);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+};
 
 export const fetchUsers = async (req, res) => {
   try {
