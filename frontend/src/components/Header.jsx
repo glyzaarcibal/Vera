@@ -56,6 +56,13 @@ const Header = () => {
           >
             Avatar AI
           </Link>
+          {/* Activities Button - Added here */}
+          <Link
+            to="/activities"
+            className={`header-link ${isActive("/activities") ? "active" : ""}`}
+          >
+            Activities
+          </Link>
           {user?.role === "admin" && (
             <Link
               to="/admin"

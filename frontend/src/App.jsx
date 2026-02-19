@@ -23,6 +23,13 @@ import Resources from "./pages/Admin/Resources";
 import AvatarAI from "./pages/Avatar";
 import CheckEmail from "./pages/CheckEmail";
 import EmailVerified from "./pages/EmailVerified";
+import Activities from "./pages/Activities";
+import ClipcardGame from "./pages/Activities/ClipCardGame";
+import Diary from "./pages/Activities/Diary";
+import MoodTrackerScreen from "./pages/Activities/MoodTrackerScreen";
+import SleepTracker from "./pages/Activities/SleepTracker";
+import WeeklyWellnessReport from "./pages/Activities/WeeklyWellnessReport";
+import TakeABreath from "./pages/Activities/TakeABreath";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -41,6 +48,16 @@ const App = () => {
         <Route path="/chat" element={<ChatAI />} />
         <Route path="/voice" element={<VoiceAI />} />
         <Route path="/avatar" element={<AvatarAI />} />
+        <Route path="/activities" element={<Activities />} />
+        <Route path="/activities/clipcard" element={<ClipcardGame />} />
+        <Route path="/activities/diary" element={<Diary />} />
+        <Route path="/activities/mood-tracker" element={<MoodTrackerScreen />} />
+        <Route path="/activities/sleep-tracker" element={<SleepTracker />} />
+        <Route
+          path="/activities/weekly-wellness-report"
+          element={<WeeklyWellnessReport />}
+        />
+        <Route path="/activities/take-a-breath" element={<TakeABreath />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
