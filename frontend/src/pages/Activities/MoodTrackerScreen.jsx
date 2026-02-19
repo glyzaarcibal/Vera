@@ -224,6 +224,15 @@ const MoodTrackerScreen = ({ navigation }) => {
   const filteredHistory = getFilteredHistory();
   const moodStats = getMoodStats();
 
+  const handleBack = () => {
+    if (navigation && typeof navigation.goBack === "function") {
+      navigation.goBack();
+      return;
+    }
+
+    window.history.back();
+  };
+
   return (
     <div
       style={{
@@ -254,7 +263,7 @@ const MoodTrackerScreen = ({ navigation }) => {
           }}
         >
           <button
-            onClick={() => navigation.goBack()}
+            onClick={handleBack}
             style={{
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               border: "none",

@@ -176,6 +176,15 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
     if (onUpdateReport) onUpdateReport(updatedHistory);
   };
 
+  const handleBack = () => {
+    if (navigation && typeof navigation.goBack === "function") {
+      navigation.goBack();
+      return;
+    }
+
+    window.history.back();
+  };
+
   return (
     <div
       style={{
@@ -189,7 +198,7 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
     >
       <div style={{ marginBottom: "10px" }}>
         <button
-          onClick={() => navigation.goBack()}
+          onClick={handleBack}
           style={{
             background: "none",
             border: "none",
