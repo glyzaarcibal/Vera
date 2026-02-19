@@ -3,10 +3,55 @@ import {
   LineChart,
   PieChart,
   BarChart,
+  Pie,
+  Cell,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Line,
+  Bar,
 } from "recharts";
 import axiosInstance from "../../utils/axios.instance";
 
 const WeeklyWellnessReport = () => {
+  const emotionColorMap = {
+    "Very Sad": "#3B82F6",
+    Sad: "#6366F1",
+    Neutral: "#9CA3AF",
+    Happy: "#FACC15",
+    "Very Happy": "#F59E0B",
+    Angry: "#EF4444",
+    Anxious: "#FB923C",
+    Tired: "#8D6E63",
+    Relaxed: "#66BB6A",
+    Calm: "#26A69A",
+    Unknown: "#94A3B8",
+  };
+
+  const fallbackPalette = [
+    "#EC4899",
+    "#14B8A6",
+    "#8B5CF6",
+    "#06B6D4",
+    "#EAB308",
+    "#F97316",
+    "#22C55E",
+    "#0EA5E9",
+  ];
+
+  const getEmotionColor = (emotion) => {
+    if (emotionColorMap[emotion]) return emotionColorMap[emotion];
+
+    const key = String(emotion || "Unknown");
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash = key.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return fallbackPalette[Math.abs(hash) % fallbackPalette.length];
+  };
+
   const [moodCounts, setMoodCounts] = useState({});
   const [sleepData, setSleepData] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -22,19 +67,42 @@ const WeeklyWellnessReport = () => {
     loadBreathingHistory();
   }, []);
 
+  const getStoredArray = (key) => {
+    try {
+      const value = localStorage.getItem(key);
+      if (!value) return [];
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const parseDurationToHours = (duration) => {
+    if (typeof duration === "number") return duration;
+    if (!duration || typeof duration !== "string") return 0;
+
+    const hoursMatch = duration.match(/(\d+)\s*h/i);
+    const minutesMatch = duration.match(/(\d+)\s*m/i);
+
+    const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+    const minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+
+    return hours + minutes / 60;
+  };
+
   const loadSleepData = async () => {
     try {
-      const response = await axiosInstance.get(
-        "/sleep-tracker/user/1/"
-      );
-      console.log("Loaded Sleep Data:", response.data);
-
-      if (response.data) {
-        const sortedHistory = response.data.sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
+      const parsedData = getStoredArray("sleepData");
+      if (parsedData.length > 0) {
+        const sortedHistory = [...parsedData].sort(
+          (a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)
         );
         setSleepData(sortedHistory);
+        return;
       }
+
+      setSleepData([]);
     } catch (error) {
       console.error("Error loading sleep history:", error);
     }
@@ -42,15 +110,23 @@ const WeeklyWellnessReport = () => {
 
   const loadMoodData = async () => {
     try {
-      const response = await axiosInstance.get(
-        "/mood-tracker/user/1/"
-      );
-      const moodData = response.data;
+      const moodHistory = getStoredArray("moodHistory");
+      const moodEntries = getStoredArray("moodEntries");
+
+      const localMoodData = [...moodHistory, ...moodEntries];
+
+      if (localMoodData.length > 0) {
+        processMoodData(localMoodData);
+        return;
+      }
+
+      const response = await axiosInstance.get("/moods/retrieve-daily-moods");
+      const moodData = response?.data?.moods || [];
 
       if (moodData && moodData.length > 0) {
         processMoodData(moodData);
-        console.log("Processed mood data:", moodData);
       } else {
+        setMoodCounts({});
         console.log("No mood data found");
       }
     } catch (error) {
@@ -59,10 +135,33 @@ const WeeklyWellnessReport = () => {
   };
 
   const processMoodData = (logs) => {
+    const moodScoreMap = {
+      1: "Very Sad",
+      2: "Sad",
+      3: "Neutral",
+      4: "Happy",
+      5: "Very Happy",
+    };
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     const counts = logs.reduce((acc, log) => {
-      acc[log.mood.mood] = (acc[log.mood.mood] || 0) + 1;
+      const logDate = log.timestamp || log.created_at || log.date;
+      if (logDate && new Date(logDate) < sevenDaysAgo) {
+        return acc;
+      }
+
+      const moodLabel =
+        (typeof log.mood === "string" && log.mood) ||
+        (log.mood && typeof log.mood === "object" && log.mood.mood) ||
+        moodScoreMap[log.mood_score] ||
+        "Unknown";
+
+      acc[moodLabel] = (acc[moodLabel] || 0) + 1;
       return acc;
     }, {});
+
     setMoodCounts(counts);
   };
 
@@ -91,23 +190,23 @@ const WeeklyWellnessReport = () => {
   // Prepare data for charts
   const sleepChartData = sleepData.map((entry) => {
     if (!entry.duration) return { date: entry.date, duration: 0 };
-    const [hours, minutes] = entry.duration
-      .split("h ")
-      .map((num) => parseInt(num, 10) || 0);
-    const totalHours = hours + minutes / 60;
+
+    const totalHours = parseDurationToHours(entry.duration);
+    const formattedDate = (entry.date || entry.created_at || "").toString();
+
     return {
-      date: entry.date.slice(5), // Show MM/DD format
-      fullDate: entry.date,
+      date: formattedDate.slice(5), // Show MM/DD format
+      fullDate: formattedDate,
       duration: totalHours,
-      sleepTime: entry.sleepTime,
-      wakeTime: entry.wakeTime,
+      sleepTime: entry.sleepTime || entry.sleep_time,
+      wakeTime: entry.wakeTime || entry.wake_time,
     };
   });
 
   const pieData = Object.keys(moodCounts).map((key, index) => ({
     name: key,
     value: moodCounts[key],
-    color: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"][index % 5],
+    color: getEmotionColor(key),
   }));
 
   const breathingChartData = Object.keys(breathingData).map((date) => ({
@@ -132,8 +231,8 @@ const WeeklyWellnessReport = () => {
     let declining = 0;
 
     for (let i = 1; i < sleepData.length; i++) {
-      const prev = parseFloat(sleepData[i - 1].duration);
-      const current = parseFloat(sleepData[i].duration);
+      const prev = parseDurationToHours(sleepData[i - 1].duration);
+      const current = parseDurationToHours(sleepData[i].duration);
       if (current > prev) improving++;
       else if (current < prev) declining++;
     }
@@ -375,20 +474,20 @@ const WeeklyWellnessReport = () => {
             <div style={styles.chartWrapper}>
               <div style={styles.chartContainer}>
                 <PieChart width={400} height={300} data={pieData}>
-                  {pieData.map((entry, index) => (
-                    <PieChart.Pie
-                      key={`pie-${index}`}
-                      data={[entry]}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill={entry.color}
-                      label
-                    />
-                  ))}
-                  <PieChart.Tooltip />
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
                 </PieChart>
               </div>
             </div>
@@ -410,17 +509,17 @@ const WeeklyWellnessReport = () => {
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   onClick={handleDataPointClick}
                 >
-                  <LineChart.XAxis dataKey="date" />
-                  <LineChart.YAxis />
-                  <LineChart.CartesianGrid strokeDasharray="3 3" />
-                  <LineChart.Line
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Line
                     type="monotone"
                     dataKey="duration"
                     stroke="#50C878"
                     strokeWidth={2}
                     activeDot={{ r: 8 }}
                   />
-                  <LineChart.Tooltip />
+                  <Tooltip />
                 </LineChart>
               </div>
               <p style={styles.trendAnalysis}>{analyzeSleepTrend()}</p>
@@ -442,11 +541,11 @@ const WeeklyWellnessReport = () => {
                   data={breathingChartData}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
-                  <BarChart.XAxis dataKey="date" />
-                  <BarChart.YAxis />
-                  <BarChart.CartesianGrid strokeDasharray="3 3" />
-                  <BarChart.Bar dataKey="sessions" fill="#1E88E5" />
-                  <BarChart.Tooltip />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Bar dataKey="sessions" fill="#1E88E5" />
+                  <Tooltip />
                 </BarChart>
               </div>
               <p style={styles.trendAnalysis}>

@@ -208,3 +208,8 @@
 .icon-spin {
   animation: spin 1s linear infinite;
 }
+
+.password-toggle-btn {
+  width: 30px;
+  height: 30px;
+}

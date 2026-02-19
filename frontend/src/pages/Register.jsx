@@ -9,6 +9,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    birthDate: "",
     password: "",
     confirmPassword: "",
   });
@@ -74,6 +75,19 @@ const Register = () => {
               onChange={handleChange}
               required
               className="auth-input"
+            />
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label">Birth Date</label>
+            <input
+              type="date"
+              name="birthDate"
+              value={formData.birthDate}
+              onChange={handleChange}
+              required
+              className="auth-input"
+              max={new Date().toISOString().split("T")[0]}
             />
           </div>
 
