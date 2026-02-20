@@ -91,7 +91,6 @@ const SimpleDatePicker = ({ selected, onDateChange, options }) => {
 const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
   const [selectedDate, setSelectedDate] = useState(today);
-  const [isOpen, setIsOpen] = useState(false);
 
   const [sleepHour, setSleepHour] = useState("10");
   const [sleepMinute, setSleepMinute] = useState("00");
@@ -189,39 +188,32 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
     <div
       style={{
         flex: 1,
-        padding: "20px",
-        backgroundColor: "#f5f5f5",
+        padding: "20px 16px",
+        backgroundColor: "#eef4ef",
         minHeight: "100vh",
         fontFamily: "system-ui, -apple-system, sans-serif",
         overflowY: "auto",
       }}
     >
-      <div style={{ marginBottom: "10px" }}>
+      <div style={styles.pageContainer}>
+      <div style={styles.topBar}>
         <button
           onClick={handleBack}
-          style={{
-            background: "none",
-            border: "none",
-            fontSize: "24px",
-            cursor: "pointer",
-          }}
+          style={styles.backButton}
         >
           ←
         </button>
       </div>
 
       <h1
-        style={{
-          fontSize: "24px",
-          textAlign: "center",
-          marginBottom: "20px",
-          fontWeight: "bold",
-        }}
+        style={styles.pageTitle}
       >
         Sleep Tracker
       </h1>
 
-      <p style={{ fontSize: "18px", marginBottom: "10px" }}>
+      <div style={styles.formCard}>
+
+      <p style={styles.selectedDateText}>
         Selected Date: {selectedDate}
       </p>
 
@@ -303,26 +295,20 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
       
       <button
         onClick={saveSleepData}
-        style={{
-          backgroundColor: "#66BB6A",
-          color: "white",
-          border: "none",
-          padding: "10px 20px",
-          borderRadius: "5px",
-          fontSize: "16px",
-          cursor: "pointer",
-          width: "100%",
-          marginBottom: "20px",
-        }}
+        style={styles.saveButton}
       >
         Save Sleep Data
       </button>
+      </div>
+
+      <div style={styles.historyCard}>
 
       <h2 style={styles.historyTitle}>Sleep History</h2>
 
       {loading ? (
-        <p>Loading...</p>
+        <p style={styles.emptyState}>Loading...</p>
       ) : (
+        <div style={styles.tableWrapper}>
         <div style={styles.table}>
           <div style={styles.row}>
             <div style={styles.headerCell}>Date</div>
@@ -341,15 +327,7 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
                 <div style={styles.cell}>
                   <button
                     onClick={() => deleteEntry(entry.id)}
-                    style={{
-                      backgroundColor: "#ff4444",
-                      color: "white",
-                      border: "none",
-                      padding: "5px 10px",
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                    }}
+                    style={styles.deleteButton}
                   >
                     Delete
                   </button>
@@ -357,37 +335,105 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
               </div>
             ))
           ) : (
-            <p style={{ textAlign: "center", padding: "20px" }}>
+            <p style={styles.emptyState}>
               No sleep history found.
             </p>
           )}
         </div>
+        </div>
       )}
+      </div>
+      </div>
     </div>
   );
 };
 
 const styles = {
+  pageContainer: {
+    maxWidth: "920px",
+    margin: "0 auto",
+  },
+  topBar: {
+    marginBottom: "8px",
+  },
+  backButton: {
+    background: "#ffffff",
+    border: "1px solid #dbe6dc",
+    width: "42px",
+    height: "42px",
+    borderRadius: "999px",
+    fontSize: "22px",
+    cursor: "pointer",
+    color: "#2f6f32",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  },
+  pageTitle: {
+    fontSize: "28px",
+    textAlign: "center",
+    marginBottom: "16px",
+    fontWeight: "700",
+    color: "#1f3b22",
+  },
+  formCard: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "16px",
+    border: "1px solid #e3ece4",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    marginBottom: "16px",
+  },
+  selectedDateText: {
+    fontSize: "16px",
+    marginBottom: "10px",
+    fontWeight: "600",
+    color: "#2e5d32",
+  },
   pickerContainer: {
     display: "flex",
     gap: "10px",
     marginBottom: "10px",
+    flexWrap: "wrap",
   },
   select: {
     flex: 1,
+    minWidth: "90px",
     padding: "8px",
     borderRadius: "5px",
     border: "1px solid #ccc",
     fontSize: "14px",
   },
+  saveButton: {
+    background: "linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%)",
+    color: "white",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer",
+    width: "100%",
+    marginBottom: "4px",
+    fontWeight: "600",
+  },
+  historyCard: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "16px",
+    border: "1px solid #e3ece4",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+  },
+  tableWrapper: {
+    overflowX: "auto",
+  },
   table: {
     marginTop: "10px",
     borderWidth: "1px",
     borderStyle: "solid",
-    borderColor: "#ccc",
+    borderColor: "#e1e1e1",
     marginBottom: "20px",
     borderRadius: "5px",
     overflow: "hidden",
+    minWidth: "640px",
+    backgroundColor: "#fff",
   },
   row: {
     display: "flex",
@@ -400,23 +446,43 @@ const styles = {
     flex: 1,
     textAlign: "center",
     fontSize: "14px",
+    color: "#2f2f2f",
   },
   headerCell: {
     flex: 1,
     fontWeight: "bold",
     textAlign: "center",
     fontSize: "14px",
+    color: "#245427",
+  },
+  deleteButton: {
+    backgroundColor: "#ef5350",
+    color: "white",
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "600",
+  },
+  emptyState: {
+    textAlign: "center",
+    padding: "20px",
+    color: "#666",
   },
   text: {
     marginTop: "10px",
     marginBottom: "5px",
     fontSize: "16px",
+    fontWeight: "600",
+    color: "#2f2f2f",
   },
   historyTitle: {
     fontSize: "20px",
     fontWeight: "bold",
-    marginTop: "20px",
+    marginTop: "0px",
     marginBottom: "10px",
+    color: "#1f3b22",
   },
   // Calendar styles
   calendarContainer: {

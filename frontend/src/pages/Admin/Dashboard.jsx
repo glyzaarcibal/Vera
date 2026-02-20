@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MdPeople, MdCheckCircle, MdWifi, MdVerified, MdAdd, MdBarChart, MdSettings, MdNotifications } from "react-icons/md";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
@@ -21,6 +12,7 @@ const RISK_COLORS = {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +206,7 @@ const Dashboard = () => {
               <span className="quick-action-icon"><MdAdd /></span>
               <span>Add User</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" onClick={() => navigate("/admin/reports")}>
               <span className="quick-action-icon"><MdBarChart /></span>
               <span>View Reports</span>
             </button>

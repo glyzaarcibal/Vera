@@ -3,14 +3,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
 import "./Header.css";
-import { selectUser } from "../store/slices/authSelectors";
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
-  console.log(user);
+
   const handleLogout = () => {
     dispatch(clearUser());
     navigate("/");
