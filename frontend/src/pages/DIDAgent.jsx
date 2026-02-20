@@ -28,15 +28,7 @@ import filipinoBoy2 from '../assets/filipino-boy-2.png';
 import filipinoBoy3 from '../assets/filipino-boy-3.png';
 import axiosInstance from '../utils/axios.instance';
 
-/**
- * DIDAgent — AI-powered human avatar with speech recognition and synthesis
- * - Uses ElevenLabs for speech-to-text and text-to-speech
- * - Uses Groq for AI responses
- * - Animated talking avatar video
- * - Multi-language support (Filipino & English)
- * - Choose avatar: American Woman/Man, Filipino Woman/Man
- * - Saves session data to backend
- */
+
 export default function DIDAgent({ onTranscript }) {
   const [avatarType, setAvatarType] = useState(null); // 'woman-america', 'man-america', 'woman-filipino', 'man-filipino'
   const [input, setInput] = useState('');
@@ -64,6 +56,14 @@ export default function DIDAgent({ onTranscript }) {
   // API Keys
   const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
   const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
+  // Validate API keys
+  useEffect(() => {
+    if (!ELEVENLABS_API_KEY) {
+      console.warn("ELEVENLABS_API_KEY missing in frontend/.env");
+      setError("ElevenLabs API key not configured. Add VITE_ELEVENLABS_API_KEY to frontend/.env");
+    }
+  }, []);
 
   // Voice IDs for different avatars
   const VOICE_IDS = {
@@ -380,11 +380,11 @@ export default function DIDAgent({ onTranscript }) {
         // Convert audio to base64 for backend storage
         const audioBase64 = await convertBlobToBase64(audioBlob);
 
-        // Emotion-Detection-By-Voice via Hugging Face (non-blocking) — label visible so you know it's working
+        // Emotion-Detection-By-Voice via Hume AI (non-blocking) — label visible so you know it's working
         axiosInstance.post('/emotion-from-voice', { audioBase64 })
           .then((res) => {
             const data = res.data;
-            const source = data?.source || 'Hugging Face';
+            const source = data?.source || 'Hume AI';
             if (data?.emotion) {
               setDetectedEmotion({
                 emotion: data.emotion,
@@ -397,8 +397,8 @@ export default function DIDAgent({ onTranscript }) {
           })
           .catch((err) => {
             const msg = err?.response?.data?.message || err?.response?.data?.error || err.message;
-            console.warn('Emotion detection (Hugging Face) skipped:', msg);
-            setDetectedEmotion({ emotion: null, score: 0, source: 'Hugging Face', error: msg });
+            console.warn('Emotion detection (Hume AI) skipped:', msg);
+            setDetectedEmotion({ emotion: null, score: 0, source: 'Hume AI', error: msg });
           });
 
         // Create user message
@@ -518,6 +518,10 @@ export default function DIDAgent({ onTranscript }) {
     // Don't set isSpeaking(true) yet — wait until we have audio and start both together
 
     try {
+      if (!ELEVENLABS_API_KEY) {
+        throw new Error("ElevenLabs API key not set. Add VITE_ELEVENLABS_API_KEY to frontend/.env");
+      }
+
       const voiceId = VOICE_IDS[avatarType];
 
       const response = await fetch(
@@ -540,7 +544,11 @@ export default function DIDAgent({ onTranscript }) {
       );
 
       if (!response.ok) {
-        throw new Error(`TTS failed: ${response.status}`);
+        const errorText = await response.text();
+        if (response.status === 401) {
+          throw new Error(`ElevenLabs API key invalid (401). Check VITE_ELEVENLABS_API_KEY in frontend/.env`);
+        }
+        throw new Error(`TTS failed: ${response.status} - ${errorText}`);
       }
 
       const audioBlob = await response.blob();
@@ -875,7 +883,7 @@ export default function DIDAgent({ onTranscript }) {
                 {detectedEmotion && (
                   <div className="mt-1 text-xs font-medium">
                     <span className="text-[#667eea]">
-                      {detectedEmotion.source || 'Hugging Face'}:{' '}
+                      {detectedEmotion.source || 'Hume AI'}:{' '}
                       {detectedEmotion.emotion
                         ? (
                             <>
@@ -893,6 +901,9 @@ export default function DIDAgent({ onTranscript }) {
                             </span>
                           )}
                     </span>
+                    <div className="text-[10px] text-gray-500 mt-0.5">
+                      Speech emotion detection via Hume AI Prosody model
+                    </div>
                   </div>
                 )}
               </div>

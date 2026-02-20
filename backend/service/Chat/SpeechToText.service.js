@@ -4,117 +4,266 @@ import { saveEmotionData } from "./Emotion.service.js";
 
 dotenv.config();
 
-const HUGGING_FACE_STT_ENDPOINT =
-  "https://xgqc71v8577p78la.us-east-1.aws.endpoints.huggingface.cloud";
+// Hume AI Expression Measurement API for speech emotion recognition
+const HUME_API_URL = "https://api.hume.ai/v0/stream/models";
 
-function getHfToken() {
-  const t = process.env.HUGGING_FACE_API_TOKEN;
-  return typeof t === "string" ? t.trim() : "";
+function getHumeApiKey() {
+  const key = process.env.HUME_API_KEY;
+  return typeof key === "string" ? key.trim() : "";
+}
+
+/** Map Hume AI emotions to our database format. Hume provides 48+ dimensions; we map common ones. */
+function mapHumeEmotionsToDb(humeEmotions) {
+  const mapped = {
+    angry: 0,
+    calm: 0,
+    disgust: 0,
+    fearful: 0,
+    happy: 0,
+    neutral: 0,
+    sad: 0,
+    surprised: 0,
+  };
+
+  if (!humeEmotions || typeof humeEmotions !== "object") return mapped;
+
+  // Map Hume AI emotion names to our database fields (Hume uses various names e.g. Anger, Happiness)
+  const emotionMap = {
+    anger: "angry",
+    angry: "angry",
+    calm: "calm",
+    disgust: "disgust",
+    fear: "fearful",
+    fearful: "fearful",
+    happiness: "happy",
+    happy: "happy",
+    joy: "happy",
+    neutral: "neutral",
+    sadness: "sad",
+    sad: "sad",
+    surprise: "surprised",
+    surprised: "surprised",
+    excitement: "surprised",
+  };
+
+  Object.entries(humeEmotions).forEach(([key, value]) => {
+    const normalizedKey = (key || "").toLowerCase().trim();
+    const dbKey = emotionMap[normalizedKey];
+    if (dbKey && typeof value === "number") {
+      mapped[dbKey] = Math.max(mapped[dbKey] || 0, value);
+    }
+  });
+
+  return mapped;
+}
+
+/** Get dominant emotion from Hume AI response. Returns { label, score }. */
+function getDominantEmotion(humeEmotions) {
+  if (!humeEmotions || typeof humeEmotions !== "object") return null;
+
+  let maxScore = 0;
+  let dominantLabel = null;
+
+  Object.entries(humeEmotions).forEach(([label, score]) => {
+    if (typeof score === "number" && score > maxScore) {
+      maxScore = score;
+      dominantLabel = label;
+    }
+  });
+
+  return dominantLabel ? { label: dominantLabel, score: maxScore } : null;
+}
+
+/** Call Hume AI Expression Measurement API for speech emotion recognition. */
+async function callHumeEmotionModel(audioBase64) {
+  const apiKey = getHumeApiKey();
+  if (!apiKey) {
+    throw new Error("HUME_API_KEY not set in backend/.env");
+  }
+
+  const audioBuffer = Buffer.from(audioBase64, "base64");
+
+  // Use FormData for multipart upload
+  const formDataModule = await import("form-data");
+  const FormData = formDataModule.default || formDataModule;
+  const formData = new FormData();
+  formData.append("file", audioBuffer, {
+    filename: "audio.webm",
+    contentType: "audio/webm",
+  });
+  formData.append(
+    "json",
+    JSON.stringify({
+      models: {
+        prosody: {}, // Speech Prosody model for emotion from speech
+      },
+    })
+  );
+
+  // Submit batch job
+  const uploadResponse = await axios.post(
+    "https://api.hume.ai/v0/batch/jobs",
+    formData,
+    {
+      headers: {
+        "X-Hume-Api-Key": apiKey,
+        ...formData.getHeaders(),
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    }
+  );
+
+  const jobId = uploadResponse.data.job_id;
+  if (!jobId) {
+    throw new Error("Failed to create Hume AI job");
+  }
+
+  // Poll job details until COMPLETED (predictions endpoint returns 400 until job is done)
+  let attempts = 0;
+  const maxAttempts = 60; // 60 seconds
+  while (attempts < maxAttempts) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    try {
+      const jobResponse = await axios.get(
+        `https://api.hume.ai/v0/batch/jobs/${jobId}`,
+        {
+          headers: {
+            "X-Hume-Api-Key": apiKey,
+          },
+        }
+      );
+
+      const status = jobResponse.data?.state?.status;
+      if (status === "FAILED") {
+        const msg = jobResponse.data?.state?.message || "Job failed";
+        throw new Error(`Hume AI job failed: ${msg}`);
+      }
+      if (status === "COMPLETED") {
+        break;
+      }
+      // QUEUED or IN_PROGRESS: keep polling
+    } catch (err) {
+      if (err.response?.status === 404) {
+        throw new Error("Hume AI job not found");
+      }
+      if (err.message?.includes("Hume AI job failed")) {
+        throw err;
+      }
+      console.warn("[Hume AI] Job status poll error:", err.message);
+    }
+
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts) {
+    throw new Error("Hume AI job timed out");
+  }
+
+  // Job completed: fetch predictions
+  const predictionsResponse = await axios.get(
+    `https://api.hume.ai/v0/batch/jobs/${jobId}/predictions`,
+    {
+      headers: {
+        "X-Hume-Api-Key": apiKey,
+      },
+    }
+  );
+
+  const data = predictionsResponse.data;
+  if (!Array.isArray(data) || data.length === 0) {
+    return {};
+  }
+
+  // Parse: array of { source, results: { predictions: [ { file, models: { prosody: { grouped_predictions: [ { predictions: [ { emotions: [ { name, score } ] } ] } ] } } } ] } }
+  const aggregated = {};
+  for (const item of data) {
+    const predictions = item?.results?.predictions;
+    if (!Array.isArray(predictions)) continue;
+    for (const pred of predictions) {
+      const prosody = pred?.models?.prosody;
+      if (!prosody?.grouped_predictions) continue;
+      for (const group of prosody.grouped_predictions) {
+        const groupPreds = group?.predictions;
+        if (!Array.isArray(groupPreds)) continue;
+        for (const p of groupPreds) {
+          const emotions = p?.emotions;
+          if (!Array.isArray(emotions)) continue;
+          for (const e of emotions) {
+            const name = e?.name;
+            const score = e?.score;
+            if (name != null && typeof score === "number") {
+              aggregated[name] = Math.max(aggregated[name] ?? 0, score);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return aggregated;
 }
 
 export async function transcribeAudio(audioBase64, messageId) {
   try {
-    console.log("Transcribing audio...");
-    console.log("Audio base64 length:", audioBase64.length);
-
-    const token = getHfToken();
-    const response = await axios.post(
-      HUGGING_FACE_STT_ENDPOINT,
-      {
-        inputs: audioBase64,
-        parameters: {},
-      },
-      {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("Transcription response:", response.data);
-
-    // Save emotion data if available
-    if (response.data && Array.isArray(response.data) && messageId) {
-      const emotionScores = response.data.reduce((acc, item) => {
-        acc[item.label] = item.score;
-        return acc;
-      }, {});
-
-      await saveEmotionData({
-        message_id: messageId,
-        fearful: emotionScores.fearful || 0,
-        angry: emotionScores.angry || 0,
-        neutral: emotionScores.neutral || 0,
-        happy: emotionScores.happy || 0,
-        sad: emotionScores.sad || 0,
-        surprised: emotionScores.surprised || 0,
-        disgust: emotionScores.disgust || 0,
-        model: "huggingface-stt",
-      });
-    }
-
-    return response.data;
-  } catch (error) {
-    const data = error.response?.data;
-    const status = error.response?.status;
-    console.error("Speech-to-text error:", data || error.message);
-
-    if (status === 403 && data?.code === "FORBIDDEN") {
-      console.warn(
-        "[SpeechToText] Hugging Face 403: Your token may lack 'Inference Endpoints' permission. " +
-          "Chat and message saving still work; only audio emotion analysis is skipped. " +
-          "See https://huggingface.co/settings/tokens to add the required scope, or use a dedicated Inference Endpoint with the correct access."
-      );
+    console.log("[SpeechToText] Emotion from audio (Hume AI)...");
+    const apiKey = getHumeApiKey();
+    if (!apiKey) {
+      console.warn("[SpeechToText] HUME_API_KEY missing in backend/.env. Add HUME_API_KEY=your_key and restart the server.");
       return null;
     }
 
-    // Don't crash the app: log and return null so message flow continues
-    console.warn("[SpeechToText] Transcription failed, continuing without emotion-from-audio:", error.message);
+    const humeEmotions = await callHumeEmotionModel(audioBase64);
+    const emotionScores = mapHumeEmotionsToDb(humeEmotions);
+
+    if (messageId) {
+      await saveEmotionData({
+        message_id: messageId,
+        ...emotionScores,
+        model: "hume-ai-prosody",
+      });
+    }
+
+    // Return array format for compatibility
+    return Object.entries(humeEmotions).map(([label, score]) => ({
+      label,
+      score: typeof score === "number" ? score : 0,
+    }));
+  } catch (error) {
+    const data = error.response?.data;
+    const status = error.response?.status;
+    console.error("[SpeechToText] Emotion error:", data || error.message);
+
+    console.warn("[SpeechToText] Emotion failed (non-fatal):", error.message);
     return null;
   }
 }
 
 /**
- * Get dominant emotion from audio via Hugging Face (for /emotion-from-voice API).
- * Returns { emotion, score } or null so the frontend can show "Hugging Face: happy" etc.
+ * Get dominant emotion from audio via Hume AI Expression Measurement API.
+ * Uses Speech Prosody model for emotion detection from speech.
+ * For /emotion-from-voice API; returns { emotion, score } so frontend can show "Hume AI: happy" etc.
  */
 export async function getEmotionFromAudio(audioBase64) {
   try {
-    const token = getHfToken();
-    if (!token) {
-      console.warn("[SpeechToText] HUGGING_FACE_API_TOKEN missing or empty");
+    const apiKey = getHumeApiKey();
+    if (!apiKey) {
       return {
         emotion: null,
         score: 0,
-        error: "Hugging Face token not set. Add HUGGING_FACE_API_TOKEN to backend/.env and restart the server.",
+        error: "Hume AI API key not set. Add HUME_API_KEY to backend/.env and restart the server.",
       };
     }
 
-    const response = await axios.post(
-      HUGGING_FACE_STT_ENDPOINT,
-      { inputs: audioBase64, parameters: {} },
-      {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const humeEmotions = await callHumeEmotionModel(audioBase64);
+    const dominant = getDominantEmotion(humeEmotions);
 
-    const data = response.data;
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return { emotion: null, score: 0, raw: data };
+    if (!dominant) {
+      return { emotion: null, score: 0 };
     }
 
-    const sorted = [...data].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-    const top = sorted[0];
-    const emotion = top?.label ?? null;
-    const score = typeof top?.score === "number" ? top.score : 0;
-
-    return { emotion, score };
+    return { emotion: dominant.label, score: dominant.score };
   } catch (error) {
     const status = error.response?.status;
     const data = error.response?.data;
@@ -125,22 +274,14 @@ export async function getEmotionFromAudio(audioBase64) {
         emotion: null,
         score: 0,
         error:
-          "Invalid Hugging Face token (401). In backend/.env set HUGGING_FACE_API_TOKEN to a valid token from https://huggingface.co/settings/tokens — then restart the server.",
-      };
-    }
-    if (status === 403) {
-      return {
-        emotion: null,
-        score: 0,
-        error:
-          "Hugging Face 403: token needs permission. Go to https://huggingface.co/settings/tokens → edit your token → under User permissions (top) enable 'Make calls to your Inference Endpoints' → Save → create a NEW token, copy it, put in backend/.env as HUGGING_FACE_API_TOKEN=..., restart backend.",
+          "Invalid Hume AI API key (401). Set HUME_API_KEY in backend/.env (get key from https://platform.hume.ai/), then restart the server.",
       };
     }
 
     return {
       emotion: null,
       score: 0,
-      error: error.response?.data?.error || error.message || "Hugging Face request failed",
+      error: error.response?.data?.error || error.message || "Hume AI request failed",
     };
   }
 }
