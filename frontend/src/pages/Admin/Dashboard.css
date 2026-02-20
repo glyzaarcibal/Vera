@@ -86,6 +86,36 @@
   gap: 20px;
 }
 
+.chart-card-full {
+  grid-column: 1 / -1;
+}
+
+.chart-loading,
+.chart-empty {
+  padding: 24px;
+  text-align: center;
+  color: #666;
+  margin: 0;
+}
+
+.avatar-risk-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.avatar-risk-total,
+.avatar-risk-avg {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.avatar-risk-avg {
+  color: #667eea;
+}
+
 .activity-card,
 .quick-actions-card {
   background: white;

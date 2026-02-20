@@ -6,13 +6,18 @@ dotenv.config();
 
 const HUGGING_FACE_STT_ENDPOINT =
   "https://xgqc71v8577p78la.us-east-1.aws.endpoints.huggingface.cloud";
-const HUGGING_FACE_TOKEN = process.env.HUGGING_FACE_API_TOKEN;
+
+function getHfToken() {
+  const t = process.env.HUGGING_FACE_API_TOKEN;
+  return typeof t === "string" ? t.trim() : "";
+}
 
 export async function transcribeAudio(audioBase64, messageId) {
   try {
     console.log("Transcribing audio...");
     console.log("Audio base64 length:", audioBase64.length);
 
+    const token = getHfToken();
     const response = await axios.post(
       HUGGING_FACE_STT_ENDPOINT,
       {
@@ -22,7 +27,7 @@ export async function transcribeAudio(audioBase64, messageId) {
       {
         headers: {
           Accept: "application/json",
-          Authorization: `Bearer ${HUGGING_FACE_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       }
@@ -68,5 +73,74 @@ export async function transcribeAudio(audioBase64, messageId) {
     // Don't crash the app: log and return null so message flow continues
     console.warn("[SpeechToText] Transcription failed, continuing without emotion-from-audio:", error.message);
     return null;
+  }
+}
+
+/**
+ * Get dominant emotion from audio via Hugging Face (for /emotion-from-voice API).
+ * Returns { emotion, score } or null so the frontend can show "Hugging Face: happy" etc.
+ */
+export async function getEmotionFromAudio(audioBase64) {
+  try {
+    const token = getHfToken();
+    if (!token) {
+      console.warn("[SpeechToText] HUGGING_FACE_API_TOKEN missing or empty");
+      return {
+        emotion: null,
+        score: 0,
+        error: "Hugging Face token not set. Add HUGGING_FACE_API_TOKEN to backend/.env and restart the server.",
+      };
+    }
+
+    const response = await axios.post(
+      HUGGING_FACE_STT_ENDPOINT,
+      { inputs: audioBase64, parameters: {} },
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return { emotion: null, score: 0, raw: data };
+    }
+
+    const sorted = [...data].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const top = sorted[0];
+    const emotion = top?.label ?? null;
+    const score = typeof top?.score === "number" ? top.score : 0;
+
+    return { emotion, score };
+  } catch (error) {
+    const status = error.response?.status;
+    const data = error.response?.data;
+    console.error("[SpeechToText] getEmotionFromAudio error:", status, data || error.message);
+
+    if (status === 401) {
+      return {
+        emotion: null,
+        score: 0,
+        error:
+          "Invalid Hugging Face token (401). In backend/.env set HUGGING_FACE_API_TOKEN to a valid token from https://huggingface.co/settings/tokens — then restart the server.",
+      };
+    }
+    if (status === 403) {
+      return {
+        emotion: null,
+        score: 0,
+        error:
+          "Hugging Face 403: token needs permission. Go to https://huggingface.co/settings/tokens → edit your token → under User permissions (top) enable 'Make calls to your Inference Endpoints' → Save → create a NEW token, copy it, put in backend/.env as HUGGING_FACE_API_TOKEN=..., restart backend.",
+      };
+    }
+
+    return {
+      emotion: null,
+      score: 0,
+      error: error.response?.data?.error || error.message || "Hugging Face request failed",
+    };
   }
 }
