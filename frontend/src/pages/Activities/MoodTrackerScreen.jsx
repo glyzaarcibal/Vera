@@ -1,5 +1,42 @@
 import React, { useState, useEffect } from "react";
 import Lottie from "lottie-web";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+const animationCache = new Map();
+
+const getAnimationData = async (animationPath) => {
+  if (animationCache.has(animationPath)) {
+    return animationCache.get(animationPath);
+  }
+
+  const response = await fetch(animationPath);
+  if (!response.ok) {
+    throw new Error(`Failed to load animation: ${animationPath}`);
+  }
+
+  const data = await response.json();
+  animationCache.set(animationPath, data);
+  return data;
+};
+
+const loadLottieAnimation = async ({ container, animationPath, loop = true, autoplay = true }) => {
+  const animationData = await getAnimationData(animationPath);
+  return Lottie.loadAnimation({
+    container,
+    renderer: "svg",
+    loop,
+    autoplay,
+    animationData,
+  });
+};
+
+const sanitizePdfText = (value) =>
+  String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[^\x20-\x7E\n\r\t]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const moods = [
   {
@@ -87,18 +124,30 @@ const MoodTrackerScreen = ({ navigation }) => {
 
   // Initialize Lottie animations
   useEffect(() => {
+    let isMounted = true;
+    const animations = [];
+
     moods.forEach((mood, index) => {
       const container = document.getElementById(`lottie-${mood.mood}-${index}`);
-      if (container) {
-        Lottie.loadAnimation({
-          container,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: mood.animation,
+      if (!container) return;
+
+      loadLottieAnimation({ container, animationPath: mood.animation })
+        .then((animation) => {
+          if (!isMounted) {
+            animation?.destroy();
+            return;
+          }
+          animations.push(animation);
+        })
+        .catch((error) => {
+          console.error(`Error loading ${mood.mood} animation:`, error);
         });
-      }
     });
+
+    return () => {
+      isMounted = false;
+      animations.forEach((animation) => animation?.destroy());
+    };
   }, []);
 
   useEffect(() => {
@@ -106,34 +155,52 @@ const MoodTrackerScreen = ({ navigation }) => {
       const container = document.getElementById('selected-mood-animation');
       if (container) {
         container.innerHTML = '';
-        Lottie.loadAnimation({
-          container,
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: selectedMood.animation,
-        });
+        let currentAnimation;
+
+        loadLottieAnimation({ container, animationPath: selectedMood.animation })
+          .then((animation) => {
+            currentAnimation = animation;
+          })
+          .catch((error) => {
+            console.error(`Error loading selected mood animation (${selectedMood.mood}):`, error);
+          });
+
+        return () => {
+          currentAnimation?.destroy();
+        };
       }
     }
   }, [selectedMood]);
 
   useEffect(() => {
     // Load history animations after they're rendered
+    let isMounted = true;
+    const animations = [];
+
     moodHistory.forEach((item, index) => {
       const container = document.getElementById(`history-lottie-${index}`);
       if (container) {
         const moodObj = moods.find(m => m.mood === item.mood);
         if (moodObj) {
-          Lottie.loadAnimation({
-            container,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            path: moodObj.animation,
-          });
+          loadLottieAnimation({ container, animationPath: moodObj.animation })
+            .then((animation) => {
+              if (!isMounted) {
+                animation?.destroy();
+                return;
+              }
+              animations.push(animation);
+            })
+            .catch((error) => {
+              console.error(`Error loading history animation (${moodObj.mood}):`, error);
+            });
         }
       }
     });
+
+    return () => {
+      isMounted = false;
+      animations.forEach((animation) => animation?.destroy());
+    };
   }, [moodHistory]);
 
   const saveMood = async () => {
@@ -199,8 +266,8 @@ const MoodTrackerScreen = ({ navigation }) => {
 
   const getFilteredHistory = () => {
     const now = new Date();
-    const oneWeekAgo = new Date(now.setDate(now.getDate() - 7));
-    const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     return moodHistory.filter(entry => {
       const entryDate = new Date(entry.timestamp);
@@ -215,10 +282,135 @@ const MoodTrackerScreen = ({ navigation }) => {
 
   const getMoodStats = () => {
     const stats = {};
-    moodHistory.forEach(entry => {
+    filteredHistory.forEach(entry => {
       stats[entry.mood] = (stats[entry.mood] || 0) + 1;
     });
     return stats;
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    const filteredHistory = getFilteredHistory();
+    const moodStats = getMoodStats();
+    
+    // Title
+    doc.setFontSize(24);
+    doc.setTextColor(102, 126, 234);
+    doc.text("Mood Tracker Report", 105, 20, { align: "center" });
+    
+    // Date range and filter info
+    doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    const filterText = filter === 'all' ? 'All Time' : filter === 'week' ? 'Last 7 Days' : 'Last 30 Days';
+    doc.text(`Period: ${filterText}`, 105, 30, { align: "center" });
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`, 105, 37, { align: "center" });
+    
+    // Summary Statistics
+    doc.setFontSize(16);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Mood Statistics", 14, 50);
+    
+    // Total entries
+    doc.setFontSize(11);
+    doc.setTextColor(102, 126, 234);
+    doc.text(`Total Entries: ${filteredHistory.length}`, 14, 60);
+    
+    // Mood distribution table
+    const statsData = Object.entries(moodStats).map(([mood, count]) => {
+      const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
+      return [
+        sanitizePdfText(mood),
+        count,
+        `${percentage}%`
+      ];
+    });
+    
+    autoTable(doc, {
+      startY: 65,
+      head: [["Mood", "Count", "Percentage"]],
+      body: statsData,
+      theme: "grid",
+      headStyles: { 
+        fillColor: [102, 126, 234],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250]
+      },
+      margin: { left: 14, right: 14 }
+    });
+    
+    // Mood History
+    doc.setFontSize(16);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Mood History", 14, (doc.lastAutoTable?.finalY || 65) + 20);
+    
+    const historyData = filteredHistory.map((item) => {
+      return [
+        sanitizePdfText(item.mood),
+        sanitizePdfText(item.date),
+        sanitizePdfText(item.time),
+        sanitizePdfText(item.reason || "No reason provided")
+      ];
+    });
+    
+    autoTable(doc, {
+      startY: (doc.lastAutoTable?.finalY || 65) + 25,
+      head: [["Mood", "Date", "Time", "Reason"]],
+      body: historyData,
+      theme: "striped",
+      headStyles: { 
+        fillColor: [102, 126, 234],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        3: { cellWidth: 60 }
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: 'linebreak'
+      },
+      margin: { left: 14, right: 14 },
+      didDrawPage: (data) => {
+        // Add header on each page
+        doc.setFontSize(10);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          "Mood Tracker Report - " + new Date().toLocaleDateString(),
+          data.settings.margin.left,
+          10
+        );
+      }
+    });
+    
+    // Footer with page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+    
+    // Save the PDF with formatted filename
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filterStr = filter !== 'all' ? `-${filter}` : '';
+    doc.save(`mood-tracker-report-${dateStr}${filterStr}.pdf`);
   };
 
   const filteredHistory = getFilteredHistory();
@@ -229,7 +421,6 @@ const MoodTrackerScreen = ({ navigation }) => {
       navigation.goBack();
       return;
     }
-
     window.history.back();
   };
 
@@ -496,7 +687,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         )}
 
         {/* Mood Statistics */}
-        {moodHistory.length > 0 && (
+        {filteredHistory.length > 0 && (
           <div
             style={{
               background: "white",
@@ -506,9 +697,14 @@ const MoodTrackerScreen = ({ navigation }) => {
               boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
             }}
           >
-            <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "15px" }}>
-              📊 Your Mood Statistics
-            </h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+              <h3 style={{ fontSize: "20px", color: "#333", margin: 0 }}>
+                📊 Your Mood Statistics
+              </h3>
+              <span style={{ fontSize: "14px", color: "#667eea", background: "#f0f0f0", padding: "5px 10px", borderRadius: "50px" }}>
+                Total: {filteredHistory.length} entries
+              </span>
+            </div>
             <div
               style={{
                 display: "grid",
@@ -518,6 +714,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             >
               {Object.entries(moodStats).map(([mood, count]) => {
                 const moodData = moods.find(m => m.mood === mood);
+                const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
                 return (
                   <div
                     key={mood}
@@ -532,6 +729,9 @@ const MoodTrackerScreen = ({ navigation }) => {
                     <div style={{ fontSize: "14px", color: "#666" }}>{mood}</div>
                     <div style={{ fontSize: "18px", fontWeight: "bold", color: moodData?.color }}>
                       {count}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#999" }}>
+                      {percentage}%
                     </div>
                   </div>
                 );
@@ -563,50 +763,88 @@ const MoodTrackerScreen = ({ navigation }) => {
               📝 Mood History
             </h2>
             
-            {/* Filter Buttons */}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                onClick={() => setFilter("all")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "50px",
-                  border: "none",
-                  background: filter === "all" ? "#667eea" : "#f0f0f0",
-                  color: filter === "all" ? "white" : "#666",
-                  cursor: "pointer",
-                  fontWeight: filter === "all" ? "bold" : "normal",
-                }}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilter("week")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "50px",
-                  border: "none",
-                  background: filter === "week" ? "#667eea" : "#f0f0f0",
-                  color: filter === "week" ? "white" : "#666",
-                  cursor: "pointer",
-                  fontWeight: filter === "week" ? "bold" : "normal",
-                }}
-              >
-                This Week
-              </button>
-              <button
-                onClick={() => setFilter("month")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "50px",
-                  border: "none",
-                  background: filter === "month" ? "#667eea" : "#f0f0f0",
-                  color: filter === "month" ? "white" : "#666",
-                  cursor: "pointer",
-                  fontWeight: filter === "month" ? "bold" : "normal",
-                }}
-              >
-                This Month
-              </button>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {/* Filter Buttons */}
+              <div style={{ display: "flex", gap: "5px", background: "#f0f0f0", padding: "5px", borderRadius: "50px" }}>
+                <button
+                  onClick={() => setFilter("all")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "50px",
+                    border: "none",
+                    background: filter === "all" ? "#667eea" : "transparent",
+                    color: filter === "all" ? "white" : "#666",
+                    cursor: "pointer",
+                    fontWeight: filter === "all" ? "bold" : "normal",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setFilter("week")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "50px",
+                    border: "none",
+                    background: filter === "week" ? "#667eea" : "transparent",
+                    color: filter === "week" ? "white" : "#666",
+                    cursor: "pointer",
+                    fontWeight: filter === "week" ? "bold" : "normal",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Week
+                </button>
+                <button
+                  onClick={() => setFilter("month")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "50px",
+                    border: "none",
+                    background: filter === "month" ? "#667eea" : "transparent",
+                    color: filter === "month" ? "white" : "#666",
+                    cursor: "pointer",
+                    fontWeight: filter === "month" ? "bold" : "normal",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  Month
+                </button>
+              </div>
+              
+              {/* Download PDF Button - Always visible when there's history */}
+              {filteredHistory.length > 0 && (
+                <button
+                  onClick={downloadPDF}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: "50px",
+                    border: "none",
+                    background: "linear-gradient(135deg, #4CAF50 0%, #45a049 100%)",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    boxShadow: "0 3px 10px rgba(76, 175, 80, 0.3)",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = "scale(1.05)";
+                    e.target.style.boxShadow = "0 5px 15px rgba(76, 175, 80, 0.5)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = "scale(1)";
+                    e.target.style.boxShadow = "0 3px 10px rgba(76, 175, 80, 0.3)";
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>📄</span>
+                  Download PDF {filter !== 'all' && `(${filter === 'week' ? 'Week' : 'Month'})`}
+                </button>
+              )}
             </div>
           </div>
 
@@ -619,9 +857,10 @@ const MoodTrackerScreen = ({ navigation }) => {
             }}
           >
             {filteredHistory.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
-                <span style={{ fontSize: "48px" }}>📭</span>
-                <p>No mood entries found for this period.</p>
+              <div style={{ textAlign: "center", padding: "60px 20px", color: "#999" }}>
+                <span style={{ fontSize: "64px", display: "block", marginBottom: "20px" }}>📭</span>
+                <p style={{ fontSize: "18px", marginBottom: "10px" }}>No mood entries found</p>
+                <p style={{ fontSize: "14px" }}>Start tracking your mood to see your history here!</p>
               </div>
             ) : (
               filteredHistory.map((item, index) => {
@@ -637,11 +876,17 @@ const MoodTrackerScreen = ({ navigation }) => {
                       background: moodData?.bgColor || "#f9f9f9",
                       borderRadius: "15px",
                       marginBottom: "10px",
-                      transition: "transform 0.2s",
+                      transition: "all 0.2s",
                       border: `1px solid ${moodData?.color}40`,
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateX(5px)"}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateX(0)"}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateX(5px)";
+                      e.currentTarget.style.boxShadow = `0 5px 15px ${moodData?.color}40`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateX(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "15px", flex: 1 }}>
                       <div
@@ -649,20 +894,20 @@ const MoodTrackerScreen = ({ navigation }) => {
                         style={{ width: "40px", height: "40px" }}
                       />
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px", flexWrap: "wrap" }}>
                           <span style={{ fontSize: "18px", fontWeight: "bold", color: moodData?.color }}>
                             {item.moodEmoji} {item.mood}
                           </span>
-                          <span style={{ fontSize: "12px", color: "#999" }}>
+                          <span style={{ fontSize: "12px", color: "#999", background: "white", padding: "2px 8px", borderRadius: "50px" }}>
                             {item.time}
                           </span>
                         </div>
                         {item.reason && (
-                          <p style={{ fontSize: "14px", color: "#666", margin: 0 }}>
-                            📝 {item.reason}
+                          <p style={{ fontSize: "14px", color: "#666", margin: "5px 0", fontStyle: "italic" }}>
+                            "{item.reason}"
                           </p>
                         )}
-                        <p style={{ fontSize: "12px", color: "#999", margin: "5px 0 0" }}>
+                        <p style={{ fontSize: "11px", color: "#999", margin: "5px 0 0" }}>
                           {item.date}
                         </p>
                       </div>
@@ -676,11 +921,18 @@ const MoodTrackerScreen = ({ navigation }) => {
                         fontSize: "20px",
                         cursor: "pointer",
                         opacity: 0.5,
-                        transition: "opacity 0.2s",
+                        transition: "all 0.2s",
                         padding: "5px 10px",
+                        borderRadius: "50%",
                       }}
-                      onMouseEnter={(e) => e.target.style.opacity = 1}
-                      onMouseLeave={(e) => e.target.style.opacity = 0.5}
+                      onMouseEnter={(e) => {
+                        e.target.style.opacity = 1;
+                        e.target.style.background = "#ffebee";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.opacity = 0.5;
+                        e.target.style.background = "none";
+                      }}
                     >
                       🗑️
                     </button>
@@ -705,11 +957,17 @@ const MoodTrackerScreen = ({ navigation }) => {
                 cursor: "pointer",
                 width: "100%",
                 marginTop: "20px",
-                boxShadow: "0 5px 15px #f4433680",
-                transition: "transform 0.2s",
+                boxShadow: "0 5px 15px rgba(244, 67, 54, 0.3)",
+                transition: "all 0.2s",
               }}
-              onMouseEnter={(e) => e.target.style.transform = "scale(1.02)"}
-              onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "scale(1.02)";
+                e.target.style.boxShadow = "0 8px 20px rgba(244, 67, 54, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "scale(1)";
+                e.target.style.boxShadow = "0 5px 15px rgba(244, 67, 54, 0.3)";
+              }}
             >
               Clear All History 🗑️
             </button>

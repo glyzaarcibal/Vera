@@ -12,9 +12,18 @@ import {
   Line,
   Bar,
 } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 
 const WeeklyWellnessReport = () => {
+  const sanitizePdfText = (value) =>
+    String(value ?? "")
+      .normalize("NFKD")
+      .replace(/[^\x20-\x7E\n\r\t]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
   const emotionColorMap = {
     "Very Sad": "#3B82F6",
     Sad: "#6366F1",
@@ -300,6 +309,123 @@ const WeeklyWellnessReport = () => {
     return "Possible anxiety o extreme relaxation practice. Kung sobra-sobra ito, baka kailangan mong tingnan ang iyong stress levels.";
   };
 
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(20);
+    doc.setTextColor(46, 125, 50);
+    doc.text("Weekly Wellness Report", 105, 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Generated on: ${new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+      105,
+      28,
+      { align: "center" }
+    );
+
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Mood Distribution (Past 7 Days)", 14, 42);
+
+    const moodTableData = pieData.length
+      ? pieData.map((item) => [sanitizePdfText(item.name), String(item.value)])
+      : [["No data", "0"]];
+
+    autoTable(doc, {
+      startY: 46,
+      head: [["Mood", "Count"]],
+      body: moodTableData,
+      theme: "striped",
+      headStyles: { fillColor: [46, 125, 50] },
+      margin: { left: 14, right: 14 },
+    });
+
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Sleep Duration Report", 14, (doc.lastAutoTable?.finalY || 46) + 14);
+
+    const sleepTableData = sleepChartData.length
+      ? sleepChartData.map((entry) => [
+          sanitizePdfText(entry.fullDate || entry.date),
+          `${Number(entry.duration || 0).toFixed(1)} h`,
+          sanitizePdfText(entry.sleepTime || "N/A"),
+          sanitizePdfText(entry.wakeTime || "N/A"),
+        ])
+      : [["No data", "0.0 h", "N/A", "N/A"]];
+
+    autoTable(doc, {
+      startY: (doc.lastAutoTable?.finalY || 46) + 18,
+      head: [["Date", "Duration", "Sleep Time", "Wake Time"]],
+      body: sleepTableData,
+      theme: "striped",
+      headStyles: { fillColor: [46, 125, 50] },
+      margin: { left: 14, right: 14 },
+    });
+
+    doc.setFontSize(11);
+    doc.setTextColor(70, 70, 70);
+    doc.text(
+      `Sleep trend: ${sanitizePdfText(analyzeSleepTrend())}`,
+      14,
+      (doc.lastAutoTable?.finalY || 46) + 10
+    );
+
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text("Breathing Sessions Per Day", 14, (doc.lastAutoTable?.finalY || 46) + 22);
+
+    const breathingTableData = breathingChartData.length
+      ? breathingChartData.map((entry) => [sanitizePdfText(entry.date), String(entry.sessions)])
+      : [["No data", "0"]];
+
+    autoTable(doc, {
+      startY: (doc.lastAutoTable?.finalY || 46) + 26,
+      head: [["Date", "Sessions"]],
+      body: breathingTableData,
+      theme: "striped",
+      headStyles: { fillColor: [46, 125, 50] },
+      margin: { left: 14, right: 14 },
+    });
+
+    const maxSessions = breathingChartData.length
+      ? Math.max(...breathingChartData.map((d) => d.sessions))
+      : 0;
+
+    doc.setFontSize(11);
+    doc.setTextColor(70, 70, 70);
+    doc.text(
+      `Breathing insight: ${sanitizePdfText(interpretBreathingData(maxSessions))}`,
+      14,
+      (doc.lastAutoTable?.finalY || 46) + 10,
+      { maxWidth: 180 }
+    );
+
+    const pageCount = doc.internal.getNumberOfPages();
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+
+    const dateStr = new Date().toISOString().split("T")[0];
+    doc.save(`weekly-wellness-report-${dateStr}.pdf`);
+  };
+
   const CustomModal = ({ show, onClose, content }) => {
     if (!show) return null;
 
@@ -499,6 +625,21 @@ const WeeklyWellnessReport = () => {
           ← Back
         </button>
         <h1 style={styles.title}>Weekly Wellness Report</h1>
+        <button
+          onClick={downloadPDF}
+          style={{
+            backgroundColor: '#2E7D32',
+            color: 'white',
+            border: 'none',
+            padding: '10px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            marginLeft: 'auto',
+          }}
+        >
+          Download PDF
+        </button>
       </div>
 
       <CustomModal

@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import ChatAI from "./pages/ChatAI";
 import VoiceAI from "./pages/VoiceAI";
 import Dashboard from "./pages/Admin/Dashboard";
+import Reports from "./pages/Admin/Reports";
 import UserManagement from "./pages/Admin/UserManagement";
 import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
@@ -61,6 +62,7 @@ const App = () => {
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
+        <Route path="/admin/reports" element={<Reports />} />
         <Route path="/admin/users" element={<UserManagement />} />
         <Route path="/admin/sessions/:userId" element={<UserSessions />} />
         <Route path="/admin/chat/:sessionId" element={<UserChat />} />
