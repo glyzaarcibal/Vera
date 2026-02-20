@@ -3,7 +3,7 @@ import { getEmotionFromAudio } from "../../service/Chat/SpeechToText.service.js"
 /**
  * POST /api/emotion-from-voice
  * Body: { audioBase64 }
- * Returns: { emotion, score, source: "Hugging Face" } so the UI can show the label.
+ * Returns: { emotion, score, source: "Hume AI" } so the UI can show the label.
  */
 export const emotionFromVoice = async (req, res) => {
   try {
@@ -12,7 +12,7 @@ export const emotionFromVoice = async (req, res) => {
       return res.status(400).json({
         emotion: null,
         score: 0,
-        source: "Hugging Face",
+        source: "Hume AI",
         message: "Missing or invalid audioBase64",
       });
     }
@@ -22,7 +22,9 @@ export const emotionFromVoice = async (req, res) => {
     return res.status(200).json({
       emotion: result.emotion,
       score: result.score ?? 0,
-      source: "Hugging Face",
+      source: "Hume AI",
+      model: "hume-ai-prosody",
+      emotions: ["angry", "calm", "disgust", "fearful", "happy", "neutral", "sad", "surprised"],
       ...(result.error && { error: result.error }),
     });
   } catch (e) {
@@ -30,7 +32,7 @@ export const emotionFromVoice = async (req, res) => {
     return res.status(500).json({
       emotion: null,
       score: 0,
-      source: "Hugging Face",
+      source: "Hume AI",
       error: e.message || "Internal server error",
     });
   }

@@ -24,7 +24,7 @@ export default function AvatarAI() {
       id: 'human',
       name: 'Human Agent',
       icon: User,
-      description: 'Realistic human avatar powered by D-ID',
+      description: 'Realistic human avatar with voice emotion detection via Hume AI Prosody model',
       component: DIDAgent
     },
     {

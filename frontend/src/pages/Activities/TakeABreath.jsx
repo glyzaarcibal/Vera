@@ -1,5 +1,72 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+
+// Audio from src/assets/breath/ (Vite bundles these and gives correct URLs)
+import getReadyEn from "../../assets/breath/get-ready-in.mp3";
+import getReadyTl from "../../assets/breath/humandakasabilang.mp3";
+import inhaleEn from "../../assets/breath/inhale.mp3";
+import inhaleTl from "../../assets/breath/huminga.mp3";
+import exhaleEn from "../../assets/breath/exhale.mp3";
+import exhaleTl from "../../assets/breath/huminganangpalabas.mp3";
+import holdEn from "../../assets/breath/hold.mp3";
+import holdTl from "../../assets/breath/Pigil.mp3";
+import countdown3En from "../../assets/breath/countdown3.mp3";
+import countdown3Tl from "../../assets/breath/countdown3tagalog.mp3";
+import countdown2En from "../../assets/breath/countdown2.mp3";
+import countdown2Tl from "../../assets/breath/countdown2tagalog.mp3";
+import countdown1En from "../../assets/breath/countdown1.mp3";
+import countdown1Tl from "../../assets/breath/countdown1tagalog.mp3";
+
+const AUDIO_SOURCES = {
+  getReady: { english: getReadyEn, tagalog: getReadyTl },
+  inhale: { english: inhaleEn, tagalog: inhaleTl },
+  exhale: { english: exhaleEn, tagalog: exhaleTl },
+  hold: { english: holdEn, tagalog: holdTl },
+  countdown3: { english: countdown3En, tagalog: countdown3Tl },
+  countdown2: { english: countdown2En, tagalog: countdown2Tl },
+  countdown1: { english: countdown1En, tagalog: countdown1Tl },
+};
+
+const BREATHING_TYPES = [
+  { id: "relaxing", name: "Relaxing (6-7-8)", nameTl: "Relaks (6-7-8)", inhaleMs: 6000, holdMs: 7000, exhaleMs: 8000 },
+  { id: "box", name: "Box (4-4-4)", nameTl: "Box (4-4-4)", inhaleMs: 4000, holdMs: 4000, exhaleMs: 4000 },
+  { id: "478", name: "4-7-8 Calm", nameTl: "4-7-8 Kalmado", inhaleMs: 4000, holdMs: 7000, exhaleMs: 8000 },
+  { id: "calm", name: "Calm (4-2-6)", nameTl: "Kalmado (4-2-6)", inhaleMs: 4000, holdMs: 2000, exhaleMs: 6000 },
+];
+
+const TEXTS = {
+  English: {
+    getReady: "Get ready...",
+    inhale: "Inhale...",
+    hold: "Hold...",
+    exhale: "Exhale...",
+    startBreathing: "Start Breathing",
+    showHistory: "Show History",
+    hideHistory: "Hide History",
+    breathingHistory: "Breathing History",
+    clearAll: "Clear All",
+    noHistory: "No history yet",
+    date: "Date",
+    time: "Time",
+    type: "Type",
+    chooseType: "Choose breathing type",
+  },
+  Tagalog: {
+    getReady: "Handa na...",
+    inhale: "Huminga papasok...",
+    hold: "Pigil...",
+    exhale: "Huminga palabas...",
+    startBreathing: "Magsimula ng Paghinga",
+    showHistory: "Ipakita ang Kasaysayan",
+    hideHistory: "Itago ang Kasaysayan",
+    breathingHistory: "Kasaysayan ng Paghinga",
+    clearAll: "Burahin Lahat",
+    noHistory: "Wala pang kasaysayan",
+    date: "Petsa",
+    time: "Oras",
+    type: "Uri",
+    chooseType: "Pumili ng uri ng paghinga",
+  },
+};
 
 const TakeABreath = () => {
   const [breathingStage, setBreathingStage] = useState(0);
@@ -9,43 +76,45 @@ const TakeABreath = () => {
   const [history, setHistory] = useState([]);
   const [scale, setScale] = useState(1);
   const [showHistory, setShowHistory] = useState(false);
-  
-  const language = useSelector(
-    (state) => state.settings?.settings?.language || "English"
-  );
+  const [language, setLanguage] = useState("English");
+  const [breathType, setBreathType] = useState(BREATHING_TYPES[0].id);
   const animationRef = useRef(null);
   const audioRefs = useRef({});
+  const audioContextRef = useRef(null);
 
   useEffect(() => {
     loadHistory();
+  }, []);
+
+  useEffect(() => {
     preloadAudio();
     return () => {
-      // Cleanup audio on unmount
-      Object.values(audioRefs.current).forEach(audio => {
-        if (audio) {
+      Object.values(audioRefs.current).forEach((audio) => {
+        if (audio && audio.pause) {
           audio.pause();
-          audio.src = '';
+          audio.src = "";
         }
       });
     };
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (!isBreathing || countdown > 0) return;
 
+    const preset = BREATHING_TYPES.find((p) => p.id === breathType) || BREATHING_TYPES[0];
     let timing = 0;
 
     if (breathingStage === 0) {
-      playAudio('inhale');
-      animateBreath(1.5, 6000);
-      timing = 6000;
+      playAudio("inhale");
+      animateBreath(1.5, preset.inhaleMs);
+      timing = preset.inhaleMs;
     } else if (breathingStage === 1) {
-      playAudio('hold');
-      timing = 7000;
+      playAudio("hold");
+      timing = preset.holdMs;
     } else if (breathingStage === 2) {
-      playAudio('exhale');
-      animateBreath(1, 8000);
-      timing = 8000;
+      playAudio("exhale");
+      animateBreath(1, preset.exhaleMs);
+      timing = preset.exhaleMs;
     }
 
     const timer = setTimeout(() => {
@@ -71,6 +140,7 @@ const TakeABreath = () => {
     countdown,
     repeatCount,
     language,
+    breathType,
   ]);
 
   const animateBreath = (targetScale, duration) => {
@@ -100,45 +170,33 @@ const TakeABreath = () => {
   };
 
   const preloadAudio = () => {
-    // Define audio files with paths - you'll need to host these files
-    const audioFiles = {
-      getReady: {
-        english: "/audio/breath/get-ready-in.mp3",
-        tagalog: "/audio/breath/humandakasabilang.mp3"
-      },
-      inhale: {
-        english: "/audio/breath/inhale.mp3",
-        tagalog: "/audio/breath/huminga.mp3"
-      },
-      exhale: {
-        english: "/audio/breath/exhale.mp3",
-        tagalog: "/audio/breath/huminganangpalabas.mp3"
-      },
-      hold: {
-        english: "/audio/breath/hold.mp3",
-        tagalog: "/audio/breath/Pigil.mp3"
-      },
-      countdown3: {
-        english: "/audio/breath/countdown3.mp3",
-        tagalog: "/audio/breath/countdown3tagalog.mp3"
-      },
-      countdown2: {
-        english: "/audio/breath/countdown2.mp3",
-        tagalog: "/audio/breath/countdown2tagalog.mp3"
-      },
-      countdown1: {
-        english: "/audio/breath/countdown1.mp3",
-        tagalog: "/audio/breath/countdown1tagalog.mp3"
-      }
-    };
-
-    // Preload audio files
-    Object.entries(audioFiles).forEach(([key, paths]) => {
-      const audio = new Audio();
+    const isTagalog = language === "Tagalog";
+    Object.entries(AUDIO_SOURCES).forEach(([key, urls]) => {
+      const src = isTagalog ? urls.tagalog : urls.english;
+      const audio = new Audio(src);
       audio.preload = "auto";
-      audio.src = language === "Tagalog" ? paths.tagalog : paths.english;
       audioRefs.current[key] = audio;
     });
+  };
+
+  const playFallbackSound = (type = "tone") => {
+    try {
+      const ctx = audioContextRef.current || new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = ctx;
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(type === "inhale" ? 220 : type === "exhale" ? 180 : 440, ctx.currentTime);
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch (e) {
+      console.log("Fallback sound skipped:", e);
+    }
   };
 
   const playAudio = (audioKey) => {
@@ -146,10 +204,16 @@ const TakeABreath = () => {
       const audio = audioRefs.current[audioKey];
       if (audio) {
         audio.currentTime = 0;
-        audio.play().catch(error => console.log("Error playing sound:", error));
+        audio.play().catch((e) => {
+          console.warn("Audio play failed, using fallback:", e);
+          playFallbackSound(audioKey === "inhale" ? "inhale" : audioKey === "exhale" ? "exhale" : "tone");
+        });
+      } else {
+        playFallbackSound();
       }
     } catch (error) {
-      console.log("Error playing sound:", error);
+      console.warn("playAudio error:", error);
+      playFallbackSound();
     }
   };
 
@@ -157,8 +221,10 @@ const TakeABreath = () => {
     const now = new Date();
     const date = now.toLocaleDateString();
     const time = now.toLocaleTimeString();
+    const preset = BREATHING_TYPES.find((p) => p.id === breathType) || BREATHING_TYPES[0];
+    const typeLabel = language === "Tagalog" ? preset.nameTl : preset.name;
     const newHistory = [
-      { session: history.length + 1, date, time },
+      { session: history.length + 1, date, time, type: breathType, typeLabel },
       ...history,
     ];
 
@@ -174,9 +240,13 @@ const TakeABreath = () => {
     try {
       const savedHistory = localStorage.getItem("breathingHistory");
       if (savedHistory) {
-        setHistory(
-          JSON.parse(savedHistory).sort((a, b) => b.session - a.session)
-        );
+        const parsed = JSON.parse(savedHistory);
+        const withType = parsed.map((entry) => ({
+          ...entry,
+          type: entry.type || "relaxing",
+          typeLabel: entry.typeLabel || (language === "Tagalog" ? "Relaks (6-7-8)" : "Relaxing (6-7-8)"),
+        }));
+        setHistory(withType.sort((a, b) => (b.session || 0) - (a.session || 0)));
       }
     } catch (error) {
       console.error("Error loading history:", error);
@@ -210,10 +280,11 @@ const TakeABreath = () => {
     }, 4000);
   };
 
+  const t = TEXTS[language] || TEXTS.English;
   const stageText = () => {
     if (!isBreathing) return "";
-    if (countdown > 0) return `Get ready... ${countdown}`;
-    return ["Inhale...", "Hold...", "Exhale..."][breathingStage] || "";
+    if (countdown > 0) return `${t.getReady} ${countdown}`;
+    return [t.inhale, t.hold, t.exhale][breathingStage] || "";
   };
 
   const handleBack = () => {
@@ -451,12 +522,70 @@ const TakeABreath = () => {
       </button>
 
       <div style={styles.content}>
+        {!isBreathing && (
+          <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+            <button
+              type="button"
+              onClick={() => setLanguage("English")}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "20px",
+                border: language === "English" ? "2px solid #4CAF50" : "1px solid #ccc",
+                background: language === "English" ? "#4CAF50" : "#fff",
+                color: language === "English" ? "#fff" : "#333",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("Tagalog")}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "20px",
+                border: language === "Tagalog" ? "2px solid #4CAF50" : "1px solid #ccc",
+                background: language === "Tagalog" ? "#4CAF50" : "#fff",
+                color: language === "Tagalog" ? "#fff" : "#333",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              Tagalog
+            </button>
+          </div>
+        )}
         <div style={styles.breathingCircle} />
-        
         <p style={styles.instruction}>{stageText()}</p>
-        
         {!isBreathing && (
           <>
+            <p style={{ marginBottom: 8, fontWeight: 600, color: "#2E7D32", fontSize: 14 }}>
+              {t.chooseType}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 12 }}>
+              {BREATHING_TYPES.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setBreathType(preset.id)}
+                  style={{
+                    padding: "8px 14px",
+                    borderRadius: 20,
+                    border: breathType === preset.id ? "2px solid #4CAF50" : "1px solid #ccc",
+                    background: breathType === preset.id ? "#4CAF50" : "#fff",
+                    color: breathType === preset.id ? "#fff" : "#333",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontSize: 13,
+                  }}
+                >
+                  {language === "Tagalog" ? preset.nameTl : preset.name}
+                </button>
+              ))}
+            </div>
             <button
               style={{
                 ...styles.startButton,
@@ -470,9 +599,8 @@ const TakeABreath = () => {
               onMouseLeave={() => setIsStartButtonHovered(false)}
               onClick={startBreathing}
             >
-              Start Breathing
+              {t.startBreathing}
             </button>
-            
             <button
               style={{
                 ...styles.historyToggle,
@@ -485,7 +613,7 @@ const TakeABreath = () => {
               onMouseLeave={() => setIsHistoryToggleHovered(false)}
               onClick={() => setShowHistory(!showHistory)}
             >
-              {showHistory ? 'Hide History' : 'Show History'}
+              {showHistory ? t.hideHistory : t.showHistory}
             </button>
           </>
         )}
@@ -493,7 +621,7 @@ const TakeABreath = () => {
         {showHistory && (
           <div style={styles.historyContainer}>
             <div style={styles.historyHeader}>
-              <h3 style={styles.historyTitle}>Breathing History</h3>
+              <h3 style={styles.historyTitle}>{t.breathingHistory}</h3>
               {history.length > 0 && (
                 <button
                   style={{
@@ -504,7 +632,7 @@ const TakeABreath = () => {
                   onMouseLeave={() => setIsClearHistoryHovered(false)}
                   onClick={clearHistory}
                 >
-                  Clear All
+                  {t.clearAll}
                 </button>
               )}
             </div>
@@ -512,20 +640,28 @@ const TakeABreath = () => {
             <div style={styles.tableContainer}>
               <div style={styles.table}>
                 <div style={styles.tableHeader}>
-                  <div style={styles.headerCell}>Date</div>
-                  <div style={styles.headerCell}>Time</div>
+                  <div style={styles.headerCell}>{t.date}</div>
+                  <div style={styles.headerCell}>{t.time}</div>
+                  <div style={styles.headerCell}>{t.type}</div>
                 </div>
                 
                 {history.length > 0 ? (
-                  history.map((item, index) => (
-                    <div key={index} style={styles.tableRow}>
-                      <div style={styles.tableCell}>{item.date}</div>
-                      <div style={styles.tableCell}>{item.time}</div>
-                    </div>
-                  ))
+                  history.map((item, index) => {
+                    const typeLabel = item.typeLabel || (() => {
+                      const p = BREATHING_TYPES.find((x) => x.id === (item.type || "relaxing"));
+                      return p ? (language === "Tagalog" ? p.nameTl : p.name) : (item.type || "—");
+                    })();
+                    return (
+                      <div key={index} style={styles.tableRow}>
+                        <div style={styles.tableCell}>{item.date}</div>
+                        <div style={styles.tableCell}>{item.time}</div>
+                        <div style={styles.tableCell}>{typeLabel}</div>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div style={styles.emptyState}>
-                    <p>No history yet</p>
+                    <p>{t.noHistory}</p>
                   </div>
                 )}
               </div>

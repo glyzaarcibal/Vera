@@ -174,13 +174,28 @@ const WeeklyWellnessReport = () => {
     setMoodCounts(counts);
   };
 
+  const BREATHING_TYPE_LABELS = {
+    relaxing: "Relaxing (6-7-8)",
+    box: "Box (4-4-4)",
+    "478": "4-7-8 Calm",
+    calm: "Calm (4-2-6)",
+  };
+
   const loadBreathingHistory = async () => {
     try {
       const savedHistory = localStorage.getItem("breathingHistory");
       if (savedHistory) {
         const parsedHistory = JSON.parse(savedHistory);
-        const groupedData = groupByDay(parsedHistory);
-        setBreathingData(groupedData);
+        const withType = Array.isArray(parsedHistory)
+          ? parsedHistory.map((entry) => ({
+              ...entry,
+              type: entry.type || "relaxing",
+              typeLabel: entry.typeLabel || BREATHING_TYPE_LABELS[entry.type] || "Relaxing (6-7-8)",
+            }))
+          : [];
+        const groupedByDay = groupByDay(withType);
+        const groupedByType = groupByType(withType);
+        setBreathingData({ byDay: groupedByDay, byType: groupedByType, raw: withType });
       }
     } catch (error) {
       console.error("Error loading breathing history:", error);
@@ -192,6 +207,15 @@ const WeeklyWellnessReport = () => {
     history.forEach((entry) => {
       const date = entry.date;
       grouped[date] = (grouped[date] || 0) + 1;
+    });
+    return grouped;
+  };
+
+  const groupByType = (history) => {
+    const grouped = {};
+    history.forEach((entry) => {
+      const label = entry.typeLabel || BREATHING_TYPE_LABELS[entry.type] || entry.type || "Other";
+      grouped[label] = (grouped[label] || 0) + 1;
     });
     return grouped;
   };
@@ -218,9 +242,15 @@ const WeeklyWellnessReport = () => {
     color: getEmotionColor(key),
   }));
 
-  const breathingChartData = Object.keys(breathingData).map((date) => ({
+  const byDay = breathingData?.byDay || breathingData || {};
+  const byType = breathingData?.byType || {};
+  const breathingChartData = Object.keys(byDay).map((date) => ({
     date,
-    sessions: breathingData[date],
+    sessions: byDay[date],
+  }));
+  const breathingByTypeChartData = Object.keys(byType).map((label) => ({
+    name: label,
+    sessions: byType[label],
   }));
 
   const getSleepMessage = (duration) => {
@@ -567,6 +597,17 @@ const WeeklyWellnessReport = () => {
       display: 'flex',
       justifyContent: 'center',
     },
+    tableHeaderCell: {
+      padding: '10px 12px',
+      textAlign: 'left',
+      fontWeight: 'bold',
+      color: '#2E7D32',
+    },
+    tableCell: {
+      padding: '8px 12px',
+      textAlign: 'left',
+      color: '#333',
+    },
   };
 
   return (
@@ -699,6 +740,55 @@ const WeeklyWellnessReport = () => {
             </div>
           ) : (
             <p style={styles.noData}>No breathing data available.</p>
+          )}
+
+          {breathingByTypeChartData.length > 0 && (
+            <>
+              <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Breathing Sessions by Type</h2>
+              <div style={styles.chartWrapper}>
+                <div style={styles.chartContainer}>
+                  <BarChart
+                    width={800}
+                    height={280}
+                    data={breathingByTypeChartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+                    layout="vertical"
+                  >
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <Bar dataKey="sessions" fill="#26A69A" name="Sessions" />
+                    <Tooltip />
+                  </BarChart>
+                </div>
+              </div>
+            </>
+          )}
+
+          {breathingData?.raw?.length > 0 && (
+            <>
+              <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Recent Breathing History</h2>
+              <div style={{ overflowX: "auto", maxHeight: 200, border: "1px solid #ddd", borderRadius: 8 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#E8F5E9" }}>
+                      <th style={styles.tableHeaderCell}>Date</th>
+                      <th style={styles.tableHeaderCell}>Time</th>
+                      <th style={styles.tableHeaderCell}>Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(breathingData.raw.slice(0, 10)).map((entry, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
+                        <td style={styles.tableCell}>{entry.date}</td>
+                        <td style={styles.tableCell}>{entry.time}</td>
+                        <td style={styles.tableCell}>{entry.typeLabel || entry.type || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
