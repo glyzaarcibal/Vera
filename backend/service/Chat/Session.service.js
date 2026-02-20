@@ -131,3 +131,38 @@ export async function fetchMessagesBySessionId(sessionId) {
   const sessionInfo = await fetchSessionInfoById(sessionId);
   return { data, sessionInfo };
 }
+
+/**
+ * Get risk distribution for Avatar sessions (for admin dashboard chart).
+ * Returns counts by risk_level and total avatar sessions.
+ */
+export async function getAvatarRiskStats() {
+  const { data, error } = await supabaseAdmin
+    .from("chat_sessions")
+    .select("risk_level, risk_score")
+    .eq("type", "Avatar");
+
+  if (error) throw error;
+
+  const byLevel = { low: 0, moderate: 0, high: 0, critical: 0 };
+  let total = 0;
+  let withScore = 0;
+  let scoreSum = 0;
+
+  (data || []).forEach((row) => {
+    total += 1;
+    const level = (row.risk_level || "").toLowerCase();
+    if (byLevel[level] !== undefined) byLevel[level] += 1;
+    if (row.risk_score != null) {
+      withScore += 1;
+      scoreSum += Number(row.risk_score);
+    }
+  });
+
+  return {
+    byLevel,
+    total,
+    averageScore: withScore > 0 ? Math.round((scoreSum / withScore) * 10) / 10 : null,
+    assessedCount: withScore,
+  };
+}

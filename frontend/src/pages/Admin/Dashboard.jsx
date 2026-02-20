@@ -4,12 +4,21 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
+const RISK_COLORS = {
+  low: "#10b981",
+  moderate: "#f59e0b",
+  high: "#f97316",
+  critical: "#ef4444",
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(0);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [avatarRiskStats, setAvatarRiskStats] = useState(null);
+  const [avatarRiskLoading, setAvatarRiskLoading] = useState(true);
 
   // Helper function to format time ago - MUST be defined before useEffect
   const formatTimeAgo = (date) => {
@@ -86,6 +95,22 @@ const Dashboard = () => {
     fetchUsersData();
   }, []);
 
+  useEffect(() => {
+    const fetchAvatarRiskStats = async () => {
+      try {
+        setAvatarRiskLoading(true);
+        const res = await axiosInstance.get("/admin/users/avatar-risk-stats");
+        setAvatarRiskStats(res.data);
+      } catch (err) {
+        console.error("Error fetching avatar risk stats:", err);
+        setAvatarRiskStats({ byLevel: { low: 0, moderate: 0, high: 0, critical: 0 }, total: 0 });
+      } finally {
+        setAvatarRiskLoading(false);
+      }
+    };
+    fetchAvatarRiskStats();
+  }, []);
+
   const stats = [
     { label: "Total Users", value: totalUsers.toLocaleString(), icon: <MdPeople />, change: "+12%" },
     { label: "Active Sessions", value: "89", icon: <MdCheckCircle />, change: "+5%" },
@@ -115,6 +140,46 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-content">
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">Avatar sessions – risk distribution</h2>
+          {avatarRiskLoading ? (
+            <p className="chart-loading">Loading chart...</p>
+          ) : avatarRiskStats && avatarRiskStats.total > 0 ? (
+            <>
+              <div className="avatar-risk-summary">
+                <span className="avatar-risk-total">Total avatar sessions: {avatarRiskStats.total}</span>
+                {avatarRiskStats.averageScore != null && (
+                  <span className="avatar-risk-avg">Avg risk score: {avatarRiskStats.averageScore}</span>
+                )}
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={[
+                    { name: "Low", sessions: avatarRiskStats.byLevel?.low ?? 0 },
+                    { name: "Moderate", sessions: avatarRiskStats.byLevel?.moderate ?? 0 },
+                    { name: "High", sessions: avatarRiskStats.byLevel?.high ?? 0 },
+                    { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0 },
+                  ]}
+                  margin={{ top: 16, right: 16, left: 16, bottom: 16 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value) => [value, "Sessions"]} />
+                  <Bar dataKey="sessions" name="Sessions" radius={[4, 4, 0, 0]}>
+                    <Cell fill={RISK_COLORS.low} />
+                    <Cell fill={RISK_COLORS.moderate} />
+                    <Cell fill={RISK_COLORS.high} />
+                    <Cell fill={RISK_COLORS.critical} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </>
+          ) : (
+            <p className="chart-empty">No avatar session data yet. Risk levels appear after conversations are analyzed.</p>
+          )}
+        </div>
+
         <div className="activity-card">
           <h2 className="activity-title">Recent Activity - New Users</h2>
           <div className="activity-list">
