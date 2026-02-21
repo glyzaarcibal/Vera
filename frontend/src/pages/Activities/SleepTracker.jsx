@@ -187,162 +187,192 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
   return (
     <div
       style={{
-        flex: 1,
-        padding: "20px 16px",
-        backgroundColor: "#eef4ef",
         minHeight: "100vh",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        overflowY: "auto",
+        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
+        padding: "20px",
+        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      {/* Decorative elements */}
+      <div style={{
+        position: "absolute",
+        top: "10%",
+        left: "5%",
+        width: "300px",
+        height: "300px",
+        background: "radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 8s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "10%",
+        right: "5%",
+        width: "400px",
+        height: "400px",
+        background: "radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 12s ease-in-out infinite reverse",
+      }} />
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+          }
+        `}
+      </style>
+
       <div style={styles.pageContainer}>
-      <div style={styles.topBar}>
-        <button
-          onClick={handleBack}
-          style={styles.backButton}
-        >
-          ←
-        </button>
-      </div>
+        <div style={styles.topBar}>
+          <button
+            onClick={handleBack}
+            style={styles.backButton}
+          >
+            ←
+          </button>
+        </div>
 
-      <h1
-        style={styles.pageTitle}
-      >
-        Sleep Tracker
-      </h1>
+        <h1 style={styles.pageTitle}>
+          Sleep Tracker 😴
+        </h1>
 
-      <div style={styles.formCard}>
+        <div style={styles.formCard}>
+          <p style={styles.selectedDateText}>
+            Selected Date: {selectedDate}
+          </p>
 
-      <p style={styles.selectedDateText}>
-        Selected Date: {selectedDate}
-      </p>
+          {/* Date Picker */}
+          <SimpleDatePicker
+            selected={selectedDate}
+            onDateChange={(date) => setSelectedDate(date)}
+            options={{
+              backgroundColor: "#fff",
+              textHeaderColor: "#66BB6A",
+              textDefaultColor: "#000",
+              selectedTextColor: "#fff",
+              mainColor: "#66BB6A",
+              textSecondaryColor: "#aaa",
+            }}
+          />
 
-      {/* Date Picker */}
-      <SimpleDatePicker
-        selected={selectedDate}
-        onDateChange={(date) => setSelectedDate(date)}
-        options={{
-          backgroundColor: "#fff",
-          textHeaderColor: "#66BB6A",
-          textDefaultColor: "#000",
-          selectedTextColor: "#fff",
-          mainColor: "#66BB6A",
-          textSecondaryColor: "#aaa",
-        }}
-      />
-
-      <p style={styles.text}>Sleep Time:</p>
-      <div style={styles.pickerContainer}>
-        <select
-          value={sleepHour}
-          onChange={(e) => setSleepHour(e.target.value)}
-          style={styles.select}
-        >
-          {generateHourOptions().map((hour) => (
-            <option key={hour} value={hour}>{hour}</option>
-          ))}
-        </select>
-        <select
-          value={sleepMinute}
-          onChange={(e) => setSleepMinute(e.target.value)}
-          style={styles.select}
-        >
-          {generateMinuteOptions().map((minute) => (
-            <option key={minute} value={minute}>{minute}</option>
-          ))}
-        </select>
-        <select
-          value={sleepPeriod}
-          onChange={(e) => setSleepPeriod(e.target.value)}
-          style={styles.select}
-        >
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-
-      <p style={styles.text}>Wake Time:</p>
-      <div style={styles.pickerContainer}>
-        <select
-          value={wakeHour}
-          onChange={(e) => setWakeHour(e.target.value)}
-          style={styles.select}
-        >
-          {generateHourOptions().map((hour) => (
-            <option key={hour} value={hour}>{hour}</option>
-          ))}
-        </select>
-        <select
-          value={wakeMinute}
-          onChange={(e) => setWakeMinute(e.target.value)}
-          style={styles.select}
-        >
-          {generateMinuteOptions().map((minute) => (
-            <option key={minute} value={minute}>{minute}</option>
-          ))}
-        </select>
-        <select
-          value={wakePeriod}
-          onChange={(e) => setWakePeriod(e.target.value)}
-          style={styles.select}
-        >
-          <option value="AM">AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-
-      <p style={styles.text}>Sleep Duration: {calculateDuration()}</p>
-      
-      <button
-        onClick={saveSleepData}
-        style={styles.saveButton}
-      >
-        Save Sleep Data
-      </button>
-      </div>
-
-      <div style={styles.historyCard}>
-
-      <h2 style={styles.historyTitle}>Sleep History</h2>
-
-      {loading ? (
-        <p style={styles.emptyState}>Loading...</p>
-      ) : (
-        <div style={styles.tableWrapper}>
-        <div style={styles.table}>
-          <div style={styles.row}>
-            <div style={styles.headerCell}>Date</div>
-            <div style={styles.headerCell}>Sleep Time</div>
-            <div style={styles.headerCell}>Wake Time</div>
-            <div style={styles.headerCell}>Duration</div>
-            <div style={styles.headerCell}>Actions</div>
+          <p style={styles.text}>Sleep Time:</p>
+          <div style={styles.pickerContainer}>
+            <select
+              value={sleepHour}
+              onChange={(e) => setSleepHour(e.target.value)}
+              style={styles.select}
+            >
+              {generateHourOptions().map((hour) => (
+                <option key={hour} value={hour}>{hour}</option>
+              ))}
+            </select>
+            <select
+              value={sleepMinute}
+              onChange={(e) => setSleepMinute(e.target.value)}
+              style={styles.select}
+            >
+              {generateMinuteOptions().map((minute) => (
+                <option key={minute} value={minute}>{minute}</option>
+              ))}
+            </select>
+            <select
+              value={sleepPeriod}
+              onChange={(e) => setSleepPeriod(e.target.value)}
+              style={styles.select}
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
           </div>
-          {sleepData.length > 0 ? (
-            sleepData.map((entry) => (
-              <div key={entry.id} style={styles.row}>
-                <div style={styles.cell}>{entry.date}</div>
-                <div style={styles.cell}>{entry.sleep_time}</div>
-                <div style={styles.cell}>{entry.wake_time}</div>
-                <div style={styles.cell}>{entry.duration}</div>
-                <div style={styles.cell}>
-                  <button
-                    onClick={() => deleteEntry(entry.id)}
-                    style={styles.deleteButton}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
+
+          <p style={styles.text}>Wake Time:</p>
+          <div style={styles.pickerContainer}>
+            <select
+              value={wakeHour}
+              onChange={(e) => setWakeHour(e.target.value)}
+              style={styles.select}
+            >
+              {generateHourOptions().map((hour) => (
+                <option key={hour} value={hour}>{hour}</option>
+              ))}
+            </select>
+            <select
+              value={wakeMinute}
+              onChange={(e) => setWakeMinute(e.target.value)}
+              style={styles.select}
+            >
+              {generateMinuteOptions().map((minute) => (
+                <option key={minute} value={minute}>{minute}</option>
+              ))}
+            </select>
+            <select
+              value={wakePeriod}
+              onChange={(e) => setWakePeriod(e.target.value)}
+              style={styles.select}
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          </div>
+
+          <p style={styles.text}>Sleep Duration: {calculateDuration()}</p>
+          
+          <button
+            onClick={saveSleepData}
+            style={styles.saveButton}
+          >
+            Save Sleep Data ✨
+          </button>
+        </div>
+
+        <div style={styles.historyCard}>
+          <h2 style={styles.historyTitle}>Sleep History</h2>
+
+          {loading ? (
+            <p style={styles.emptyState}>Loading...</p>
           ) : (
-            <p style={styles.emptyState}>
-              No sleep history found.
-            </p>
+            <div style={styles.tableWrapper}>
+              <div style={styles.table}>
+                <div style={styles.row}>
+                  <div style={styles.headerCell}>Date</div>
+                  <div style={styles.headerCell}>Sleep Time</div>
+                  <div style={styles.headerCell}>Wake Time</div>
+                  <div style={styles.headerCell}>Duration</div>
+                  <div style={styles.headerCell}>Actions</div>
+                </div>
+                {sleepData.length > 0 ? (
+                  sleepData.map((entry) => (
+                    <div key={entry.id} style={styles.row}>
+                      <div style={styles.cell}>{entry.date}</div>
+                      <div style={styles.cell}>{entry.sleep_time}</div>
+                      <div style={styles.cell}>{entry.wake_time}</div>
+                      <div style={styles.cell}>{entry.duration}</div>
+                      <div style={styles.cell}>
+                        <button
+                          onClick={() => deleteEntry(entry.id)}
+                          style={styles.deleteButton}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ padding: "20px", textAlign: "center" }}>
+                    <span style={{ fontSize: "48px", display: "block", marginBottom: "10px" }}>😴</span>
+                    <p style={styles.emptyState}>No sleep history found.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
-        </div>
-      )}
-      </div>
       </div>
     </div>
   );
@@ -352,95 +382,103 @@ const styles = {
   pageContainer: {
     maxWidth: "920px",
     margin: "0 auto",
+    position: "relative",
+    zIndex: 10,
   },
   topBar: {
     marginBottom: "8px",
   },
   backButton: {
     background: "#ffffff",
-    border: "1px solid #dbe6dc",
+    border: "none",
     width: "42px",
     height: "42px",
     borderRadius: "999px",
     fontSize: "22px",
     cursor: "pointer",
-    color: "#2f6f32",
+    color: "#667eea",
     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    transition: "all 0.2s",
   },
   pageTitle: {
-    fontSize: "28px",
+    fontSize: "32px",
     textAlign: "center",
-    marginBottom: "16px",
+    marginBottom: "24px",
     fontWeight: "700",
-    color: "#1f3b22",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
   },
   formCard: {
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    padding: "16px",
-    border: "1px solid #e3ece4",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-    marginBottom: "16px",
+    background: "rgba(255, 255, 255, 0.85)",
+    borderRadius: "20px",
+    padding: "24px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    backdropFilter: "blur(10px)",
+    marginBottom: "24px",
   },
   selectedDateText: {
     fontSize: "16px",
-    marginBottom: "10px",
+    marginBottom: "16px",
     fontWeight: "600",
-    color: "#2e5d32",
+    color: "#667eea",
   },
   pickerContainer: {
     display: "flex",
     gap: "10px",
-    marginBottom: "10px",
+    marginBottom: "16px",
     flexWrap: "wrap",
   },
   select: {
     flex: 1,
     minWidth: "90px",
-    padding: "8px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
+    padding: "10px",
+    borderRadius: "10px",
+    border: "1px solid #e0e0e0",
     fontSize: "14px",
+    background: "white",
+    cursor: "pointer",
+    transition: "all 0.2s",
   },
   saveButton: {
-    background: "linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%)",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     color: "white",
     border: "none",
-    padding: "12px 20px",
-    borderRadius: "8px",
+    padding: "14px 20px",
+    borderRadius: "12px",
     fontSize: "16px",
     cursor: "pointer",
     width: "100%",
     marginBottom: "4px",
     fontWeight: "600",
+    boxShadow: "0 5px 15px rgba(102, 126, 234, 0.3)",
+    transition: "all 0.3s",
   },
   historyCard: {
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    padding: "16px",
-    border: "1px solid #e3ece4",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+    background: "rgba(255, 255, 255, 0.85)",
+    borderRadius: "20px",
+    padding: "24px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    backdropFilter: "blur(10px)",
   },
   tableWrapper: {
     overflowX: "auto",
+    borderRadius: "12px",
   },
   table: {
     marginTop: "10px",
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderColor: "#e1e1e1",
+    border: "1px solid rgba(0,0,0,0.05)",
     marginBottom: "20px",
-    borderRadius: "5px",
+    borderRadius: "12px",
     overflow: "hidden",
     minWidth: "640px",
-    backgroundColor: "#fff",
+    background: "white",
   },
   row: {
     display: "flex",
-    borderBottomWidth: "1px",
-    borderBottomStyle: "solid",
-    borderBottomColor: "#ccc",
-    padding: "10px",
+    borderBottom: "1px solid rgba(0,0,0,0.05)",
+    padding: "12px",
+    transition: "background 0.2s",
   },
   cell: {
     flex: 1,
@@ -453,7 +491,7 @@ const styles = {
     fontWeight: "bold",
     textAlign: "center",
     fontSize: "14px",
-    color: "#245427",
+    color: "#667eea",
   },
   deleteButton: {
     backgroundColor: "#ef5350",
@@ -464,52 +502,56 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
     fontWeight: "600",
+    transition: "all 0.2s",
   },
   emptyState: {
     textAlign: "center",
-    padding: "20px",
     color: "#666",
+    fontSize: "16px",
   },
   text: {
-    marginTop: "10px",
-    marginBottom: "5px",
+    marginTop: "16px",
+    marginBottom: "8px",
     fontSize: "16px",
     fontWeight: "600",
     color: "#2f2f2f",
   },
   historyTitle: {
-    fontSize: "20px",
+    fontSize: "24px",
     fontWeight: "bold",
     marginTop: "0px",
-    marginBottom: "10px",
-    color: "#1f3b22",
+    marginBottom: "16px",
+    color: "#333",
   },
   // Calendar styles
   calendarContainer: {
-    backgroundColor: "#fff",
-    borderRadius: "10px",
-    padding: "15px",
+    background: "rgba(255, 255, 255, 0.9)",
+    borderRadius: "16px",
+    padding: "20px",
     marginBottom: "20px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
   },
   calendarHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "10px",
+    marginBottom: "15px",
   },
   calendarNavButton: {
-    background: "none",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     border: "none",
     fontSize: "18px",
     cursor: "pointer",
-    padding: "5px 10px",
+    padding: "8px 15px",
+    borderRadius: "25px",
+    color: "white",
+    transition: "all 0.2s",
   },
   calendarWeekdays: {
     display: "grid",
     gridTemplateColumns: "repeat(7, 1fr)",
     textAlign: "center",
-    marginBottom: "5px",
+    marginBottom: "10px",
   },
   calendarWeekday: {
     fontSize: "12px",
@@ -519,18 +561,19 @@ const styles = {
   calendarGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(7, 1fr)",
-    gap: "2px",
+    gap: "5px",
   },
   calendarCell: {
     border: "none",
-    padding: "8px",
+    padding: "10px",
     textAlign: "center",
     cursor: "pointer",
-    borderRadius: "5px",
+    borderRadius: "8px",
     fontSize: "14px",
+    transition: "all 0.2s",
   },
   calendarEmptyCell: {
-    padding: "8px",
+    padding: "10px",
   },
 };
 

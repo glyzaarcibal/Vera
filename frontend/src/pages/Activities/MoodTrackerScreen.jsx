@@ -428,74 +428,100 @@ const MoodTrackerScreen = ({ navigation }) => {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
         padding: "20px",
         fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+        position: "relative",
       }}
     >
+      {/* Decorative elements */}
+      <div style={{
+        position: "absolute",
+        top: "10%",
+        left: "5%",
+        width: "300px",
+        height: "300px",
+        background: "radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 8s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "10%",
+        right: "5%",
+        width: "400px",
+        height: "400px",
+        background: "radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 12s ease-in-out infinite reverse",
+      }} />
+
+      {/* CSS Animations */}
+      <style>
+        {`
+          @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+          }
+        `}
+      </style>
+
+      {/* Header with back button */}
       <div
         style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "30px",
           maxWidth: "1200px",
-          margin: "0 auto",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
-          borderRadius: "30px",
-          padding: "30px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-          backdropFilter: "blur(10px)",
+          margin: "0 auto 30px auto",
         }}
       >
-        {/* Header with back button */}
-        <div
+        <button
+          onClick={handleBack}
           style={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            border: "none",
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "30px",
+            justifyContent: "center",
+            color: "white",
+            fontSize: "20px",
+            boxShadow: "0 5px 15px rgba(102, 126, 234, 0.4)",
+            transition: "transform 0.2s",
+          }}
+          onMouseEnter={(e) => e.target.style.transform = "scale(1.1)"}
+          onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+        >
+          ←
+        </button>
+        
+        <h1
+          style={{
+            fontSize: "32px",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            margin: 0,
+            fontWeight: "bold",
           }}
         >
-          <button
-            onClick={handleBack}
-            style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              border: "none",
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontSize: "20px",
-              boxShadow: "0 5px 15px rgba(102, 126, 234, 0.4)",
-              transition: "transform 0.2s",
-            }}
-            onMouseEnter={(e) => e.target.style.transform = "scale(1.1)"}
-            onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
-          >
-            ←
-          </button>
-          
-          <h1
-            style={{
-              fontSize: "32px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              margin: 0,
-              fontWeight: "bold",
-            }}
-          >
-            Mood Tracker 🌈
-          </h1>
-          
-          <div style={{ width: "40px" }} /> {/* Spacer */}
-        </div>
+          Mood Tracker 🌈
+        </h1>
+        
+        <div style={{ width: "40px" }} /> {/* Spacer */}
+      </div>
 
-        {/* Main content */}
+      {/* Main content container */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        {/* Mood Selection Grid */}
         {!selectedMood ? (
           <>
-            {/* Mood Selection Grid */}
             <div style={{ marginBottom: "40px" }}>
               <h2
                 style={{
@@ -534,6 +560,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       cursor: "pointer",
                       transition: "all 0.3s ease",
                       boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+                      backdropFilter: "blur(5px)",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "translateY(-5px)";
@@ -567,11 +594,13 @@ const MoodTrackerScreen = ({ navigation }) => {
           /* Selected Mood Input */
           <div
             style={{
-              background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+              background: "linear-gradient(135deg, rgba(245, 247, 250, 0.9) 0%, rgba(195, 207, 226, 0.9) 100%)",
               borderRadius: "20px",
               padding: "30px",
               marginBottom: "40px",
               textAlign: "center",
+              backdropFilter: "blur(10px)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
             }}
           >
             <h2
@@ -632,6 +661,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       fontFamily: "inherit",
                       resize: "vertical",
                       marginBottom: "15px",
+                      background: "rgba(255,255,255,0.9)",
                     }}
                   />
                   
@@ -690,11 +720,12 @@ const MoodTrackerScreen = ({ navigation }) => {
         {filteredHistory.length > 0 && (
           <div
             style={{
-              background: "white",
+              background: "rgba(255, 255, 255, 0.85)",
               borderRadius: "20px",
               padding: "20px",
               marginBottom: "30px",
-              boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+              backdropFilter: "blur(10px)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
@@ -743,10 +774,11 @@ const MoodTrackerScreen = ({ navigation }) => {
         {/* Mood History Section */}
         <div
           style={{
-            background: "white",
+            background: "rgba(255, 255, 255, 0.85)",
             borderRadius: "20px",
             padding: "20px",
-            boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+            backdropFilter: "blur(10px)",
           }}
         >
           <div

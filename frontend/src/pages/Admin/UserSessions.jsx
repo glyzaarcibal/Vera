@@ -427,7 +427,7 @@ const UserSessions = () => {
               availableResources.map((resource) => (
                 <div
                   key={resource.id}
-                  className={`flex-shrink-0 w-[180px] bg-white border-2 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
+                  className={`shrink-0 w-[180px] bg-white border-2 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
                     selectedResourceIds.includes(resource.id)
                       ? "border-blue-500 shadow-md"
                       : "border-gray-200"
@@ -442,7 +442,7 @@ const UserSessions = () => {
                         className="w-full h-32 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                      <div className="w-full h-32 bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                         <MdImage className="w-12 h-12 text-white opacity-50" />
                       </div>
                     )}
@@ -491,7 +491,7 @@ const UserSessions = () => {
                 return (
                   <div
                     key={assignment.id}
-                    className="flex-shrink-0 w-[180px] bg-white border-2 border-gray-200 rounded-xl overflow-hidden transition-all hover:shadow-lg relative"
+                    className="shrink-0 w-[180px] bg-white border-2 border-gray-200 rounded-xl overflow-hidden transition-all hover:shadow-lg relative"
                   >
                     <div className="relative">
                       {resource.image_url ? (

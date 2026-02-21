@@ -1,4 +1,5 @@
 import AuthRoutes from "./Auth/Auth.routes.js";
+import ActivitiesRoutes from "./Activities.routes.js";
 import SessionRoutes from "./Chat/Session.routes.js";
 import MessageRoutes from "./Chat/Message.routes.js";
 import EmotionDetectionRoutes from "./Chat/EmotionDetection.routes.js";
@@ -10,6 +11,7 @@ import ResourceRoutes from "./Resource.routes.js";
 
 export default function registerRoutes(app) {
   app.use("/api/auth", AuthRoutes);
+  app.use("/api/activities", ActivitiesRoutes);
   app.use("/api/sessions", SessionRoutes);
   app.use("/api/messages", MessageRoutes);
   app.use("/api", EmotionDetectionRoutes);

@@ -17,6 +17,7 @@ import ChatAI from "./pages/ChatAI";
 import VoiceAI from "./pages/VoiceAI";
 import Dashboard from "./pages/Admin/Dashboard";
 import Reports from "./pages/Admin/Reports";
+// ...existing code...
 import UserManagement from "./pages/Admin/UserManagement";
 import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
@@ -67,6 +68,7 @@ const App = () => {
         <Route path="/admin/sessions/:userId" element={<UserSessions />} />
         <Route path="/admin/chat/:sessionId" element={<UserChat />} />
         <Route path="/admin/resources" element={<Resources />} />
+        {/* <Route path="/admin/activity-graph/:userId" element={<UserActivityGraph />} /> */}
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

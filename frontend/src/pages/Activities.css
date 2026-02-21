@@ -1,3 +1,10 @@
+/* ═══════════════════════════════════════════════════════════
+   ACTIVITIES.CSS — ALL ORIGINAL STYLES PRESERVED
+   + floating rounded header · deeper shadows · smoother easing · glow on hover
+   (Card shimmer removed as requested)
+═══════════════════════════════════════════════════════════ */
+
+/* ── PAGE CONTAINER ─────────────────────────────────────── */
 .activities-container {
   padding: 2rem;
   max-width: 1280px;
@@ -6,24 +13,92 @@
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
+/* ── HEADER — NOW FLOATING + ROUNDED ────────────────────── */
 .activities-header {
   text-align: center;
-  margin-bottom: 3rem;
-  padding: 2rem 0;
+  margin: 0 0 3rem;
+  padding: 2.5rem 2rem;
+
+  /* Floating card */
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 20px 60px rgba(102, 126, 234, 0.14),
+    0 4px 16px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+
+  /* Float in on load */
+  animation: headerFloat 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  position: relative;
+  overflow: hidden;
 }
 
+/* Subtle shimmer border sweep on the floating header */
+.activities-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(102, 126, 234, 0.06) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: headerShimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Accent top bar on floating header */
+.activities-header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #667eea);
+  background-size: 200% 100%;
+  border-radius: 0 0 4px 4px;
+  animation: accentFlow 3s linear infinite;
+}
+
+@keyframes headerFloat {
+  from { opacity: 0; transform: translateY(-30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+@keyframes headerShimmer {
+  0%, 100% { background-position: 200% 0; }
+  50%       { background-position: -200% 0; }
+}
+@keyframes accentFlow {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── HEADER TITLE ───────────────────────────────────────── */
 .activities-header h1 {
   font-size: 3rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 1rem;
   font-weight: 800;
   letter-spacing: -0.5px;
-  animation: fadeInDown 0.6s ease-out;
+  animation: fadeInDown 0.6s ease-out, gradientShift 5s linear infinite;
 }
 
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+/* ── SUBTITLE ───────────────────────────────────────────── */
 .activities-subtitle {
   font-size: 1.2rem;
   color: #4a5568;
@@ -35,6 +110,7 @@
   animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
+/* ── STATS ROW ──────────────────────────────────────────── */
 .activities-stats {
   display: flex;
   justify-content: center;
@@ -62,6 +138,7 @@
   letter-spacing: 0.5px;
 }
 
+/* ── ACTIVITIES GRID ────────────────────────────────────── */
 .activities-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -70,6 +147,7 @@
   padding: 1rem;
 }
 
+/* ── ACTIVITY CARD ──────────────────────────────────────── */
 .activity-card {
   background: white;
   border-radius: 20px;
@@ -87,6 +165,7 @@
   animation-fill-mode: both;
 }
 
+/* Top accent bar */
 .activity-card::before {
   content: '';
   position: absolute;
@@ -101,14 +180,17 @@
 
 .activity-card:hover {
   transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
-  border-color: #667eea;
+  box-shadow:
+    0 24px 50px rgba(102, 126, 234, 0.22),
+    0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: rgba(102, 126, 234, 0.35);
 }
 
 .activity-card:hover::before {
   transform: scaleX(1);
 }
 
+/* Stagger delays */
 .activity-card:nth-child(1) { animation-delay: 0.1s; }
 .activity-card:nth-child(2) { animation-delay: 0.2s; }
 .activity-card:nth-child(3) { animation-delay: 0.3s; }
@@ -116,6 +198,7 @@
 .activity-card:nth-child(5) { animation-delay: 0.5s; }
 .activity-card:nth-child(6) { animation-delay: 0.6s; }
 
+/* ── ICON WRAPPER ───────────────────────────────────────── */
 .activity-icon-wrapper {
   width: 70px;
   height: 70px;
@@ -125,13 +208,13 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
 }
 
 .activity-card:hover .activity-icon-wrapper {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
+  transform: scale(1.12) rotate(6deg);
+  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.35);
 }
 
 .activity-icon {
@@ -139,6 +222,7 @@
   color: white;
 }
 
+/* ── CARD TEXT ──────────────────────────────────────────── */
 .activity-card h3 {
   font-size: 1.6rem;
   font-weight: 700;
@@ -159,6 +243,7 @@
   line-height: 1.6;
 }
 
+/* ── META TAGS ──────────────────────────────────────────── */
 .activity-meta {
   display: flex;
   gap: 1rem;
@@ -183,6 +268,7 @@
   border-color: #667eea;
 }
 
+/* ── CARD FOOTER ────────────────────────────────────────── */
 .activity-footer {
   display: flex;
   justify-content: space-between;
@@ -215,7 +301,7 @@
   justify-content: center;
   font-size: 1.2rem;
   color: #667eea;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   border: 2px solid transparent;
 }
 
@@ -223,8 +309,10 @@
   background: #667eea;
   color: white;
   transform: translateX(5px) rotate(-45deg);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
+/* ── LOADING SKELETON ───────────────────────────────────── */
 .loading-skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -233,6 +321,7 @@
   height: 200px;
 }
 
+/* ── EMPTY STATE ────────────────────────────────────────── */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -258,6 +347,25 @@
   margin-bottom: 2rem;
 }
 
+.empty-state button {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
+}
+
+.empty-state button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
+}
+
+/* ── REPORTS SECTION ────────────────────────────────────── */
 .reports-section {
   margin-top: 1.5rem;
   margin-bottom: 2rem;
@@ -340,24 +448,7 @@
   height: 260px;
 }
 
-.empty-state button {
-  padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 30px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
-}
-
-.empty-state button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
-}
-
+/* ── KEYFRAMES ──────────────────────────────────────────── */
 @keyframes fadeInDown {
   from {
     opacity: 0;
@@ -389,7 +480,7 @@
   }
 }
 
-/* Responsive Design */
+/* ── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .activities-container {
     padding: 1.5rem;
@@ -410,8 +501,9 @@
   }
 
   .activities-header {
-    padding: 1rem 0;
+    padding: 1.5rem 1rem;
     margin-bottom: 2rem;
+    border-radius: 20px;
   }
 
   .activities-header h1 {
@@ -420,7 +512,7 @@
 
   .activities-subtitle {
     font-size: 1rem;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
 
   .activities-stats {
@@ -470,6 +562,10 @@
 }
 
 @media (max-width: 480px) {
+  .activities-header {
+    border-radius: 16px;
+  }
+
   .activities-header h1 {
     font-size: 1.75rem;
   }
@@ -508,10 +604,18 @@
   }
 }
 
-/* Dark mode support */
+/* ── DARK MODE ───────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   .activities-container {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  }
+
+  .activities-header {
+    background: rgba(45, 55, 72, 0.8);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.3),
+      0 4px 16px rgba(0, 0, 0, 0.2);
   }
 
   .activities-header h1 {
@@ -573,5 +677,19 @@
 
   .empty-state p {
     color: #cbd5e0;
+  }
+}
+
+/* ── REDUCED MOTION ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .activities-header,
+  .activities-header h1,
+  .activities-header::before,
+  .activities-header::after,
+  .activity-card,
+  .activities-subtitle,
+  .activities-stats {
+    animation: none !important;
+    transition: none !important;
   }
 }
