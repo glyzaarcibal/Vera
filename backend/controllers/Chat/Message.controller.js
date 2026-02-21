@@ -13,7 +13,7 @@ export const processMessage = async (req, res) => {
   try {
     const userId = req.userId;
     const { sessionId } = req.params;
-    const { message, messages, audioBase64 } = req.body;
+    const { message, messages = [], audioBase64 } = req.body;
     const permissions = await fetchPermissions(userId);
     console.log("Permission to save:", permissions.permit_store);
     console.log("Permission to analyze:", permissions.permit_analyze);
@@ -27,21 +27,25 @@ export const processMessage = async (req, res) => {
         content: msg.text,
       }));
 
+    const messageText = message?.text ?? message?.content ?? "";
     const userMessage = {
       session_id: sessionId,
-      content: message.text,
+      content: messageText,
       sent_by: "user",
     };
 
+    let savedMessageId = null;
     if (permissions.permit_store) {
       const messageId = await saveMessage(userMessage);
-      console.log(messageId.id);
-      if (audioBase64 && messageId.id != null) {
-        console.log("Audio base64 received, transcribing...");
+      savedMessageId = messageId.id;
+      console.log("[processMessage] Saved user message with ID:", savedMessageId);
+      if (audioBase64 && typeof audioBase64 === "string" && audioBase64.length > 100 && savedMessageId != null) {
+        console.log("[processMessage] Audio base64 received (len=" + audioBase64.length + "), transcribing and detecting emotions...");
         try {
-          await transcribeAudio(audioBase64, messageId.id);
+          await transcribeAudio(audioBase64, savedMessageId);
+          console.log("[processMessage] Emotion detection completed for message:", savedMessageId);
         } catch (err) {
-          console.warn("[processMessage] Transcribe failed (non-fatal):", err.message);
+          console.warn("[processMessage] Transcribe/emotion detection failed (non-fatal):", err.message);
         }
       }
     }
@@ -62,7 +66,10 @@ export const processMessage = async (req, res) => {
     if (messages.length > 5 && permissions.permit_analyze)
       analyzeConversation(messages, sessionId);
 
-    return res.status(200).json({ response });
+    return res.status(200).json({ 
+      response,
+      messageId: savedMessageId // Return messageId so frontend can use it for additional operations
+    });
   } catch (e) {
     console.log(e);
     return res.status(500).json({ message: "Internal Server Error" });

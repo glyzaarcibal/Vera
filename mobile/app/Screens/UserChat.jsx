@@ -40,6 +40,8 @@ const UserChat = () => {
     fearful: '#8B5CF6',
     neutral: '#9CA3AF',
     surprised: '#F97316',
+    doubt: '#A855F7',
+    confusion: '#F59E0B',
   }
 
   useEffect(() => {
@@ -71,6 +73,8 @@ const UserChat = () => {
       { name: 'fearful', value: emotions.fearful },
       { name: 'neutral', value: emotions.neutral },
       { name: 'surprised', value: emotions.surprised },
+      { name: 'doubt', value: emotions.doubt },
+      { name: 'confusion', value: emotions.confusion },
     ]
     return emotionList.reduce((max, emotion) =>
       emotion.value > max.value ? emotion : max,
@@ -91,6 +95,8 @@ const UserChat = () => {
       fearful: 0,
       neutral: 0,
       surprised: 0,
+      doubt: 0,
+      confusion: 0,
     }
 
     messagesWithEmotions.forEach(msg => {

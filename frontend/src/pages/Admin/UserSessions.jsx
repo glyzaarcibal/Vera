@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday } from "react-icons/md";
+import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend } from "recharts";
 import axiosInstance from "../../utils/axios.instance";
 import Skeleton from "../../components/Skeleton";
 import RiskBadge from "../../components/RiskBadge";
@@ -40,6 +41,24 @@ const UserSessions = () => {
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
+  // Reports state
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [aiUsageStats, setAiUsageStats] = useState({
+    totalSessions: 0,
+    totalMessages: 0,
+    voiceSessions: 0,
+    textSessions: 0,
+    avatarSessions: 0,
+  });
+  const [activitiesData, setActivitiesData] = useState({
+    moodEntries: 0,
+    sleepEntries: 0,
+    breathingSessions: 0,
+  });
+  const [dailyEmotions, setDailyEmotions] = useState([]);
+  const [emotionWords, setEmotionWords] = useState({});
+  const [showReports, setShowReports] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -57,6 +76,165 @@ const UserSessions = () => {
       fetchAssignedResources(),
     ]);
     setLoading(false);
+  };
+
+  // Fetch reports data
+  const fetchReportsData = async () => {
+    setReportsLoading(true);
+    try {
+      // Fetch all sessions for the user (without pagination to get complete stats)
+      const allSessionsRes = await axiosInstance.get(
+        `/admin/users/get-sessions-by-user/${userId}?page=1&limit=1000&type=all`
+      );
+      const allSessions = allSessionsRes.data.sessions || [];
+
+      // Calculate AI usage stats
+      const stats = {
+        totalSessions: allSessions.length,
+        totalMessages: 0,
+        voiceSessions: allSessions.filter((s) => s.type === "voice").length,
+        textSessions: allSessions.filter((s) => s.type === "text").length,
+        avatarSessions: allSessions.filter((s) => s.type === "Avatar").length,
+      };
+
+      // Fetch messages with emotion data from voice and avatar sessions only
+      // (Hume AI is used for voice/avatar sessions)
+      const voiceAndAvatarSessions = allSessions.filter(
+        (s) => s.type === "voice" || s.type === "Avatar"
+      );
+      
+      const emotionDataByDay = {};
+      let totalMessages = 0;
+      let sessionsWithEmotions = 0;
+      let messagesWithEmotions = 0;
+
+      for (const session of voiceAndAvatarSessions) {
+        try {
+          const chatRes = await axiosInstance.get(`/sessions/fetch-chat/${session.id}`);
+          const messages = chatRes.data.chat || [];
+          totalMessages += messages.length;
+
+          // Helper: Supabase may return message_emotion as array or single object
+          const getEmotionArr = (m) => {
+            const em = m.message_emotion;
+            if (!em) return [];
+            return Array.isArray(em) ? em : [em];
+          };
+
+          // Process messages with emotion data
+          messages.forEach((msg) => {
+            // Only process user messages (emotions are detected from user voice)
+            if (msg.sent_by === "user") {
+              const emotionArr = getEmotionArr(msg);
+
+              if (emotionArr.length > 0) {
+                const emotion = emotionArr[0];
+                messagesWithEmotions++;
+                
+                // Use message created_at, fallback to session created_at
+                const date = new Date(msg.created_at || session.created_at).toISOString().split("T")[0];
+
+                if (!emotionDataByDay[date]) {
+                  emotionDataByDay[date] = {
+                    date,
+                    sad: 0,
+                    angry: 0,
+                    happy: 0,
+                    disgust: 0,
+                    fearful: 0,
+                    neutral: 0,
+                    surprised: 0,
+                    calm: 0,
+                    doubt: 0,
+                    confusion: 0,
+                  };
+                }
+
+                // Aggregate emotion scores (sum all emotion values)
+                Object.keys(emotionDataByDay[date]).forEach((key) => {
+                  if (key !== "date" && emotion[key] != null && typeof emotion[key] === "number") {
+                    emotionDataByDay[date][key] += emotion[key] || 0;
+                  }
+                });
+              }
+            }
+          });
+          
+          // Check if this session had any messages with emotions
+          const sessionHasEmotions = messages.some(
+            (msg) => msg.sent_by === "user" && getEmotionArr(msg).length > 0
+          );
+          if (sessionHasEmotions) {
+            sessionsWithEmotions++;
+          }
+        } catch (e) {
+          console.error(`Error fetching chat for session ${session.id}:`, e);
+        }
+      }
+
+      console.log("Emotion detection stats:", {
+        totalVoiceAvatarSessions: voiceAndAvatarSessions.length,
+        sessionsWithEmotions,
+        messagesWithEmotions,
+        daysWithData: Object.keys(emotionDataByDay).length,
+      });
+
+      stats.totalMessages = totalMessages;
+
+      // Convert emotion data to array format for chart
+      const dailyEmotionArray = Object.values(emotionDataByDay)
+        .map((dayData) => {
+          // Find dominant emotion for each day
+          const emotions = Object.keys(dayData)
+            .filter((key) => key !== "date")
+            .map((emotion) => ({
+              emotion,
+              value: dayData[emotion],
+            }))
+            .sort((a, b) => b.value - a.value);
+
+          // Format date for display (MM/DD)
+          const dateObj = new Date(dayData.date);
+          const formattedDate = `${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`;
+
+          return {
+            date: formattedDate,
+            fullDate: dayData.date,
+            ...dayData,
+            dominantEmotion: emotions[0]?.emotion || "neutral",
+          };
+        })
+        .sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate))
+        .slice(-30); // Last 30 days
+
+      setAiUsageStats(stats);
+      setDailyEmotions(dailyEmotionArray);
+
+      // Fetch activities data
+      try {
+        const moodRes = await axiosInstance.get(`/moods/retrieve-daily-moods?user_id=${userId}`);
+        const moodData = moodRes.data?.moods || [];
+        setActivitiesData((prev) => ({
+          ...prev,
+          moodEntries: moodData.length,
+        }));
+      } catch (e) {
+        console.error("Error fetching mood data:", e);
+      }
+
+      // Fetch emotion-hinting words
+      try {
+        const emotionWordsRes = await axiosInstance.get(`/admin/users/get-emotion-words/${userId}`);
+        setEmotionWords(emotionWordsRes.data.emotionWords || {});
+      } catch (e) {
+        console.error("Error fetching emotion words:", e);
+        setEmotionWords({});
+      }
+    } catch (e) {
+      console.error("Error fetching reports data:", e);
+    } finally {
+      setReportsLoading(false);
+    }
   };
 
   const fetchUserInfo = async () => {
@@ -401,6 +579,216 @@ const UserSessions = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Reports Section */}
+      <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <MdBarChart className="text-xl" />
+            User Reports & Analytics
+          </h3>
+          <button
+            onClick={() => {
+              if (!showReports) {
+                fetchReportsData();
+              }
+              setShowReports(!showReports);
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition-all"
+          >
+            {showReports ? "Hide Reports" : "Show Reports"}
+          </button>
+        </div>
+
+        {showReports && (
+          <div className="space-y-6">
+            {reportsLoading ? (
+              <div className="py-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                <p className="mt-2 text-sm text-gray-500">Loading reports...</p>
+              </div>
+            ) : (
+              <>
+                {/* AI Usage Statistics */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <MdPsychology className="text-lg" />
+                    AI Usage Statistics
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="bg-indigo-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Total Sessions</div>
+                      <div className="text-2xl font-bold text-indigo-600">{aiUsageStats.totalSessions}</div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Total Messages</div>
+                      <div className="text-2xl font-bold text-blue-600">{aiUsageStats.totalMessages}</div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Voice Sessions</div>
+                      <div className="text-2xl font-bold text-purple-600">{aiUsageStats.voiceSessions}</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Text Sessions</div>
+                      <div className="text-2xl font-bold text-green-600">{aiUsageStats.textSessions}</div>
+                    </div>
+                    <div className="bg-pink-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-1">Avatar Sessions</div>
+                      <div className="text-2xl font-bold text-pink-600">{aiUsageStats.avatarSessions}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activities */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <MdFitnessCenter className="text-lg" />
+                    Activities
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <div className="text-sm text-gray-600 mb-1">Mood Entries</div>
+                      <div className="text-2xl font-bold text-yellow-700">{activitiesData.moodEntries}</div>
+                      <div className="text-xs text-gray-500 mt-1">Mood tracking entries</div>
+                    </div>
+                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                      <div className="text-sm text-gray-600 mb-1">Sleep Entries</div>
+                      <div className="text-2xl font-bold text-indigo-700">{activitiesData.sleepEntries}</div>
+                      <div className="text-xs text-gray-500 mt-1">Sleep tracking entries</div>
+                    </div>
+                    <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                      <div className="text-sm text-gray-600 mb-1">Breathing Sessions</div>
+                      <div className="text-2xl font-bold text-teal-700">{activitiesData.breathingSessions}</div>
+                      <div className="text-xs text-gray-500 mt-1">Breathing exercises</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Daily Emotion Detection Chart */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    Daily Emotion Detection (Hume AI Voice Analysis)
+                  </h4>
+                  {dailyEmotions.length === 0 ? (
+                    <div className="bg-gray-50 p-8 rounded-lg text-center">
+                      <p className="text-gray-500 font-medium">No emotion data available yet.</p>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Emotions are detected from <strong>voice</strong> and <strong>avatar</strong> sessions using Hume AI Prosody model.
+                      </p>
+                      <div className="mt-4 text-xs text-gray-500 space-y-1">
+                        <p>• Make sure you're using voice or avatar sessions (not text chat)</p>
+                        <p>• Emotions are detected from your voice recordings</p>
+                        <p>• Voice sessions: {aiUsageStats.voiceSessions} | Avatar sessions: {aiUsageStats.avatarSessions}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <ResponsiveContainer width="100%" height={400}>
+                        <BarChart
+                          data={dailyEmotions}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={80}
+                            interval={dailyEmotions.length > 14 ? Math.floor(dailyEmotions.length / 14) : 0}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            formatter={(value, name) => {
+                              if (name === "date") return null;
+                              return [value.toFixed(2), name.charAt(0).toUpperCase() + name.slice(1)];
+                            }}
+                            labelFormatter={(label) => `Date: ${label}`}
+                          />
+                          <Legend />
+                          <Bar dataKey="happy" stackId="a" fill="#10b981" name="Happy" />
+                          <Bar dataKey="sad" stackId="a" fill="#3b82f6" name="Sad" />
+                          <Bar dataKey="angry" stackId="a" fill="#ef4444" name="Angry" />
+                          <Bar dataKey="neutral" stackId="a" fill="#9ca3af" name="Neutral" />
+                          <Bar dataKey="calm" stackId="a" fill="#06b6d4" name="Calm" />
+                          <Bar dataKey="fearful" stackId="a" fill="#f59e0b" name="Fearful" />
+                          <Bar dataKey="surprised" stackId="a" fill="#8b5cf6" name="Surprised" />
+                          <Bar dataKey="disgust" stackId="a" fill="#ec4899" name="Disgust" />
+                          <Bar dataKey="doubt" stackId="a" fill="#a855f7" name="Doubt" />
+                          <Bar dataKey="confusion" stackId="a" fill="#f59e0b" name="Confusion" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        Emotion scores detected from voice sessions using Hume AI Prosody model. Values represent aggregated emotion scores per day.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Emotion-Hinting Words Section */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    Emotion-Hinting Words Detected
+                  </h4>
+                  {Object.keys(emotionWords).length === 0 ? (
+                    <div className="bg-gray-50 p-8 rounded-lg text-center">
+                      <p className="text-gray-500">No emotion-hinting words detected yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">Words that indicate emotions will appear here as the user interacts.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {Object.entries(emotionWords).map(([emotion, data]) => {
+                        const emotionColors = {
+                          sad: "bg-blue-50 border-blue-200 text-blue-800",
+                          angry: "bg-red-50 border-red-200 text-red-800",
+                          happy: "bg-green-50 border-green-200 text-green-800",
+                          fearful: "bg-orange-50 border-orange-200 text-orange-800",
+                          surprised: "bg-purple-50 border-purple-200 text-purple-800",
+                          disgust: "bg-pink-50 border-pink-200 text-pink-800",
+                          calm: "bg-cyan-50 border-cyan-200 text-cyan-800",
+                          neutral: "bg-gray-50 border-gray-200 text-gray-800",
+                          doubt: "bg-violet-50 border-violet-200 text-violet-800",
+                          confusion: "bg-amber-50 border-amber-200 text-amber-800",
+                        };
+                        const colorClass = emotionColors[emotion] || emotionColors.neutral;
+                        
+                        return (
+                          <div key={emotion} className={`p-4 rounded-lg border-2 ${colorClass}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <h5 className="font-bold text-sm uppercase">{emotion}</h5>
+                              <span className="text-xs font-semibold bg-white px-2 py-1 rounded">
+                                {data.count} words
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {data.words.slice(0, 8).map((word, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-xs bg-white px-2 py-0.5 rounded font-medium"
+                                >
+                                  {word}
+                                </span>
+                              ))}
+                              {data.words.length > 8 && (
+                                <span className="text-xs text-gray-500 px-2 py-0.5">
+                                  +{data.words.length - 8} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-3 text-center">
+                    Words detected from user messages that indicate emotional states. These words help identify patterns in emotional expression.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Available Resources Section */}

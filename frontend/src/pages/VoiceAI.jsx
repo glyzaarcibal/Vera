@@ -54,10 +54,12 @@ const VoiceAI = () => {
   const [conversationMode, setConversationMode] = useState("listening");
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
+  const [detectedEmotion, setDetectedEmotion] = useState(null);
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const streamRef = useRef(null);
   const recognitionStartedRef = useRef(false);
 
   useEffect(() => {
@@ -168,10 +170,10 @@ const VoiceAI = () => {
         `/messages/process-message/${sessionId}`,
         { message, messages, audioBase64 }
       );
-      const { response } = res.data;
-      return response;
+      return res.data;
     } catch (e) {
       alert("Internal Server Error");
+      return null;
     }
   };
 
@@ -263,6 +265,7 @@ const VoiceAI = () => {
       // Start MediaRecorder for audio capture
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
         const mediaRecorder = new MediaRecorder(stream);
 
         mediaRecorder.ondataavailable = (event) => {
@@ -286,10 +289,15 @@ const VoiceAI = () => {
         setIsRecording(false);
       }
 
-      // Stop MediaRecorder when call ends
+      // Stop MediaRecorder and release mic when call ends
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
+        mediaRecorderRef.current = null;
         audioChunksRef.current = [];
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
       }
     }
   };
@@ -301,35 +309,48 @@ const VoiceAI = () => {
   const handleRecordingToggle = async () => {
     if (isRecording) {
       console.log("Stopping recording...");
-      // Stop both Web Speech API and MediaRecorder temporarily
       recognitionStartedRef.current = false;
       recognition.stop();
 
+      // Must use stop() to flush audio data – pause() never fires ondataavailable
+      let chunks = [];
       if (
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state === "recording"
       ) {
-        mediaRecorderRef.current.pause();
+        await new Promise((resolve) => {
+          const mr = mediaRecorderRef.current;
+          mr.onstop = resolve;
+          mr.stop();
+        });
+        chunks = [...audioChunksRef.current];
+        audioChunksRef.current = [];
+
+        // Start new MediaRecorder for next recording
+        if (streamRef.current) {
+          const mr = new MediaRecorder(streamRef.current);
+          mr.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunksRef.current.push(e.data);
+          };
+          mr.start();
+          mediaRecorderRef.current = mr;
+        }
       }
 
       setIsRecording(false);
       setIsListening(false);
 
       console.log("Transcript:", transcript);
-      console.log("Audio chunks:", audioChunksRef.current.length);
+      console.log("Audio chunks:", chunks.length);
 
       // Process the transcript when recording stops
       if (transcript.trim()) {
-        // Create audio blob from recorded chunks
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
-        });
-
-        // Convert audio blob to base64
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
         const audioBase64 = await convertBlobToBase64(audioBlob);
-        console.log("Audio base64 length:", audioBase64.length);
+        const hasValidAudio = typeof audioBase64 === "string" && audioBase64.length > 100;
 
-        // Add user message to messages array
+        console.log("Audio base64 length:", audioBase64?.length ?? 0);
+
         const userMessage = {
           id: messages.length + 1,
           type: "user",
@@ -338,11 +359,29 @@ const VoiceAI = () => {
         };
         setMessages((prev) => [...prev, userMessage]);
 
-        // Switch to thinking mode
         setConversationMode("thinking");
 
-        // Fetch bot response with audio base64
-        const botResponse = await fetchBotResponse(userMessage, audioBase64);
+        // Hume AI emotion detection – only when we have valid audio
+        if (hasValidAudio) {
+          axiosInstance.post("/emotion-from-voice", { audioBase64 }, { timeout: 90000 })
+            .then((res) => {
+              const d = res.data;
+              if (d?.emotion) {
+                setDetectedEmotion({ emotion: d.emotion, score: d.score ?? 0, source: d?.source || "Hume AI" });
+              } else if (d?.error) {
+                setDetectedEmotion({ emotion: null, score: 0, source: "Hume AI", error: d.error });
+              }
+            })
+            .catch((e) => {
+              const msg = e.response?.data?.error ?? e.response?.data?.message ?? (e.code === "ECONNABORTED" ? "Request timed out" : "Unavailable");
+              setDetectedEmotion({ emotion: null, score: 0, source: "Hume AI", error: msg });
+            });
+        }
+
+        // Fetch bot response – include audioBase64 only when valid so backend can run Hume emotion detection
+        const botResult = await fetchBotResponse(userMessage, hasValidAudio ? audioBase64 : null);
+        const botResponse = botResult?.response ?? botResult;
+        const messageId = botResult?.messageId ?? botResult?.message_id;
 
         if (botResponse) {
           // Add bot message to messages array
@@ -353,6 +392,11 @@ const VoiceAI = () => {
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, botMessage]);
+
+          // Backup emotion-from-voice with messageId for storage (only when we have valid audio)
+          if (messageId && hasValidAudio && audioBase64) {
+            axiosInstance.post("/emotion-from-voice", { audioBase64, messageId }).catch(() => {});
+          }
 
           // Switch to speaking mode and play TTS
           setConversationMode("speaking");
@@ -597,6 +641,19 @@ const VoiceAI = () => {
                   </p>
                 )}
               </div>
+              {detectedEmotion && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <span className="text-[#667eea] font-semibold text-xs">
+                    {detectedEmotion.source}:{" "}
+                    {detectedEmotion.emotion ? (
+                      <>{detectedEmotion.emotion}{detectedEmotion.score > 0 && ` (${Math.round(detectedEmotion.score * 100)}%)`}</>
+                    ) : (
+                      <span className="text-amber-600">{detectedEmotion.error || "No emotion detected"}</span>
+                    )}
+                  </span>
+                  <div className="text-[10px] text-gray-500 mt-0.5">Speech emotion via Hume AI Prosody</div>
+                </div>
+              )}
             </div>
           )}
         </div>

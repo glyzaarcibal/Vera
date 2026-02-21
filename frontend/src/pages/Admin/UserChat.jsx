@@ -21,6 +21,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
@@ -52,6 +53,9 @@ const UserChat = () => {
     fearful: "#8B5CF6",
     neutral: "#9CA3AF",
     surprised: "#F97316",
+    calm: "#06B6D4",
+    doubt: "#A855F7",
+    confusion: "#F59E0B",
   };
 
   useEffect(() => {
@@ -69,15 +73,23 @@ const UserChat = () => {
       { name: "fearful", value: emotions.fearful },
       { name: "neutral", value: emotions.neutral },
       { name: "surprised", value: emotions.surprised },
+      { name: "doubt", value: emotions.doubt },
+      { name: "confusion", value: emotions.confusion },
     ];
     return emotionList.reduce((max, emotion) =>
       emotion.value > max.value ? emotion : max
     );
   };
 
+  const getEmotionArray = (msg) => {
+    const em = msg.message_emotion;
+    if (!em) return [];
+    return Array.isArray(em) ? em : [em];
+  };
+
   const calculateOverallEmotions = () => {
     const messagesWithEmotions = chat.filter(
-      (msg) => msg.message_emotion && msg.message_emotion.length > 0
+      (msg) => getEmotionArray(msg).length > 0
     );
     if (messagesWithEmotions.length === 0) return null;
 
@@ -89,10 +101,13 @@ const UserChat = () => {
       fearful: 0,
       neutral: 0,
       surprised: 0,
+      calm: 0,
+      doubt: 0,
+      confusion: 0,
     };
 
     messagesWithEmotions.forEach((msg) => {
-      const emotion = msg.message_emotion[0];
+      const emotion = getEmotionArray(msg)[0];
       Object.keys(totals).forEach((key) => {
         totals[key] += emotion[key] || 0;
       });
@@ -104,6 +119,41 @@ const UserChat = () => {
       value: (totals[key] / count) * 100,
       fill: emotionColors[key],
     }));
+  };
+
+  /** Build a short Hume AI speech emotion detection summary for this session */
+  const getHumeEmotionSummary = () => {
+    const emotionsData = calculateOverallEmotions();
+    if (!emotionsData || emotionsData.length === 0) return null;
+
+    const sorted = [...emotionsData].sort((a, b) => b.value - a.value);
+    const messagesWithEmotions = chat.filter(
+      (msg) => getEmotionArray(msg).length > 0
+    );
+    const dominant = sorted[0];
+    const secondary = sorted[1];
+    const tertiary = sorted[2];
+
+    let summary = `Speech emotion detection (Hume AI Prosody) analyzed ${messagesWithEmotions.length} user utterance(s). `;
+    summary += `Dominant emotion: **${dominant.emotion}** (${dominant.value.toFixed(1)}%). `;
+    if (secondary && secondary.value > 5) {
+      summary += `Also present: ${secondary.emotion} (${secondary.value.toFixed(1)}%)`;
+      if (tertiary && tertiary.value > 5) {
+        summary += `, ${tertiary.emotion} (${tertiary.value.toFixed(1)}%)`;
+      }
+      summary += ". ";
+    }
+    if (dominant.emotion === "Sad" || dominant.emotion === "Fearful" || dominant.emotion === "Angry") {
+      summary += "Emotional tone may warrant follow-up.";
+    } else if (dominant.emotion === "Calm" || dominant.emotion === "Neutral" || dominant.emotion === "Happy") {
+      summary += "Overall tone suggests stable or positive state.";
+    } else if (dominant.emotion === "Doubt" || dominant.emotion === "Confusion") {
+      summary += "Uncertainty or confusion detected; clarification may be helpful.";
+    } else {
+      summary += "Mixed emotional signals detected.";
+    }
+
+    return { summary, dominant, secondary, messagesCount: messagesWithEmotions.length };
   };
 
   const getChatInfo = async () => {
@@ -225,11 +275,10 @@ const UserChat = () => {
                 </div>
               ) : (
                 chat.map((message) => {
-                  const hasEmotion =
-                    message.message_emotion &&
-                    message.message_emotion.length > 0;
+                  const emotionArr = getEmotionArray(message);
+                  const hasEmotion = emotionArr.length > 0;
                   const dominantEmotion = hasEmotion
-                    ? getDominantEmotion(message.message_emotion)
+                    ? getDominantEmotion(emotionArr)
                     : null;
 
                   return (
@@ -323,48 +372,58 @@ const UserChat = () => {
                                     {
                                       emotion: "Sad",
                                       value:
-                                        message.message_emotion[0].sad * 100,
+                                        emotionArr[0].sad * 100,
                                       fill: emotionColors.sad,
                                     },
                                     {
                                       emotion: "Angry",
                                       value:
-                                        message.message_emotion[0].angry * 100,
+                                        emotionArr[0].angry * 100,
                                       fill: emotionColors.angry,
                                     },
                                     {
                                       emotion: "Happy",
                                       value:
-                                        message.message_emotion[0].happy * 100,
+                                        emotionArr[0].happy * 100,
                                       fill: emotionColors.happy,
                                     },
                                     {
                                       emotion: "Disgust",
                                       value:
-                                        message.message_emotion[0].disgust *
+                                        emotionArr[0].disgust *
                                         100,
                                       fill: emotionColors.disgust,
                                     },
                                     {
                                       emotion: "Fearful",
                                       value:
-                                        message.message_emotion[0].fearful *
+                                        emotionArr[0].fearful *
                                         100,
                                       fill: emotionColors.fearful,
                                     },
                                     {
                                       emotion: "Neutral",
                                       value:
-                                        message.message_emotion[0].neutral *
+                                        emotionArr[0].neutral *
                                         100,
                                       fill: emotionColors.neutral,
                                     },
                                     {
                                       emotion: "Surprised",
                                       value:
-                                        message.message_emotion[0].surprised *
+                                        emotionArr[0].surprised *
                                         100,
                                       fill: emotionColors.surprised,
+                                    },
+                                    {
+                                      emotion: "Doubt",
+                                      value: (emotionArr[0].doubt ?? 0) * 100,
+                                      fill: emotionColors.doubt,
+                                    },
+                                    {
+                                      emotion: "Confusion",
+                                      value: (emotionArr[0].confusion ?? 0) * 100,
+                                      fill: emotionColors.confusion,
                                     },
                                   ]}
                                   layout="vertical"
@@ -391,7 +450,7 @@ const UserChat = () => {
                               </ResponsiveContainer>
                             </div>
                             <div className="space-y-2">
-                              {Object.entries(message.message_emotion[0])
+                              {Object.entries(emotionArr[0])
                                 .filter(
                                   ([key]) =>
                                     ![
@@ -427,7 +486,7 @@ const UserChat = () => {
                             </div>
                             <div className="mt-3 pt-3 border-t border-gray-200">
                               <p className="text-xs text-gray-500">
-                                Model: {message.message_emotion[0].model}
+                                Model: {emotionArr[0].model}
                               </p>
                             </div>
                           </div>
@@ -528,6 +587,125 @@ const UserChat = () => {
                     </div>
                   </div>
 
+                  {/* Hume AI – Speech Emotion Detection Chart */}
+                  {(() => {
+                    const emotionsData = calculateOverallEmotions();
+                    const humeSummary = getHumeEmotionSummary();
+                    const isVoiceOrAvatar = ["voice", "avatar"].includes((sessionInfo?.type || "").toLowerCase());
+                    if (!emotionsData || emotionsData.length === 0) {
+                      return (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wide">
+                            Hume AI – Speech Emotion Detection
+                          </h3>
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <p className="text-sm text-gray-500 mb-1">No emotion data available</p>
+                            <p className="text-xs text-gray-400 mb-2">
+                              Emotions are detected from voice/avatar sessions using Hume AI Prosody model.
+                            </p>
+                            {isVoiceOrAvatar && (
+                              <p className="text-xs text-amber-600 mt-2">
+                                This session used voice but no emotion data was captured. Record new messages using the voice interface to enable emotion detection.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wide">
+                          Hume AI – Speech Emotion Detection
+                        </h3>
+                        
+                        {/* Chart */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3">
+                          <div className="mb-2">
+                            <p className="text-xs text-slate-600 font-medium mb-1">
+                              Emotion Distribution (Hume AI Prosody Model)
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {humeSummary?.messagesCount || 0} utterance(s) analyzed
+                            </p>
+                          </div>
+                          <ResponsiveContainer width="100%" height={280}>
+                            <BarChart
+                              data={emotionsData.sort((a, b) => b.value - a.value)}
+                              margin={{ top: 10, right: 10, left: 5, bottom: 50 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="#d1d5db" />
+                              <XAxis
+                                dataKey="emotion"
+                                tick={{ fontSize: 11, fill: '#64748b' }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={70}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 11, fill: '#64748b' }}
+                                label={{ 
+                                  value: 'Percentage (%)', 
+                                  angle: -90, 
+                                  position: 'insideLeft', 
+                                  style: { fontSize: 11, fill: '#64748b' } 
+                                }}
+                                domain={[0, 100]}
+                              />
+                              <Tooltip
+                                formatter={(value) => [`${value.toFixed(2)}%`, 'Emotion Score']}
+                                contentStyle={{ 
+                                  fontSize: 12, 
+                                  backgroundColor: '#fff',
+                                  border: '1px solid #e2e8f0',
+                                  borderRadius: '6px',
+                                  padding: '8px'
+                                }}
+                                labelStyle={{ fontWeight: 600, marginBottom: '4px' }}
+                              />
+                              <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Emotion Score">
+                                {emotionsData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* Summary Text */}
+                        {humeSummary && (
+                          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {humeSummary.summary.split("**").map((part, i) =>
+                                i % 2 === 1 ? (
+                                  <strong key={i} className="text-indigo-700 font-semibold">{part}</strong>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                )
+                              )}
+                            </p>
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                              <span className="text-xs text-slate-500">
+                                Source: Hume AI Prosody model · {humeSummary.messagesCount} utterance(s) analyzed
+                              </span>
+                              {humeSummary.dominant && (
+                                <span
+                                  className="text-xs font-semibold px-2 py-1 rounded"
+                                  style={{
+                                    backgroundColor: (emotionColors[humeSummary.dominant.emotion.toLowerCase()] || "#94a3b8") + "20",
+                                    color: emotionColors[humeSummary.dominant.emotion.toLowerCase()] || "#64748b",
+                                  }}
+                                >
+                                  Dominant: {humeSummary.dominant.emotion}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Summary */}
                   <div>
                     <h3 className="text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wide">
@@ -552,9 +730,7 @@ const UserChat = () => {
                             Overall emotion distribution across{" "}
                             {
                               chat.filter(
-                                (msg) =>
-                                  msg.message_emotion &&
-                                  msg.message_emotion.length > 0
+                                (msg) => getEmotionArray(msg).length > 0
                               ).length
                             }{" "}
                             analyzed messages

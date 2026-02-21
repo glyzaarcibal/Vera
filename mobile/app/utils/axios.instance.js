@@ -5,7 +5,7 @@ import { clearUser } from '../store/slices/authSlice'
 
 const axiosInstance = axios.create({
   // baseURL: "https://api.verrai.camp/api",
-  baseURL: 'https://backend-pi-blue-64.vercel.app/api',
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.129:5000/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
