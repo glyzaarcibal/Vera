@@ -8,6 +8,7 @@ const allowedOrigins = [
   "https://vera-ebon.vercel.app",
   "http://localhost:5173", // Local Vite dev
   "http://localhost:3000", // Alternative local port
+  "http://192.168.100.129:5000", // Mobile app backend
 ].filter(Boolean); // Remove any undefined values
 
 const corsConfig = {

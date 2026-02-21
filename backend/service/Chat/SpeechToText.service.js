@@ -13,11 +13,13 @@ function getHumeApiKey() {
 }
 
 /** Map Hume AI emotions to our database format. Hume provides 48+ dimensions; we map common ones. */
-function mapHumeEmotionsToDb(humeEmotions) {
+export function mapHumeEmotionsToDb(humeEmotions) {
   const mapped = {
     angry: 0,
     calm: 0,
     disgust: 0,
+    doubt: 0,
+    confusion: 0,
     fearful: 0,
     happy: 0,
     neutral: 0,
@@ -32,18 +34,32 @@ function mapHumeEmotionsToDb(humeEmotions) {
     anger: "angry",
     angry: "angry",
     calm: "calm",
+    calmness: "calm",
     disgust: "disgust",
+    doubt: "doubt",
+    doubtful: "doubt",
+    uncertainty: "doubt",
+    uncertain: "doubt",
+    confusion: "confusion",
+    confused: "confusion",
+    perplexed: "confusion",
+    bewildered: "confusion",
+    puzzled: "confusion",
     fear: "fearful",
     fearful: "fearful",
     happiness: "happy",
     happy: "happy",
     joy: "happy",
+    interest: "happy",
+    interested: "happy",
+    excitement: "surprised",
+    excited: "surprised",
     neutral: "neutral",
     sadness: "sad",
     sad: "sad",
     surprise: "surprised",
     surprised: "surprised",
-    excitement: "surprised",
+    Calmness:"neutral",
   };
 
   Object.entries(humeEmotions).forEach(([key, value]) => {
@@ -56,6 +72,14 @@ function mapHumeEmotionsToDb(humeEmotions) {
 
   return mapped;
 }
+
+/** Map raw Hume labels to user-friendly display labels (e.g. Interest -> Happy) */
+const RAW_TO_DISPLAY_LABEL = {
+  interest: "happy",
+  interested: "happy",
+  excitement: "surprised",
+  excited: "surprised",
+};
 
 /** Get dominant emotion from Hume AI response. Returns { label, score }. */
 function getDominantEmotion(humeEmotions) {
@@ -71,11 +95,13 @@ function getDominantEmotion(humeEmotions) {
     }
   });
 
-  return dominantLabel ? { label: dominantLabel, score: maxScore } : null;
+  if (!dominantLabel) return null;
+  const displayLabel = RAW_TO_DISPLAY_LABEL[dominantLabel.toLowerCase()] ?? dominantLabel;
+  return { label: displayLabel, score: maxScore };
 }
 
 /** Call Hume AI Expression Measurement API for speech emotion recognition. */
-async function callHumeEmotionModel(audioBase64) {
+export async function callHumeEmotionModel(audioBase64) {
   const apiKey = getHumeApiKey();
   if (!apiKey) {
     throw new Error("HUME_API_KEY not set in backend/.env");
@@ -217,12 +243,23 @@ export async function transcribeAudio(audioBase64, messageId) {
     const humeEmotions = await callHumeEmotionModel(audioBase64);
     const emotionScores = mapHumeEmotionsToDb(humeEmotions);
 
+    console.log("[SpeechToText] Mapped emotion scores:", emotionScores);
+    console.log("[SpeechToText] Message ID for emotion save:", messageId);
+
     if (messageId) {
-      await saveEmotionData({
-        message_id: messageId,
-        ...emotionScores,
-        model: "hume-ai-prosody",
-      });
+      try {
+        await saveEmotionData({
+          message_id: messageId,
+          ...emotionScores,
+          model: "hume-ai-prosody",
+        });
+        console.log("[SpeechToText] Emotion data saved successfully for message:", messageId);
+      } catch (saveError) {
+        console.error("[SpeechToText] Failed to save emotion data:", saveError);
+        // Don't throw - this is non-fatal, emotion detection still worked
+      }
+    } else {
+      console.warn("[SpeechToText] No messageId provided, skipping emotion save");
     }
 
     // Return array format for compatibility

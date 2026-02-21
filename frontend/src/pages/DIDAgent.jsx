@@ -280,16 +280,16 @@ export default function DIDAgent({ onTranscript }) {
     });
   };
 
-  // Save message to backend
+  // Save message to backend (returns { response, messageId } for emotion backup)
   const saveMessageToBackend = async (message, audioBase64 = null) => {
-    if (!sessionId) return;
+    if (!sessionId) return null;
 
     try {
       const res = await axiosInstance.post(
         `/messages/process-message/${sessionId}`,
         { message, messages, audioBase64 }
       );
-      return res.data.response;
+      return res.data; // Return full response including messageId for emotion save
     } catch (e) {
       console.error('Message save error:', e);
       throw e;
@@ -381,7 +381,8 @@ export default function DIDAgent({ onTranscript }) {
         const audioBase64 = await convertBlobToBase64(audioBlob);
 
         // Emotion-Detection-By-Voice via Hume AI (non-blocking) — label visible so you know it's working
-        axiosInstance.post('/emotion-from-voice', { audioBase64 })
+        // First call: just for UI display (no messageId yet). 90s timeout: Hume batch can take 30–60s
+        axiosInstance.post('/emotion-from-voice', { audioBase64 }, { timeout: 90000 })
           .then((res) => {
             const data = res.data;
             const source = data?.source || 'Hume AI';
@@ -396,7 +397,7 @@ export default function DIDAgent({ onTranscript }) {
             }
           })
           .catch((err) => {
-            const msg = err?.response?.data?.message || err?.response?.data?.error || err.message;
+            const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? (err?.code === 'ECONNABORTED' ? 'Request timed out' : err?.message ?? 'Unavailable');
             console.warn('Emotion detection (Hume AI) skipped:', msg);
             setDetectedEmotion({ emotion: null, score: 0, source: 'Hume AI', error: msg });
           });
@@ -485,13 +486,29 @@ export default function DIDAgent({ onTranscript }) {
           source: 'did',
         });
 
-        // Save to backend
+        // Save to backend (includes user message + audio for emotion detection)
         if (sessionId) {
           try {
-            await saveMessageToBackend(
+            const saveResult = await saveMessageToBackend(
               { text: userMessage },
               audioBase64
             );
+            
+            // Backup: Call emotion-from-voice with messageId to ensure emotions are saved
+            // (process-message saves via transcribeAudio, but this backup handles edge cases)
+            const messageId = saveResult?.messageId ?? saveResult?.message_id;
+            if (messageId && audioBase64) {
+              axiosInstance.post('/emotion-from-voice', { 
+                audioBase64, 
+                messageId 
+              }).then(res => {
+                if (res.data?.saved) {
+                  console.log('[DIDAgent] Emotion data saved to database for message:', messageId);
+                }
+              }).catch(err => {
+                console.warn('[DIDAgent] Backup emotion save failed (non-critical):', err?.response?.data || err.message);
+              });
+            }
           } catch (e) {
             console.error('Failed to save message:', e);
           }

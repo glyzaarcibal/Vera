@@ -22,6 +22,7 @@ export default function AnimalAI({ onTranscript }) {
     const [error, setError] = useState(null);
     const [sessionId, setSessionId] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [detectedEmotion, setDetectedEmotion] = useState(null);
 
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -92,17 +93,19 @@ export default function AnimalAI({ onTranscript }) {
         });
     };
 
-    // Save message to backend
+    // Save message to backend (returns { response, messageId } for emotion backup)
     const saveMessageToBackend = async (message, audioBase64 = null) => {
-        if (!sessionId) return;
+        if (!sessionId) return null;
 
         try {
-            await axiosInstance.post(
+            const res = await axiosInstance.post(
                 `/messages/process-message/${sessionId}`,
                 { message, messages, audioBase64 }
             );
+            return res.data;
         } catch (e) {
             console.error('Message save error:', e);
+            throw e;
         }
     };
 
@@ -190,6 +193,21 @@ export default function AnimalAI({ onTranscript }) {
                 // Convert audio to base64 for backend storage
                 const audioBase64 = await convertBlobToBase64(audioBlob);
 
+                // Hume AI emotion detection (non-blocking) – for UI display (90s timeout: Hume batch can take 30–60s)
+                axiosInstance.post('/emotion-from-voice', { audioBase64 }, { timeout: 90000 })
+                    .then((res) => {
+                        const d = res.data;
+                        if (d?.emotion) {
+                            setDetectedEmotion({ emotion: d.emotion, score: d.score ?? 0, source: d?.source || 'Hume AI' });
+                        } else if (d?.error) {
+                            setDetectedEmotion({ emotion: null, score: 0, source: 'Hume AI', error: d.error });
+                        }
+                    })
+                    .catch((e) => {
+                        const msg = e.response?.data?.error ?? e.response?.data?.message ?? (e.code === 'ECONNABORTED' ? 'Request timed out' : 'Unavailable');
+                        setDetectedEmotion({ emotion: null, score: 0, source: 'Hume AI', error: msg });
+                    });
+
                 const authorName = 'User';
                 onTranscript?.(transcribedText, { author: authorName, source: 'animal' });
 
@@ -259,9 +277,18 @@ export default function AnimalAI({ onTranscript }) {
                 const authorName = `${animalType.charAt(0).toUpperCase() + animalType.slice(1)} AI`;
                 onTranscript?.(aiResponse, { author: authorName, source: 'animal' });
 
-                // Save to backend
+                // Save to backend (includes emotion via process-message)
                 if (sessionId) {
-                    await saveMessageToBackend({ text: userMessage }, audioBase64);
+                    try {
+                        const saveResult = await saveMessageToBackend({ text: userMessage }, audioBase64);
+                        const messageId = saveResult?.messageId ?? saveResult?.message_id;
+                        if (messageId && audioBase64) {
+                            axiosInstance.post('/emotion-from-voice', { audioBase64, messageId })
+                                .catch(() => {});
+                        }
+                    } catch (e) {
+                        console.error('Failed to save message:', e);
+                    }
                 }
 
                 // Convert AI response to speech
@@ -433,6 +460,19 @@ export default function AnimalAI({ onTranscript }) {
                     {isProcessing && (
                         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg px-6 py-3 rounded-full text-gray-800 text-sm font-semibold border border-gray-100">
                             Thinking...
+                        </div>
+                    )}
+                    {detectedEmotion && (
+                        <div className="absolute bottom-24 left-4 right-4 md:left-auto md:right-4 md:max-w-xs bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-xl border border-gray-100 text-left">
+                            <span className="text-[#667eea] font-semibold text-xs">
+                                {detectedEmotion.source}:{' '}
+                                {detectedEmotion.emotion ? (
+                                    <>{detectedEmotion.emotion}{detectedEmotion.score > 0 && ` (${Math.round(detectedEmotion.score * 100)}%)`}</>
+                                ) : (
+                                    <span className="text-amber-600">{detectedEmotion.error || 'No emotion detected'}</span>
+                                )}
+                            </span>
+                            <div className="text-[10px] text-gray-500 mt-0.5">Speech emotion via Hume AI Prosody</div>
                         </div>
                     )}
 

@@ -93,3 +93,95 @@ export async function getUserInfo(userId) {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Detect emotion-hinting words from user messages
+ * Returns words grouped by emotion category
+ */
+export async function detectEmotionWords(userId) {
+  // Emotion word dictionaries
+  const emotionWords = {
+    sad: ['sad', 'depressed', 'unhappy', 'down', 'miserable', 'lonely', 'empty', 'hopeless', 'crying', 'tears', 'hurt', 'pain', 'sorrow', 'grief', 'disappointed', 'upset'],
+    angry: ['angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'resent', 'bitter', 'hostile', 'aggressive', 'outraged'],
+    happy: ['happy', 'joy', 'excited', 'glad', 'pleased', 'delighted', 'cheerful', 'ecstatic', 'thrilled', 'elated', 'content', 'satisfied', 'grateful'],
+    fearful: ['afraid', 'scared', 'fear', 'anxious', 'worried', 'nervous', 'panic', 'terrified', 'dread', 'apprehensive', 'uneasy', 'frightened'],
+    surprised: ['surprised', 'shocked', 'amazed', 'astonished', 'stunned'],
+    disgust: ['disgusted', 'revolted', 'sickened', 'repulsed', 'appalled', 'horrified'],
+    doubt: ['doubt', 'doubtful', 'uncertain', 'uncertainty', 'unsure', 'questioning', 'skeptical', 'hesitant', 'suspicious', 'suspicion'],
+    confusion: ['confused', 'confusion', 'perplexed', 'bewildered', 'puzzled', 'muddled', 'disoriented', 'lost', 'baffled'],
+    calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'composed', 'at ease', 'content'],
+    neutral: ['okay', 'fine', 'alright', 'normal', 'regular', 'usual']
+  };
+
+  // Get all sessions for the user
+  const { data: sessions, error: sessionsError } = await supabaseAdmin
+    .from("chat_sessions")
+    .select("id")
+    .eq("user_id", userId);
+
+  if (sessionsError) throw sessionsError;
+  if (!sessions || sessions.length === 0) {
+    return { emotionWords: {}, totalWords: 0 };
+  }
+
+  const sessionIds = sessions.map(s => s.id);
+
+  // Get all user messages (sent_by = 'user')
+  const { data: messages, error: messagesError } = await supabaseAdmin
+    .from("chat_messages")
+    .select("content, created_at")
+    .eq("sent_by", "user")
+    .in("session_id", sessionIds);
+
+  if (messagesError) throw messagesError;
+  if (!messages || messages.length === 0) {
+    return { emotionWords: {}, totalWords: 0 };
+  }
+
+  // Process messages to find emotion-hinting words
+  const detectedWords = {};
+  let totalWords = 0;
+
+  messages.forEach(message => {
+    if (!message.content) return;
+    
+    const text = message.content.toLowerCase();
+    const words = text.split(/\s+/);
+    totalWords += words.length;
+
+    // Check each emotion category
+    Object.keys(emotionWords).forEach(emotion => {
+      if (!detectedWords[emotion]) {
+        detectedWords[emotion] = [];
+      }
+
+      emotionWords[emotion].forEach(word => {
+        // Check if word appears in the message
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        if (regex.test(text)) {
+          // Avoid duplicates
+          if (!detectedWords[emotion].includes(word)) {
+            detectedWords[emotion].push(word);
+          }
+        }
+      });
+    });
+  });
+
+  // Count occurrences and format results
+  const result = {};
+  Object.keys(detectedWords).forEach(emotion => {
+    if (detectedWords[emotion].length > 0) {
+      result[emotion] = {
+        words: detectedWords[emotion],
+        count: detectedWords[emotion].length
+      };
+    }
+  });
+
+  return {
+    emotionWords: result,
+    totalWords,
+    totalMessages: messages.length
+  };
+}

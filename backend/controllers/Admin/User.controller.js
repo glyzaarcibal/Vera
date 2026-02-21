@@ -1,4 +1,4 @@
-import { getAllUsers, getUserInfo } from "../../service/Admin/User.service.js";
+import { getAllUsers, getUserInfo, detectEmotionWords } from "../../service/Admin/User.service.js";
 import { getAvatarRiskStats } from "../../service/Chat/Session.service.js";
 
 export const fetchAvatarRiskStats = async (req, res) => {
@@ -29,6 +29,17 @@ export const fetchUserInfo = async (req, res) => {
     return res.status(200).json({ profile });
   } catch (e) {
     console.log(e);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const getUserEmotionWords = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await detectEmotionWords(userId);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Error detecting emotion words:", e);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

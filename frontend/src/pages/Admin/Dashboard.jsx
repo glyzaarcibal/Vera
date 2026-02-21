@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MdPeople, MdCheckCircle, MdWifi, MdVerified, MdAdd, MdBarChart, MdSettings, MdNotifications } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell } from "recharts";
 import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
@@ -129,6 +130,15 @@ const Dashboard = () => {
     { label: "System Status", value: "Healthy", icon: <MdVerified />, change: "100%" },
   ];
 
+  const chartData = avatarRiskStats
+    ? [
+        { name: "Low", sessions: avatarRiskStats.byLevel?.low ?? 0, color: RISK_COLORS.low },
+        { name: "Moderate", sessions: avatarRiskStats.byLevel?.moderate ?? 0, color: RISK_COLORS.moderate },
+        { name: "High", sessions: avatarRiskStats.byLevel?.high ?? 0, color: RISK_COLORS.high },
+        { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0, color: RISK_COLORS.critical },
+      ]
+    : [];
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -165,12 +175,7 @@ const Dashboard = () => {
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart
-                  data={[
-                    { name: "Low", sessions: avatarRiskStats.byLevel?.low ?? 0 },
-                    { name: "Moderate", sessions: avatarRiskStats.byLevel?.moderate ?? 0 },
-                    { name: "High", sessions: avatarRiskStats.byLevel?.high ?? 0 },
-                    { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0 },
-                  ]}
+                  data={chartData}
                   margin={{ top: 16, right: 16, left: 16, bottom: 16 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
@@ -178,10 +183,9 @@ const Dashboard = () => {
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(value) => [value, "Sessions"]} />
                   <Bar dataKey="sessions" name="Sessions" radius={[4, 4, 0, 0]}>
-                    <Cell fill={RISK_COLORS.low} />
-                    <Cell fill={RISK_COLORS.moderate} />
-                    <Cell fill={RISK_COLORS.high} />
-                    <Cell fill={RISK_COLORS.critical} />
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
