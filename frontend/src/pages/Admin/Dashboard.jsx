@@ -4,6 +4,17 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
+import {
+  ResponsiveContainer,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  Cell
+} from "recharts";
+
 const RISK_COLORS = {
   low: "#10b981",
   moderate: "#f59e0b",

@@ -313,7 +313,7 @@ const WeeklyWellnessReport = () => {
     const doc = new jsPDF();
 
     doc.setFontSize(20);
-    doc.setTextColor(46, 125, 50);
+    doc.setTextColor(102, 126, 234);
     doc.text("Weekly Wellness Report", 105, 20, { align: "center" });
 
     doc.setFontSize(10);
@@ -345,7 +345,7 @@ const WeeklyWellnessReport = () => {
       head: [["Mood", "Count"]],
       body: moodTableData,
       theme: "striped",
-      headStyles: { fillColor: [46, 125, 50] },
+      headStyles: { fillColor: [102, 126, 234] },
       margin: { left: 14, right: 14 },
     });
 
@@ -367,7 +367,7 @@ const WeeklyWellnessReport = () => {
       head: [["Date", "Duration", "Sleep Time", "Wake Time"]],
       body: sleepTableData,
       theme: "striped",
-      headStyles: { fillColor: [46, 125, 50] },
+      headStyles: { fillColor: [102, 126, 234] },
       margin: { left: 14, right: 14 },
     });
 
@@ -392,7 +392,7 @@ const WeeklyWellnessReport = () => {
       head: [["Date", "Sessions"]],
       body: breathingTableData,
       theme: "striped",
-      headStyles: { fillColor: [46, 125, 50] },
+      headStyles: { fillColor: [102, 126, 234] },
       margin: { left: 14, right: 14 },
     });
 
@@ -458,39 +458,60 @@ const WeeklyWellnessReport = () => {
   // Styles object
   const styles = {
     container: {
-      padding: '20px',
-      backgroundColor: '#E8F5E9',
       minHeight: '100vh',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      background: 'linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)',
+      padding: '20px',
+      fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+      position: 'relative',
     },
     headerContainer: {
       display: 'flex',
       alignItems: 'center',
       marginBottom: '20px',
-      padding: '0 20px',
+      padding: '20px',
       maxWidth: '1200px',
       marginLeft: 'auto',
       marginRight: 'auto',
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '20px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+      backdropFilter: 'blur(10px)',
     },
     backButton: {
       background: 'none',
       border: 'none',
       fontSize: '18px',
       cursor: 'pointer',
-      color: '#2E7D32',
+      color: '#667eea',
       marginRight: '20px',
       padding: '8px 16px',
       borderRadius: '5px',
-      transition: 'background-color 0.3s',
+      transition: 'background-color 0.3s, transform 0.2s',
+      fontWeight: '500',
     },
     backButtonHover: {
-      backgroundColor: 'rgba(46, 125, 50, 0.1)',
+      backgroundColor: 'rgba(102, 126, 234, 0.1)',
+      transform: 'translateX(-2px)',
     },
     title: {
       fontSize: '28px',
       fontWeight: 'bold',
-      color: '#2E7D32',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       margin: 0,
+    },
+    downloadButton: {
+      backgroundColor: '#667eea',
+      color: 'white',
+      border: 'none',
+      padding: '10px 16px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: '600',
+      marginLeft: 'auto',
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)',
     },
     cardsContainer: {
       maxWidth: '1200px',
@@ -500,16 +521,17 @@ const WeeklyWellnessReport = () => {
       gap: '20px',
     },
     card: {
-      backgroundColor: '#ffffff',
+      background: 'rgba(255, 255, 255, 0.85)',
       padding: '20px',
-      borderRadius: '10px',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      borderRadius: '20px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+      backdropFilter: 'blur(10px)',
       width: '100%',
     },
     sectionTitle: {
       fontSize: '20px',
       fontWeight: 'bold',
-      color: '#388E3C',
+      color: '#667eea',
       marginBottom: '20px',
       textAlign: 'center',
     },
@@ -531,9 +553,9 @@ const WeeklyWellnessReport = () => {
       textAlign: 'center',
       marginTop: '15px',
       fontWeight: 'bold',
-      color: '#2E7D32',
+      color: '#667eea',
       padding: '10px',
-      backgroundColor: '#f5f5f5',
+      backgroundColor: 'rgba(102, 126, 234, 0.1)',
       borderRadius: '5px',
     },
     // Modal styles
@@ -548,19 +570,20 @@ const WeeklyWellnessReport = () => {
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 1000,
+      backdropFilter: 'blur(5px)',
     },
     modalContent: {
       backgroundColor: 'white',
       padding: '30px',
-      borderRadius: '10px',
+      borderRadius: '20px',
       maxWidth: '500px',
       width: '90%',
       maxHeight: '80vh',
       overflowY: 'auto',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
     },
     modalTitle: {
-      color: '#2E7D32',
+      color: '#667eea',
       marginTop: 0,
       marginBottom: '20px',
       fontSize: '24px',
@@ -578,18 +601,21 @@ const WeeklyWellnessReport = () => {
       borderTop: '1px solid #eee',
     },
     closeButton: {
-      backgroundColor: '#2E7D32',
+      backgroundColor: '#667eea',
       color: 'white',
       border: 'none',
       padding: '10px 20px',
-      borderRadius: '5px',
+      borderRadius: '10px',
       cursor: 'pointer',
       fontSize: '16px',
       marginTop: '20px',
-      transition: 'background-color 0.3s',
+      transition: 'all 0.2s',
+      fontWeight: '500',
     },
     closeButtonHover: {
-      backgroundColor: '#1B5E20',
+      backgroundColor: '#5a67d8',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 5px 15px rgba(102, 126, 234, 0.4)',
     },
     // Chart wrapper for better layout
     chartWrapper: {
@@ -601,7 +627,7 @@ const WeeklyWellnessReport = () => {
       padding: '10px 12px',
       textAlign: 'left',
       fontWeight: 'bold',
-      color: '#2E7D32',
+      color: '#667eea',
     },
     tableCell: {
       padding: '8px 12px',
@@ -612,6 +638,85 @@ const WeeklyWellnessReport = () => {
 
   return (
     <div style={styles.container}>
+      {/* Decorative elements */}
+      <div style={{
+        position: "absolute",
+        top: "10%",
+        left: "5%",
+        width: "300px",
+        height: "300px",
+        background: "radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 8s ease-in-out infinite",
+        zIndex: 1,
+      }} />
+      <div style={{
+        position: "absolute",
+        bottom: "10%",
+        right: "5%",
+        width: "400px",
+        height: "400px",
+        background: "radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)",
+        borderRadius: "50%",
+        animation: "float 12s ease-in-out infinite reverse",
+        zIndex: 1,
+      }} />
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes float {
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+          100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        @media (max-width: 768px) {
+          .container {
+            padding: 10px;
+          }
+          .title {
+            font-size: 24px;
+          }
+          .card {
+            padding: 15px;
+          }
+          .section-title {
+            font-size: 18px;
+          }
+          .modal-content {
+            padding: 20px;
+            width: 95%;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .chart-container {
+            margin: 0 -10px;
+          }
+        }
+
+        /* Scrollbar styles */
+        .modal-content::-webkit-scrollbar,
+        .chart-container::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .modal-content::-webkit-scrollbar-track,
+        .chart-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .modal-content::-webkit-scrollbar-thumb,
+        .chart-container::-webkit-scrollbar-thumb {
+          background: #667eea;
+          border-radius: 4px;
+        }
+        .modal-content::-webkit-scrollbar-thumb:hover,
+        .chart-container::-webkit-scrollbar-thumb:hover {
+          background: #5a67d8;
+        }
+      `}</style>
+
       <div style={styles.headerContainer}>
         <button
           style={{
@@ -628,15 +733,11 @@ const WeeklyWellnessReport = () => {
         <button
           onClick={downloadPDF}
           style={{
-            backgroundColor: '#2E7D32',
-            color: 'white',
-            border: 'none',
-            padding: '10px 16px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            marginLeft: 'auto',
+            ...styles.downloadButton,
+            ...(isCloseButtonHovered ? { transform: 'scale(1.05)' } : {})
           }}
+          onMouseEnter={() => setIsCloseButtonHovered(true)}
+          onMouseLeave={() => setIsCloseButtonHovered(false)}
         >
           Download PDF
         </button>
@@ -697,7 +798,7 @@ const WeeklyWellnessReport = () => {
                   <Line
                     type="monotone"
                     dataKey="duration"
-                    stroke="#50C878"
+                    stroke="#667eea"
                     strokeWidth={2}
                     activeDot={{ r: 8 }}
                   />
@@ -726,7 +827,7 @@ const WeeklyWellnessReport = () => {
                   <XAxis dataKey="date" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Bar dataKey="sessions" fill="#1E88E5" />
+                  <Bar dataKey="sessions" fill="#667eea" />
                   <Tooltip />
                 </BarChart>
               </div>
@@ -757,7 +858,7 @@ const WeeklyWellnessReport = () => {
                     <XAxis type="number" />
                     <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
                     <CartesianGrid strokeDasharray="3 3" />
-                    <Bar dataKey="sessions" fill="#26A69A" name="Sessions" />
+                    <Bar dataKey="sessions" fill="#764ba2" name="Sessions" />
                     <Tooltip />
                   </BarChart>
                 </div>
@@ -768,10 +869,10 @@ const WeeklyWellnessReport = () => {
           {breathingData?.raw?.length > 0 && (
             <>
               <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Recent Breathing History</h2>
-              <div style={{ overflowX: "auto", maxHeight: 200, border: "1px solid #ddd", borderRadius: 8 }}>
+              <div style={{ overflowX: "auto", maxHeight: 200, border: "1px solid rgba(102,126,234,0.2)", borderRadius: 8 }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                   <thead>
-                    <tr style={{ backgroundColor: "#E8F5E9" }}>
+                    <tr style={{ backgroundColor: "rgba(102,126,234,0.1)" }}>
                       <th style={styles.tableHeaderCell}>Date</th>
                       <th style={styles.tableHeaderCell}>Time</th>
                       <th style={styles.tableHeaderCell}>Type</th>
@@ -779,7 +880,7 @@ const WeeklyWellnessReport = () => {
                   </thead>
                   <tbody>
                     {(breathingData.raw.slice(0, 10)).map((entry, idx) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
+                      <tr key={idx} style={{ borderBottom: "1px solid rgba(102,126,234,0.1)" }}>
                         <td style={styles.tableCell}>{entry.date}</td>
                         <td style={styles.tableCell}>{entry.time}</td>
                         <td style={styles.tableCell}>{entry.typeLabel || entry.type || "—"}</td>
@@ -792,66 +893,6 @@ const WeeklyWellnessReport = () => {
           )}
         </div>
       </div>
-
-      {/* Add responsive styles via style tag */}
-      <style>{`
-        @media (max-width: 768px) {
-          .container {
-            padding: 10px;
-          }
-          .title {
-            font-size: 24px;
-          }
-          .card {
-            padding: 15px;
-          }
-          .section-title {
-            font-size: 18px;
-          }
-          .modal-content {
-            padding: 20px;
-            width: 95%;
-          }
-        }
-
-        @media (max-width: 600px) {
-          .chart-container {
-            margin: 0 -10px;
-          }
-        }
-
-        /* Scrollbar styles */
-        .modal-content::-webkit-scrollbar {
-          width: 8px;
-        }
-        .modal-content::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        .modal-content::-webkit-scrollbar-thumb {
-          background: #4CAF50;
-          border-radius: 4px;
-        }
-        .modal-content::-webkit-scrollbar-thumb:hover {
-          background: #45a049;
-        }
-
-        /* Chart container scrollbar */
-        .chart-container::-webkit-scrollbar {
-          height: 8px;
-        }
-        .chart-container::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 4px;
-        }
-        .chart-container::-webkit-scrollbar-thumb {
-          background: #4CAF50;
-          border-radius: 4px;
-        }
-        .chart-container::-webkit-scrollbar-thumb:hover {
-          background: #45a049;
-        }
-      `}</style>
     </div>
   );
 };

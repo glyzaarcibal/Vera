@@ -48,13 +48,13 @@ const playSound = (soundFile) => {
   return audio;
 };
 
-const Card = ({ card, onClick }) => {
+const Card = ({ card, onClick, isDisabled }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <button
       onClick={() => onClick(card)}
-      disabled={card.matched}
+      disabled={card.matched || isDisabled}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -70,8 +70,9 @@ const Card = ({ card, onClick }) => {
         margin: "8px",
         borderRadius: "20px",
         border: card.matched ? "3px solid #FFD700" : "none",
-        cursor: card.matched ? "default" : "pointer",
-        boxShadow: isHovered && !card.matched && !card.flipped
+        cursor: (card.matched || isDisabled) ? "default" : "pointer",
+        opacity: isDisabled && !card.flipped && !card.matched ? 0.7 : 1,
+        boxShadow: isHovered && !card.matched && !card.flipped && !isDisabled
           ? "0 10px 20px rgba(102, 126, 234, 0.4)"
           : card.matched
           ? "0 5px 15px rgba(255, 215, 0, 0.3)"
@@ -81,7 +82,7 @@ const Card = ({ card, onClick }) => {
         display: "flex",
         fontSize: card.matched || card.flipped ? "36px" : "24px",
         color: "#fff",
-        transform: isHovered && !card.matched && !card.flipped 
+        transform: isHovered && !card.matched && !card.flipped && !isDisabled
           ? "scale(1.05) translateY(-5px)" 
           : card.flipped
           ? "scale(1.02)"
@@ -93,7 +94,7 @@ const Card = ({ card, onClick }) => {
       }}
     >
       {/* Shine effect on hover */}
-      {isHovered && !card.matched && !card.flipped && (
+      {isHovered && !card.matched && !card.flipped && !isDisabled && (
         <div
           style={{
             position: "absolute",
@@ -136,13 +137,16 @@ const ClipCardGame = () => {
   const [timeLeft, setTimeLeft] = useState(60);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     if (selectedCards.length === 2) {
+      setIsChecking(true);
       setMoves(prev => prev + 1);
       const [first, second] = selectedCards;
       
       if (first.content.icon === second.content.icon) {
+        // Match found
         setCards((prevCards) =>
           prevCards.map((card) =>
             card.content.icon === first.content.icon 
@@ -152,7 +156,10 @@ const ClipCardGame = () => {
         );
         setScore(prev => prev + 10 * level);
         playSound("/audio/ting.mp3");
+        setSelectedCards([]);
+        setIsChecking(false);
       } else {
+        // No match - flip back after delay
         setTimeout(() => {
           setCards((prevCards) =>
             prevCards.map((card) =>
@@ -161,9 +168,10 @@ const ClipCardGame = () => {
                 : card
             )
           );
-        }, 1000);
+          setSelectedCards([]);
+          setIsChecking(false);
+        }, 800); // 800ms delay before flipping back
       }
-      setSelectedCards([]);
     }
   }, [selectedCards, level]);
 
@@ -204,6 +212,7 @@ const ClipCardGame = () => {
   const handleCardClick = (card) => {
     if (
       !gameOver &&
+      !isChecking &&
       selectedCards.length < 2 &&
       !card.flipped &&
       !card.matched
@@ -232,6 +241,7 @@ const ClipCardGame = () => {
       setMoves(0);
       setTimeLeft(60 + (level * 10));
       setIsTimerActive(false);
+      setIsChecking(false);
     } else {
       resetGame();
     }
@@ -252,6 +262,7 @@ const ClipCardGame = () => {
     setTimeLeft(60);
     setIsTimerActive(false);
     setShowConfetti(false);
+    setIsChecking(false);
   };
 
   const progress = (cards.filter(c => c.matched).length / cards.length) * 100;
@@ -262,14 +273,14 @@ const ClipCardGame = () => {
   };
 
   const handleGoBack = () => {
-    navigate(-1); // Go back to previous page
+    navigate(-1);
   };
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
         padding: "20px",
         fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
         position: "relative",
@@ -310,7 +321,7 @@ const ClipCardGame = () => {
         left: "5%",
         width: "300px",
         height: "300px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
         borderRadius: "50%",
         animation: "float 8s ease-in-out infinite",
       }} />
@@ -320,7 +331,7 @@ const ClipCardGame = () => {
         right: "5%",
         width: "400px",
         height: "400px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
         borderRadius: "50%",
         animation: "float 12s ease-in-out infinite reverse",
       }} />
@@ -330,7 +341,7 @@ const ClipCardGame = () => {
         right: "10%",
         width: "200px",
         height: "200px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
         borderRadius: "50%",
         animation: "float 6s ease-in-out infinite",
       }} />
@@ -367,10 +378,10 @@ const ClipCardGame = () => {
         style={{
           maxWidth: "800px",
           margin: "0 auto",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backgroundColor: "rgba(255, 255, 255, 0.85)",
           borderRadius: "40px",
           padding: "30px",
-          boxShadow: "0 25px 50px rgba(0,0,0,0.3)",
+          boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
           backdropFilter: "blur(10px)",
           position: "relative",
           zIndex: 10,
@@ -645,6 +656,7 @@ const ClipCardGame = () => {
                   key={card.id} 
                   card={card} 
                   onClick={handleCardClick}
+                  isDisabled={isChecking}
                 />
               ))}
             </div>

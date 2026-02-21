@@ -32,7 +32,7 @@ const Skeleton = ({ variant = "text", width, height, count = 1, className = "" }
       {skeletons.map((_, index) => (
         <div
           key={index}
-          className={`bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[skeleton_1.5s_ease-in-out_infinite] rounded ${getVariantClasses()} ${className}`}
+          className={`bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 bg-size-[200%_100%] animate-[skeleton_1.5s_ease-in-out_infinite] rounded ${getVariantClasses()} ${className}`}
           style={getStyle()}
         />
       ))}
