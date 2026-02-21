@@ -501,7 +501,7 @@ const UserSessions = () => {
                           className="w-full h-32 object-cover"
                         />
                       ) : (
-                        <div className="w-full h-32 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        <div className="w-full h-32 bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                           <MdImage className="w-12 h-12 text-white opacity-50" />
                         </div>
                       )}
