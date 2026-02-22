@@ -1,0 +1,17 @@
+/* Shared Admin + App Design Variables */
+:root {
+  --vera-primary: #667eea;
+  --vera-primary-dark: #5a67d8;
+  --vera-secondary: #764ba2;
+  --vera-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --vera-bg: #f8f7fc;
+  --vera-bg-card: #ffffff;
+  --vera-border: rgba(0, 0, 0, 0.08);
+  --vera-shadow-sm: 0 2px 8px rgba(102, 126, 234, 0.06);
+  --vera-shadow-md: 0 4px 16px rgba(102, 126, 234, 0.08);
+  --vera-shadow-lg: 0 8px 32px rgba(102, 126, 234, 0.12);
+  --vera-text: #1a1a2e;
+  --vera-text-muted: #64748b;
+  --vera-radius: 12px;
+  --vera-radius-lg: 16px;
+}

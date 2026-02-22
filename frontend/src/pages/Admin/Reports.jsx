@@ -133,33 +133,33 @@ const Reports = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
+
     // Title
     doc.setFontSize(20);
     doc.setTextColor(99, 102, 241);
     doc.text("User Analytics Report", 105, 20, { align: "center" });
-    
+
     // Date
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     })}`, 105, 28, { align: "center" });
-    
+
     // Summary Statistics
     doc.setFontSize(14);
     doc.setTextColor(51, 51, 51);
     doc.text("Summary Statistics", 14, 40);
-    
+
     const summaryData = [
       ["Total Users Tracked", analytics.totalUsers.toLocaleString()],
       ["Active Users", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
       ["Inactive Users", (analytics.statusDistribution.find(item => item.name === "Inactive")?.value || 0).toLocaleString()],
     ];
-    
+
     autoTable(doc, {
       startY: 45,
       head: [["Metric", "Value"]],
@@ -167,16 +167,16 @@ const Reports = () => {
       theme: "grid",
       headStyles: { fillColor: [99, 102, 241] },
     });
-    
+
     // Monthly Registrations
     doc.setFontSize(14);
     doc.text("Monthly Registrations", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-    
+
     const monthlyData = analytics.monthlyRegistrations.map(item => [
       item.month,
       item.total
     ]);
-    
+
     autoTable(doc, {
       startY: (doc.lastAutoTable?.finalY || 45) + 20,
       head: [["Month", "Registrations"]],
@@ -184,16 +184,16 @@ const Reports = () => {
       theme: "striped",
       headStyles: { fillColor: [99, 102, 241] },
     });
-    
+
     // Weekday Activity
     doc.setFontSize(14);
     doc.text("Activity by Weekday", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-    
+
     const weekdayData = analytics.weekdayActivity.map(item => [
       item.day,
       item.records
     ]);
-    
+
     autoTable(doc, {
       startY: (doc.lastAutoTable?.finalY || 45) + 20,
       head: [["Day", "Records"]],
@@ -201,17 +201,17 @@ const Reports = () => {
       theme: "striped",
       headStyles: { fillColor: [99, 102, 241] },
     });
-    
+
     // Role Distribution
     if (analytics.roleDistribution.length > 0) {
       doc.setFontSize(14);
       doc.text("User Roles Distribution", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-      
+
       const roleData = analytics.roleDistribution.map(item => [
         item.name,
         item.value
       ]);
-      
+
       autoTable(doc, {
         startY: (doc.lastAutoTable?.finalY || 45) + 20,
         head: [["Role", "Count"]],
@@ -220,7 +220,7 @@ const Reports = () => {
         headStyles: { fillColor: [99, 102, 241] },
       });
     }
-    
+
     // Footer
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(8);
@@ -234,7 +234,7 @@ const Reports = () => {
         { align: "center" }
       );
     }
-    
+
     // Save the PDF
     doc.save(`user-analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
@@ -246,7 +246,7 @@ const Reports = () => {
           <h1 className="reports-title">Reports</h1>
           <p className="reports-subtitle">Graphs for overall user activity records and trends.</p>
         </div>
-        <button 
+        <button
           onClick={downloadPDF}
           className="reports-download-btn"
           disabled={loading}

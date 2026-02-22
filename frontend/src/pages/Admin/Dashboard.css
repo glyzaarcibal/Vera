@@ -1,22 +1,25 @@
+@import "../../admin-variables.css";
+
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .dashboard-header {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .dashboard-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+  color: var(--vera-text);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-subtitle {
-  font-size: 16px;
-  color: #666;
+  font-size: 15px;
+  color: var(--vera-text-muted);
   margin: 0;
 }
 
@@ -28,30 +31,34 @@
 }
 
 .stat-card {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--vera-bg-card);
+  padding: 22px 24px;
+  border-radius: var(--vera-radius);
+  box-shadow: var(--vera-shadow-sm);
+  border: 1px solid var(--vera-border);
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: all 0.2s;
+  gap: 18px;
+  transition: all 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--vera-shadow-md);
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
 .stat-icon {
-  font-size: 40px;
-  width: 64px;
-  height: 64px;
+  font-size: 36px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f5ff 0%, #ededff 100%);
-  border-radius: 12px;
+  background: var(--vera-gradient);
+  color: white;
+  border-radius: var(--vera-radius);
+  opacity: 0.95;
 }
 
 .stat-info {
@@ -118,18 +125,19 @@
 
 .activity-card,
 .quick-actions-card {
-  background: white;
+  background: var(--vera-bg-card);
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-radius: var(--vera-radius);
+  box-shadow: var(--vera-shadow-sm);
+  border: 1px solid var(--vera-border);
 }
 
 .activity-title,
 .quick-actions-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
-  color: #333;
-  margin: 0 0 20px 0;
+  color: var(--vera-text);
+  margin: 0 0 18px 0;
 }
 
 .activity-list {
@@ -170,12 +178,12 @@
 }
 
 .quick-action-btn {
-  padding: 16px;
-  border-radius: 8px;
-  border: none;
-  background: #fafbfc;
-  color: #666;
-  font-size: 15px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--vera-border);
+  background: var(--vera-bg-card);
+  color: var(--vera-text-muted);
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -185,9 +193,10 @@
 }
 
 .quick-action-btn:hover {
-  background: #f5f5ff;
-  color: #667eea;
-  transform: translateX(4px);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.06) 100%);
+  color: var(--vera-primary);
+  border-color: rgba(102, 126, 234, 0.25);
+  transform: translateX(3px);
 }
 
 .quick-action-icon {

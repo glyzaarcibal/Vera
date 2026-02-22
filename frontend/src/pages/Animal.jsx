@@ -4,6 +4,7 @@ import './Welcome.css';
 import meowVideo from '../assets/meow+meow+.mp4';
 import arfarfVideo from '../assets/++arf+arf+.mp4';
 import axiosInstance from '../utils/axios.instance';
+import "../styles/GlobalDesign.css";
 
 /**
  * AnimalAI — AI-powered avatar with speech recognition and synthesis
@@ -284,7 +285,7 @@ export default function AnimalAI({ onTranscript }) {
                         const messageId = saveResult?.messageId ?? saveResult?.message_id;
                         if (messageId && audioBase64) {
                             axiosInstance.post('/emotion-from-voice', { audioBase64, messageId })
-                                .catch(() => {});
+                                .catch(() => { });
                         }
                     } catch (e) {
                         console.error('Failed to save message:', e);
@@ -376,155 +377,171 @@ export default function AnimalAI({ onTranscript }) {
             videoRef.current.currentTime = 0;
         }
     };
-
     return (
-        <div className="relative w-full h-full min-h-0 flex flex-col flex-1 bg-[#fafbfc]">
-            {/* Avatar Selection Screen - compact like DIDAgent */}
-            {!animalType && (
-                <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 overflow-auto min-h-0">
-                    <div className="text-center max-w-2xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
-                        <div className="hero-badge text-xs py-1.5 px-3">Animal AI</div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
-                            Choose Your <span className="gradient-text">Companion</span>
+        <div className="page-container flex flex-col items-center">
+            {!animalType ? (
+                <>
+                    <div className="page-header w-full">
+                        <h1 className="page-title">
+                            Companion <span className="gradient-text">Selection</span>
                         </h1>
-                        <p className="text-sm text-gray-600 mb-1">
-                            Select an avatar to chat with
-                        </p>
-
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-md mx-auto">
-                            <button
-                                type="button"
-                                onClick={() => handleAnimalSelect('cat')}
-                                className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-3"
-                            >
-                                <div className="text-4xl sm:text-5xl mb-2">🐱</div>
-                                <h3 className="text-sm font-semibold text-[#1a1a1a]">Cat</h3>
-                                <p className="text-xs text-gray-600 mt-0.5">Playful and sassy feline friend</p>
-                                <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
-                                    Choose Cat
-                                </span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleAnimalSelect('dog')}
-                                className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-3"
-                            >
-                                <div className="text-4xl sm:text-5xl mb-2">🐶</div>
-                                <h3 className="text-sm font-semibold text-[#1a1a1a]">Dog</h3>
-                                <p className="text-xs text-gray-600 mt-0.5">Enthusiastic and loyal canine companion</p>
-                                <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
-                                    Choose Dog
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Video - Full Screen */}
-            {animalType && (
-                <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full">
-                    <video
-                        ref={videoRef}
-                        src={VIDEO_MAP[animalType]}
-                        className="w-full h-full min-h-0 object-contain"
-                        loop
-                        muted
-                        playsInline
-                        preload="auto"
-                        onLoadedData={() => console.log('Video loaded successfully')}
-                        onError={(e) => console.error('Video load error:', e)}
-                    />
-
-                    {/* Avatar Type Badge - light theme like Welcome */}
-                    <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-full flex items-center gap-2 border border-gray-100">
-                        <span className="text-2xl">{animalType === 'cat' ? '🐱' : '🐶'}</span>
-                        <span className="text-gray-900 font-semibold capitalize">{`${animalType} AI`}</span>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setAnimalType(null);
-                                setSessionId(null);
-                                setMessages([]);
-                            }}
-                            className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
-                        >
-                            Change
-                        </button>
+                        <p className="page-subtitle">Select a friendly animal avatar to start your conversation</p>
                     </div>
 
-                    {isSpeaking && (
-                        <div className="absolute inset-0 border-4 border-[#667eea] animate-pulse pointer-events-none rounded-2xl"></div>
-                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-4xl">
+                        {[
+                            { id: 'cat', name: 'Cat AI', icon: '🐱', color: 'indigo', desc: 'Sassy and playful feline friend' },
+                            { id: 'dog', name: 'Dog AI', icon: '🐶', color: 'purple', desc: 'Loyal and energetic canine companion' }
+                        ].map(animal => (
+                            <button
+                                key={animal.id}
+                                onClick={() => handleAnimalSelect(animal.id)}
+                                className="design-section text-left p-8 group hover:scale-[1.02] flex flex-col items-center text-center"
+                            >
+                                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-500">
+                                    {animal.icon}
+                                </div>
+                                <h3 className="section-title mb-2 capitalize">{animal.name}</h3>
+                                <p className="text-sm text-gray-500 leading-relaxed max-w-[200px]">
+                                    {animal.desc}
+                                </p>
+                                <div className="mt-6 inline-flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                    Select Companion
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-8">
+                    <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white aspect-video bg-gray-900 rounded-3xl flex items-center justify-center">
+                        <video
+                            ref={videoRef}
+                            src={VIDEO_MAP[animalType]}
+                            className="w-full h-full object-cover"
+                            playsInline
+                            muted
+                            loop
+                        />
 
-                    {isProcessing && (
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg px-6 py-3 rounded-full text-gray-800 text-sm font-semibold border border-gray-100">
-                            Thinking...
+                        <div className="absolute top-6 left-6 flex items-center gap-3 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-white/50">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center text-white text-xs font-bold">
+                                {animalType === 'cat' ? '🐱' : '🐶'}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">{animalType} AI</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                    <span className="text-[10px] font-bold text-green-600 uppercase">Live</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setAnimalType(null);
+                                    setMessages([]);
+                                    setSessionId(null);
+                                }}
+                                className="ml-4 transition-all hover:rotate-90"
+                                title="Switch Avatar"
+                            >
+                                <svg className="w-5 h-5 text-gray-400 group-hover:text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
                         </div>
-                    )}
-                    {detectedEmotion && (
-                        <div className="absolute bottom-24 left-4 right-4 md:left-auto md:right-4 md:max-w-xs bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-xl border border-gray-100 text-left">
-                            <span className="text-[#667eea] font-semibold text-xs">
-                                {detectedEmotion.source}:{' '}
-                                {detectedEmotion.emotion ? (
-                                    <>{detectedEmotion.emotion}{detectedEmotion.score > 0 && ` (${Math.round(detectedEmotion.score * 100)}%)`}</>
-                                ) : (
-                                    <span className="text-amber-600">{detectedEmotion.error || 'No emotion detected'}</span>
-                                )}
-                            </span>
-                            <div className="text-[10px] text-gray-500 mt-0.5">Speech emotion via Hume AI Prosody</div>
-                        </div>
-                    )}
 
-                    {error && (
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 px-6 py-3 rounded-lg text-red-700 text-sm font-semibold max-w-md">
-                            {error}
-                        </div>
-                    )}
-                </div>
-            )}
+                        {isSpeaking && (
+                            <div className="absolute inset-0 border-4 border-[#667eea] animate-pulse pointer-events-none rounded-2xl"></div>
+                        )}
 
-            {/* Floating Controls at Bottom - light theme like Welcome */}
-            {animalType && (
-                <div className="absolute bottom-0 left-0 right-0 w-full">
-                    <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg p-4 space-y-3">
-                        <div className="flex items-center justify-center gap-3">
+                        {isProcessing && (
+                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg px-6 py-3 rounded-full text-gray-800 text-sm font-semibold border border-gray-100">
+                                Thinking...
+                            </div>
+                        )}
+
+                        {detectedEmotion && (
+                            <div className="absolute bottom-24 left-6 right-6 md:left-auto md:right-6 md:max-w-xs bg-white/95 backdrop-blur-md shadow-xl px-5 py-3 rounded-2xl border border-white/50 text-left animate-in slide-in-from-right-10">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="bg-indigo-50 p-1 rounded-md">
+                                        <svg className="w-3 h-3 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Emotion Detected</span>
+                                </div>
+                                <span className="text-indigo-600 font-bold text-lg leading-none block">
+                                    {detectedEmotion.emotion ? (
+                                        <>{detectedEmotion.emotion} <span className="text-[10px] text-gray-400 ml-1">{detectedEmotion.score > 0 && ` ${Math.round(detectedEmotion.score * 100)}%`}</span></>
+                                    ) : (
+                                        <span className="text-amber-600 text-sm">Analyzing...</span>
+                                    )}
+                                </span>
+                                <div className="text-[9px] text-gray-400 mt-1 uppercase font-bold tracking-tighter">Powered by Hume AI Prosody</div>
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 px-6 py-3 rounded-lg text-red-700 text-sm font-semibold max-w-md">
+                                {error}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="w-full max-w-md">
+                        <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-4 flex items-center gap-4 transition-all">
                             <button
                                 type="button"
                                 onClick={toggleListening}
                                 disabled={isProcessing || isSpeaking}
-                                className={`p-4 rounded-full transition-all ${isListening
-                                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                                    : 'bg-[#667eea] hover:bg-[#5a6fd6]'
-                                    } disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-white`}
+                                className={`p-5 rounded-2xl transition-all duration-500 transform active:scale-90 ${isListening
+                                    ? 'bg-rose-500 shadow-lg shadow-rose-200 animate-pulse'
+                                    : 'bg-gradient-to-r from-[#667eea] to-[#764ba2] shadow-lg shadow-indigo-100'
+                                    } disabled:opacity-50 disabled:grayscale text-white`}
                                 title={isListening ? 'Stop listening' : 'Start listening'}
                             >
                                 {isListening ? (
-                                    <Mic size={28} className="text-white" />
+                                    <Mic size={24} className="text-white" />
                                 ) : (
-                                    <MicOff size={28} className="text-white" />
+                                    <MicOff size={24} className="text-white" />
                                 )}
                             </button>
 
-                            <div className="text-gray-800">
-                                <div className="font-semibold text-sm">
-                                    {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Processing...' : 'Ready to chat'}
+                            <div className="flex-1">
+                                <div className="text-gray-800 font-bold text-sm tracking-tight">
+                                    {isListening ? 'Listening to you...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Tap Mic to Start Chat'}
                                 </div>
-                                <div className="text-xs text-gray-600">
-                                    {isListening ? 'Speak now' : 'Click mic to speak'}
+                                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">
+                                    {isListening ? 'Companion is attentive' : isSpeaking ? 'Interactive guidance' : 'Processing AI Response'}
                                 </div>
                             </div>
+
+                            {/* Speech Activity Indicator */}
+                            {isListening && (
+                                <div className="flex items-end gap-0.5 h-6 px-2">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <div
+                                            key={i}
+                                            className="w-1 bg-rose-400 rounded-full animate-bounce"
+                                            style={{
+                                                height: `${Math.random() * 100}%`,
+                                                animationDuration: `${0.5 + Math.random()}s`
+                                            }}
+                                        ></div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
+
+                    {/* Hidden audio player for TTS */}
+                    <audio
+                        ref={audioRef}
+                        onEnded={handleAudioEnd}
+                        className="hidden"
+                    />
                 </div>
             )}
-
-            {/* Hidden audio player for TTS */}
-            <audio
-                ref={audioRef}
-                onEnded={handleAudioEnd}
-                className="hidden"
-            />
         </div>
     );
-}
+};

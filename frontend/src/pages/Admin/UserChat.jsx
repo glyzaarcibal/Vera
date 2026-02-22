@@ -284,16 +284,14 @@ const UserChat = () => {
                   return (
                     <div
                       key={message.id}
-                      className={`flex gap-3 ${
-                        message.sent_by === "user" ? "flex-row-reverse" : ""
-                      }`}
+                      className={`flex gap-3 ${message.sent_by === "user" ? "flex-row-reverse" : ""
+                        }`}
                     >
                       <div
-                        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                          message.sent_by === "user"
+                        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${message.sent_by === "user"
                             ? "bg-indigo-100 text-indigo-600"
                             : "bg-gray-100 text-gray-600"
-                        }`}
+                          }`}
                       >
                         {message.sent_by === "user" ? (
                           <MdPerson className="text-xl" />
@@ -302,23 +300,20 @@ const UserChat = () => {
                         )}
                       </div>
                       <div
-                        className={`flex-1 max-w-[70%] ${
-                          message.sent_by === "user" ? "text-right" : ""
-                        }`}
+                        className={`flex-1 max-w-[70%] ${message.sent_by === "user" ? "text-right" : ""
+                          }`}
                       >
                         <div
-                          className={`flex items-center gap-2 mb-1 ${
-                            message.sent_by === "user"
+                          className={`flex items-center gap-2 mb-1 ${message.sent_by === "user"
                               ? "justify-end"
                               : "justify-start"
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`text-xs font-semibold uppercase ${
-                              message.sent_by === "user"
+                            className={`text-xs font-semibold uppercase ${message.sent_by === "user"
                                 ? "text-indigo-600"
                                 : "text-gray-600"
-                            }`}
+                              }`}
                           >
                             {message.sent_by === "user" ? "User" : "Sentinel"}
                           </span>
@@ -336,9 +331,8 @@ const UserChat = () => {
                               }
                               className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105"
                               style={{
-                                backgroundColor: `${
-                                  emotionColors[dominantEmotion.name]
-                                }20`,
+                                backgroundColor: `${emotionColors[dominantEmotion.name]
+                                  }20`,
                                 color: emotionColors[dominantEmotion.name],
                               }}
                             >
@@ -350,11 +344,10 @@ const UserChat = () => {
                           )}
                         </div>
                         <div
-                          className={`px-4 py-3 rounded-lg ${
-                            message.sent_by === "user"
+                          className={`px-4 py-3 rounded-lg ${message.sent_by === "user"
                               ? "bg-indigo-500 text-white"
                               : "bg-gray-100 text-gray-800"
-                          }`}
+                            }`}
                         >
                           <p className="text-sm leading-relaxed">
                             {message.content || "(No content)"}
@@ -505,21 +498,19 @@ const UserChat = () => {
             <div className="flex border-b border-gray-100">
               <button
                 onClick={() => setActiveTab("info")}
-                className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${
-                  activeTab === "info"
+                className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${activeTab === "info"
                     ? "text-indigo-600 border-b-2 border-indigo-600"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 Session Info
               </button>
               <button
                 onClick={() => setActiveTab("notes")}
-                className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${
-                  activeTab === "notes"
+                className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${activeTab === "notes"
                     ? "text-indigo-600 border-b-2 border-indigo-600"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 Doctor's Notes
               </button>
@@ -612,13 +603,13 @@ const UserChat = () => {
                         </div>
                       );
                     }
-                    
+
                     return (
                       <div>
                         <h3 className="text-sm font-semibold text-gray-800 mb-3 uppercase tracking-wide">
                           Hume AI – Speech Emotion Detection
                         </h3>
-                        
+
                         {/* Chart */}
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-3">
                           <div className="mb-2">
@@ -644,18 +635,18 @@ const UserChat = () => {
                               />
                               <YAxis
                                 tick={{ fontSize: 11, fill: '#64748b' }}
-                                label={{ 
-                                  value: 'Percentage (%)', 
-                                  angle: -90, 
-                                  position: 'insideLeft', 
-                                  style: { fontSize: 11, fill: '#64748b' } 
+                                label={{
+                                  value: 'Percentage (%)',
+                                  angle: -90,
+                                  position: 'insideLeft',
+                                  style: { fontSize: 11, fill: '#64748b' }
                                 }}
                                 domain={[0, 100]}
                               />
                               <Tooltip
                                 formatter={(value) => [`${value.toFixed(2)}%`, 'Emotion Score']}
-                                contentStyle={{ 
-                                  fontSize: 12, 
+                                contentStyle={{
+                                  fontSize: 12,
                                   backgroundColor: '#fff',
                                   border: '1px solid #e2e8f0',
                                   borderRadius: '6px',
@@ -793,7 +784,7 @@ const UserChat = () => {
                           </h4>
                           <ul className="text-xs text-amber-900 space-y-1 list-disc list-inside">
                             {sessionInfo.risk_level === "high" ||
-                            sessionInfo.risk_level === "critical" ? (
+                              sessionInfo.risk_level === "critical" ? (
                               <>
                                 <li>Elevated distress signals detected</li>
                                 <li>Potential emotional overwhelm</li>
@@ -815,8 +806,8 @@ const UserChat = () => {
                             {sessionInfo.risk_score >= 70
                               ? "Immediate follow-up recommended. Consider direct intervention."
                               : sessionInfo.risk_score >= 50
-                              ? "Schedule follow-up within 48 hours. Monitor closely."
-                              : "Continue routine monitoring. No immediate action required."}
+                                ? "Schedule follow-up within 48 hours. Monitor closely."
+                                : "Continue routine monitoring. No immediate action required."}
                           </p>
                         </div>
                       </div>
@@ -837,99 +828,98 @@ const UserChat = () => {
                         <MdClose className="text-xl text-gray-600" />
                       </button>
                     </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                      Problem Categorization
-                    </label>
-                    <select
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      value={problemCategory}
-                      onChange={(e) => setProblemCategory(e.target.value)}
-                    >
-                      <option value="" disabled>
-                        Select category...
-                      </option>
-                      <option value="anxiety">Anxiety Disorder</option>
-                      <option value="depression">Depression</option>
-                      <option value="trauma">Trauma/PTSD</option>
-                      <option value="substance">Substance Use</option>
-                      <option value="relationship">Relationship Issues</option>
-                      <option value="adjustment">Adjustment Disorder</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                      Severity Rating
-                    </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <button
-                          key={rating}
-                          type="button"
-                          onClick={() => setSeverityRating(rating)}
-                          className={`flex-1 py-2 px-3 border-2 rounded-lg text-sm font-semibold transition-all ${
-                            severityRating === rating
-                              ? "border-indigo-500 bg-indigo-500 text-white"
-                              : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50"
-                          }`}
-                        >
-                          {rating}
-                        </button>
-                      ))}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                        Problem Categorization
+                      </label>
+                      <select
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        value={problemCategory}
+                        onChange={(e) => setProblemCategory(e.target.value)}
+                      >
+                        <option value="" disabled>
+                          Select category...
+                        </option>
+                        <option value="anxiety">Anxiety Disorder</option>
+                        <option value="depression">Depression</option>
+                        <option value="trauma">Trauma/PTSD</option>
+                        <option value="substance">Substance Use</option>
+                        <option value="relationship">Relationship Issues</option>
+                        <option value="adjustment">Adjustment Disorder</option>
+                        <option value="other">Other</option>
+                      </select>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      1 = Minimal, 5 = Severe
-                    </p>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                      Clinical Observations
-                    </label>
-                    <textarea
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                      rows="6"
-                      placeholder="Document your observations, behavioral patterns, and clinical impressions..."
-                      value={doctorNotes}
-                      onChange={(e) => setDoctorNotes(e.target.value)}
-                    ></textarea>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                        Severity Rating
+                      </label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <button
+                            key={rating}
+                            type="button"
+                            onClick={() => setSeverityRating(rating)}
+                            className={`flex-1 py-2 px-3 border-2 rounded-lg text-sm font-semibold transition-all ${severityRating === rating
+                                ? "border-indigo-500 bg-indigo-500 text-white"
+                                : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50"
+                              }`}
+                          >
+                            {rating}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        1 = Minimal, 5 = Severe
+                      </p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                      Treatment Plan
-                    </label>
-                    <textarea
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                      rows="4"
-                      placeholder="Outline recommended interventions, therapy approach, and follow-up actions..."
-                      value={treatmentPlan}
-                      onChange={(e) => setTreatmentPlan(e.target.value)}
-                    ></textarea>
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                        Clinical Observations
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                        rows="6"
+                        placeholder="Document your observations, behavioral patterns, and clinical impressions..."
+                        value={doctorNotes}
+                        onChange={(e) => setDoctorNotes(e.target.value)}
+                      ></textarea>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                      Next Appointment
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      value={nextAppointment}
-                      onChange={(e) => setNextAppointment(e.target.value)}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                        Treatment Plan
+                      </label>
+                      <textarea
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                        rows="4"
+                        placeholder="Outline recommended interventions, therapy approach, and follow-up actions..."
+                        value={treatmentPlan}
+                        onChange={(e) => setTreatmentPlan(e.target.value)}
+                      ></textarea>
+                    </div>
 
-                  <button
-                    onClick={saveDoctorNotes}
-                    disabled={savingNotes}
-                    className="w-full py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-all shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {savingNotes ? "Saving..." : "Save Notes"}
-                  </button>
-                </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                        Next Appointment
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        value={nextAppointment}
+                        onChange={(e) => setNextAppointment(e.target.value)}
+                      />
+                    </div>
+
+                    <button
+                      onClick={saveDoctorNotes}
+                      disabled={savingNotes}
+                      className="w-full py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-all shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {savingNotes ? "Saving..." : "Save Notes"}
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between mb-2">
@@ -984,15 +974,14 @@ const UserChat = () => {
                                 {[1, 2, 3, 4, 5].map((level) => (
                                   <div
                                     key={level}
-                                    className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${
-                                      level <= note.severity_rating
+                                    className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${level <= note.severity_rating
                                         ? level <= 2
                                           ? "bg-green-500 text-white"
                                           : level <= 3
-                                          ? "bg-yellow-500 text-white"
-                                          : "bg-red-500 text-white"
+                                            ? "bg-yellow-500 text-white"
+                                            : "bg-red-500 text-white"
                                         : "bg-gray-200 text-gray-400"
-                                    }`}
+                                      }`}
                                   >
                                     {level}
                                   </div>

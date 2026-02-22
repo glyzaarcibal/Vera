@@ -1,3 +1,5 @@
+@import "../../admin-variables.css";
+
 .reports-page {
   max-width: 1400px;
   margin: 0 auto;
@@ -5,18 +7,25 @@
 
 .reports-header {
   margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
 }
 
 .reports-title {
-  margin: 0 0 8px;
-  font-size: 32px;
+  margin: 0 0 6px;
+  font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: var(--vera-text);
+  letter-spacing: -0.02em;
 }
 
 .reports-subtitle {
   margin: 0;
-  color: #666;
+  color: var(--vera-text-muted);
+  font-size: 15px;
 }
 
 .reports-error {
@@ -33,24 +42,30 @@
 }
 
 .reports-summary-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--vera-bg-card);
+  border-radius: var(--vera-radius);
+  padding: 18px 22px;
+  box-shadow: var(--vera-shadow-sm);
+  border: 1px solid var(--vera-border);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.reports-summary-card:hover {
+  box-shadow: var(--vera-shadow-md);
 }
 
 .reports-summary-label {
   font-size: 14px;
-  color: #777;
+  color: var(--vera-text-muted);
 }
 
 .reports-summary-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
-  color: #333;
+  color: var(--vera-text);
 }
 
 .reports-grid {
@@ -60,10 +75,11 @@
 }
 
 .report-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--vera-bg-card);
+  border-radius: var(--vera-radius);
+  padding: 20px;
+  box-shadow: var(--vera-shadow-sm);
+  border: 1px solid var(--vera-border);
 }
 
 .report-card-title {

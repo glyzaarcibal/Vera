@@ -3,7 +3,8 @@ import { saveActivityToDB, getActivitiesFromDB } from "../service/Activities.ser
 // Save activity for a user
 export const saveActivity = async (req, res) => {
   try {
-    const { userId, activityType, data } = req.body;
+    const userId = req.userId;
+    const { activityType, data } = req.body;
     if (!userId || !activityType || !data) {
       return res.status(400).json({ message: "Missing required fields." });
     }
@@ -17,7 +18,7 @@ export const saveActivity = async (req, res) => {
 // Get activities for a user
 export const getActivities = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.userId;
     const activities = await getActivitiesFromDB(userId);
     res.status(200).json({ activities });
   } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import "../../styles/GlobalDesign.css";
 import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend } from "recharts";
 import axiosInstance from "../../utils/axios.instance";
@@ -102,7 +103,7 @@ const UserSessions = () => {
       const voiceAndAvatarSessions = allSessions.filter(
         (s) => s.type === "voice" || s.type === "Avatar"
       );
-      
+
       const emotionDataByDay = {};
       let totalMessages = 0;
       let sessionsWithEmotions = 0;
@@ -130,7 +131,7 @@ const UserSessions = () => {
               if (emotionArr.length > 0) {
                 const emotion = emotionArr[0];
                 messagesWithEmotions++;
-                
+
                 // Use message created_at, fallback to session created_at
                 const date = new Date(msg.created_at || session.created_at).toISOString().split("T")[0];
 
@@ -159,7 +160,7 @@ const UserSessions = () => {
               }
             }
           });
-          
+
           // Check if this session had any messages with emotions
           const sessionHasEmotions = messages.some(
             (msg) => msg.sent_by === "user" && getEmotionArr(msg).length > 0
@@ -210,16 +211,20 @@ const UserSessions = () => {
       setAiUsageStats(stats);
       setDailyEmotions(dailyEmotionArray);
 
-      // Fetch activities data
+      // Fetch unified activities data (Mood, Sleep, Breath)
       try {
-        const moodRes = await axiosInstance.get(`/moods/retrieve-daily-moods?user_id=${userId}`);
-        const moodData = moodRes.data?.moods || [];
-        setActivitiesData((prev) => ({
-          ...prev,
-          moodEntries: moodData.length,
-        }));
+        const activitiesRes = await axiosInstance.get(`/admin/users/get-user-activities/${userId}`);
+        const activities = activitiesRes.data?.activities || [];
+
+        const counts = {
+          moodEntries: activities.filter(a => a.activity_type === 'mood').length,
+          sleepEntries: activities.filter(a => a.activity_type === 'sleep').length,
+          breathingSessions: activities.filter(a => a.activity_type === 'breath').length,
+        };
+
+        setActivitiesData(counts);
       } catch (e) {
-        console.error("Error fetching mood data:", e);
+        console.error("Error fetching activity data:", e);
       }
 
       // Fetch emotion-hinting words
@@ -445,18 +450,24 @@ const UserSessions = () => {
   const overallRisk = getOverallRisk();
 
   return (
-    <div className="max-w-[1400px] mx-auto">
-      <div className="mb-8">
+    <div className="page-container">
+      <div className="page-header">
         <button
-          className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-lg text-indigo-500 text-[15px] font-medium shadow-sm hover:bg-indigo-50 hover:-translate-x-0.5 transition-all mb-5"
+          className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-[#667eea] text-[15px] font-medium shadow-sm border border-[#e2e8f0] hover:bg-[#f5f5ff] hover:-translate-x-0.5 transition-all mb-8 absolute left-0"
           onClick={() => navigate(-1)}
         >
           <MdArrowBack className="text-xl" />
           <span>Back</span>
         </button>
+        <h1 className="page-title">
+          User <span className="gradient-text">Sessions</span>
+        </h1>
+        <p className="page-subtitle">View and manage user activity, risk assessments, and reports</p>
+      </div>
 
+      <div className="design-section">
         {loading ? (
-          <div className="flex items-center gap-5 bg-white p-6 rounded-xl shadow-sm">
+          <div className="flex items-center gap-5">
             <Skeleton variant="avatar" width="80px" height="80px" />
             <div className="flex-1">
               <Skeleton variant="title" width="200px" />
@@ -464,50 +475,33 @@ const UserSessions = () => {
             </div>
           </div>
         ) : userInfo ? (
-          <div className="flex items-center gap-5 bg-white p-6 rounded-xl shadow-sm">
+          <div className="flex items-center gap-6">
             <img
               src={userInfo.avatar_url || "https://via.placeholder.com/80"}
               alt={userInfo.username}
-              className="w-20 h-20 rounded-full object-cover border-[3px] border-indigo-50"
+              className="w-20 h-20 rounded-full object-cover border-[3px] border-indigo-50 shadow-sm"
             />
             <div className="flex-1">
-              <h1 className="text-[28px] font-bold text-gray-800 mb-2">
+              <h2 className="section-title mb-1">
                 {userInfo.username || userInfo.email}
-              </h1>
+              </h2>
               <p className="text-base text-gray-600 mb-3">{userInfo.email}</p>
-              <div className="flex items-center gap-3 text-sm text-gray-400 mb-3">
-                <span>ID: {userInfo.id}</span>
-                <span>•</span>
-                <span>Role: {userInfo.role}</span>
-                <span>•</span>
-                <span>
-                  Joined: {new Date(userInfo.created_at).toLocaleDateString()}
-                </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
+                <span className="bg-gray-50 px-2 py-1 rounded">ID: {userInfo.id}</span>
+                <span className="bg-gray-50 px-2 py-1 rounded">Role: {userInfo.role}</span>
+                <span className="bg-gray-50 px-2 py-1 rounded">Joined: {new Date(userInfo.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-500">Store Conversations:</span>
-                  <span
-                    className={`font-semibold px-2.5 py-1 rounded-md ${
-                      userInfo.permit_store
-                        ? "bg-green-50 text-green-700"
-                        : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    {userInfo.permit_store ? "Allowed" : "Denied"}
-                  </span>
+            </div>
+            <div className="hidden md:flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-4 text-xs font-medium uppercase tracking-wider text-gray-400">
+                <span>Privacy Settings</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${userInfo.permit_store ? "bg-green-50 border-green-100 text-green-600" : "bg-red-50 border-red-100 text-red-600"}`}>
+                  STORE: {userInfo.permit_store ? "ON" : "OFF"}
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-gray-500">AI Analysis:</span>
-                  <span
-                    className={`font-semibold px-2.5 py-1 rounded-md ${
-                      userInfo.permit_analyze
-                        ? "bg-green-50 text-green-700"
-                        : "bg-red-50 text-red-700"
-                    }`}
-                  >
-                    {userInfo.permit_analyze ? "Allowed" : "Denied"}
-                  </span>
+                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${userInfo.permit_analyze ? "bg-green-50 border-green-100 text-green-600" : "bg-red-50 border-red-100 text-red-600"}`}>
+                  ANALYZE: {userInfo.permit_analyze ? "ON" : "OFF"}
                 </div>
               </div>
             </div>
@@ -515,78 +509,59 @@ const UserSessions = () => {
         ) : null}
       </div>
 
-      <div className="bg-white p-5 md:px-6 rounded-xl shadow-sm mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+      <div className="design-section">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
           <div>
-            <h3 className="text-base font-semibold text-gray-800 mb-1">
-              Overall Risk Assessment
-            </h3>
+            <h3 className="section-title mb-1">Overall Risk Assessment</h3>
             <p className="text-sm text-gray-500">
-              Based on {sessions.filter((s) => s.risk_score != null).length}{" "}
-              assessed sessions
+              Analysis based on {sessions.filter((s) => s.risk_score != null).length} sessions
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6 bg-gray-50 p-4 rounded-2xl">
             <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">Risk Score</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Risk Score</div>
               <div className="text-3xl font-bold text-gray-800">
                 {overallRisk.score.toFixed(0)}
-                <span className="text-lg text-gray-400">/100</span>
+                <span className="text-lg text-gray-300">/100</span>
               </div>
             </div>
-            <div className="h-16 w-px bg-gray-200"></div>
+            <div className="h-10 w-px bg-gray-200"></div>
             <div>
-              <div className="text-sm text-gray-500 mb-2">Risk Level</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Category</div>
               <RiskBadge level={overallRisk.level} size="lg" />
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-4">
-          <h3 className="text-base font-semibold text-gray-800 mb-4">
-            Risk Distribution
-          </h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <RiskBadge level="low" />
-              <span className="text-sm font-semibold text-gray-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                {riskStats.low}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RiskBadge level="moderate" />
-              <span className="text-sm font-semibold text-gray-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                {riskStats.moderate}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RiskBadge level="high" />
-              <span className="text-sm font-semibold text-gray-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                {riskStats.high}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RiskBadge level="critical" />
-              <span className="text-sm font-semibold text-gray-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                {riskStats.critical}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RiskBadge level={null} />
-              <span className="text-sm font-semibold text-gray-600 bg-indigo-50 px-2.5 py-1 rounded-md">
-                {riskStats.notAssessed}
-              </span>
-            </div>
+        <div className="border-t border-gray-50 pt-6">
+          <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Risk Distribution</div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { level: "low", count: riskStats.low },
+              { level: "moderate", count: riskStats.moderate },
+              { level: "high", count: riskStats.high },
+              { level: "critical", count: riskStats.critical },
+              { level: null, count: riskStats.notAssessed }
+            ].map((stat, i) => (
+              <div key={i} className="flex items-center gap-2 bg-white border border-gray-100 px-3 py-2 rounded-xl shadow-sm">
+                <RiskBadge level={stat.level} />
+                <span className="text-sm font-bold text-gray-700">
+                  {stat.count}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Reports Section */}
-      <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            <MdBarChart className="text-xl" />
-            User Reports & Analytics
+      <div className="design-section">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="section-title mb-0 flex items-center gap-2">
+            <div className="bg-indigo-50 p-2 rounded-lg">
+              <MdBarChart className="text-xl text-indigo-600" />
+            </div>
+            User Analytics
           </h3>
           <button
             onClick={() => {
@@ -595,9 +570,9 @@ const UserSessions = () => {
               }
               setShowReports(!showReports);
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-500 text-white hover:bg-indigo-600 transition-all"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white hover:opacity-90 transition-all shadow-md active:scale-95"
           >
-            {showReports ? "Hide Reports" : "Show Reports"}
+            {showReports ? "Hide Analytics" : "View Analytics"}
           </button>
         </div>
 
@@ -752,7 +727,7 @@ const UserSessions = () => {
                           confusion: "bg-amber-50 border-amber-200 text-amber-800",
                         };
                         const colorClass = emotionColors[emotion] || emotionColors.neutral;
-                        
+
                         return (
                           <div key={emotion} className={`p-4 rounded-lg border-2 ${colorClass}`}>
                             <div className="flex items-center justify-between mb-2">
@@ -798,11 +773,10 @@ const UserSessions = () => {
           <button
             onClick={handleAssignResources}
             disabled={selectedResourceIds.length === 0 || assigning}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              selectedResourceIds.length > 0 && !assigning
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedResourceIds.length > 0 && !assigning
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
           >
             {assigning ? "Assigning..." : `Assign Selected (${selectedResourceIds.length})`}
           </button>
@@ -815,11 +789,10 @@ const UserSessions = () => {
               availableResources.map((resource) => (
                 <div
                   key={resource.id}
-                  className={`shrink-0 w-[180px] bg-white border-2 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-                    selectedResourceIds.includes(resource.id)
-                      ? "border-blue-500 shadow-md"
-                      : "border-gray-200"
-                  }`}
+                  className={`shrink-0 w-[180px] bg-white border-2 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg ${selectedResourceIds.includes(resource.id)
+                    ? "border-blue-500 shadow-md"
+                    : "border-gray-200"
+                    }`}
                   onClick={() => handleResourceSelect(resource.id)}
                 >
                   <div className="relative">
@@ -931,22 +904,20 @@ const UserSessions = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">Sort by:</span>
               <button
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  sortBy === "date"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === "date"
+                  ? "bg-indigo-500 text-white"
+                  : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
+                  }`}
                 onClick={() => handleSortByChange("date")}
               >
                 <MdCalendarToday className="text-lg" />
                 Date
               </button>
               <button
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  sortBy === "risk"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === "risk"
+                  ? "bg-indigo-500 text-white"
+                  : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
+                  }`}
                 onClick={() => handleSortByChange("risk")}
               >
                 <MdSort className="text-lg" />
@@ -964,8 +935,8 @@ const UserSessions = () => {
                     ? "Newest first"
                     : "Oldest first"
                   : sortOrder === "desc"
-                  ? "Highest Risk First"
-                  : "Lowest Risk First"}
+                    ? "Highest Risk First"
+                    : "Lowest Risk First"}
               </span>
             </button>
             <ViewToggle view={view} onViewChange={setView} />
@@ -1038,11 +1009,10 @@ const UserSessions = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={!pagination.hasPrev}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    pagination.hasPrev
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasPrev
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <MdChevronLeft className="text-lg" />
                   <span>Previous</span>
@@ -1050,11 +1020,10 @@ const UserSessions = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={!pagination.hasNext}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    pagination.hasNext
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasNext
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <span>Next</span>
                   <MdChevronRight className="text-lg" />
@@ -1076,11 +1045,10 @@ const UserSessions = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage - 1)}
                   disabled={!pagination.hasPrev}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    pagination.hasPrev
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasPrev
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <MdChevronLeft className="text-lg" />
                   <span>Previous</span>
@@ -1088,11 +1056,10 @@ const UserSessions = () => {
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={!pagination.hasNext}
-                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    pagination.hasNext
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasNext
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    }`}
                 >
                   <span>Next</span>
                   <MdChevronRight className="text-lg" />
