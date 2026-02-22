@@ -3,8 +3,8 @@ import { store } from "../store/store";
 import { clearUser } from "../store/slices/authSlice";
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api",
-  // baseURL: "https://backend-pi-blue-64.vercel.app/api",
+  //baseURL: "http://localhost:5000/api",
+   baseURL: "https://vera-7nnk.vercel.app/api",
   timeout: 30000,
   withCredentials: true,
   headers: {
