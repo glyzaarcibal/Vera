@@ -26,7 +26,7 @@ import AvatarAI from "./pages/Avatar";
 import CheckEmail from "./pages/CheckEmail";
 import EmailVerified from "./pages/EmailVerified";
 import Activities from "./pages/Activities";
-import ClipcardGame from "./pages/Activities/ClipCardGame";
+import ClipcardGame from "./pages/Activities/ClipcardGame.jsx";
 import Diary from "./pages/Activities/Diary";
 import MoodTrackerScreen from "./pages/Activities/MoodTrackerScreen";
 import SleepTracker from "./pages/Activities/SleepTracker";
