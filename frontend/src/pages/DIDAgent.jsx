@@ -27,6 +27,7 @@ import filipinoBoy1 from '../assets/filipino-boy-1.png';
 import filipinoBoy2 from '../assets/filipino-boy-2.png';
 import filipinoBoy3 from '../assets/filipino-boy-3.png';
 import axiosInstance from '../utils/axios.instance';
+import "../styles/GlobalDesign.css";
 
 
 export default function DIDAgent({ onTranscript }) {
@@ -493,14 +494,14 @@ export default function DIDAgent({ onTranscript }) {
               { text: userMessage },
               audioBase64
             );
-            
+
             // Backup: Call emotion-from-voice with messageId to ensure emotions are saved
             // (process-message saves via transcribeAudio, but this backup handles edge cases)
             const messageId = saveResult?.messageId ?? saveResult?.message_id;
             if (messageId && audioBase64) {
-              axiosInstance.post('/emotion-from-voice', { 
-                audioBase64, 
-                messageId 
+              axiosInstance.post('/emotion-from-voice', {
+                audioBase64,
+                messageId
               }).then(res => {
                 if (res.data?.saved) {
                   console.log('[DIDAgent] Emotion data saved to database for message:', messageId);
@@ -667,18 +668,18 @@ export default function DIDAgent({ onTranscript }) {
     if (videoRef.current && avatarType === 'woman-america') {
       const newVideoSrc = getCurrentVideo();
       const currentSrc = videoRef.current.currentSrc || videoRef.current.src || '';
-      const newSrcString = typeof newVideoSrc === 'string' 
-        ? newVideoSrc 
+      const newSrcString = typeof newVideoSrc === 'string'
+        ? newVideoSrc
         : newVideoSrc?.default || newVideoSrc;
-      
+
       const currentFilename = currentSrc.split('/').pop() || '';
       const newFilename = newSrcString.split('/').pop() || '';
-      
+
       if (currentFilename !== newFilename && newFilename) {
         const wasPlaying = !videoRef.current.paused;
         videoRef.current.src = newVideoSrc;
         videoRef.current.load();
-        
+
         if (wasPlaying || isSpeaking || isProcessing) {
           videoRef.current.play().catch(err => console.error('Video play error:', err));
         }
@@ -691,250 +692,193 @@ export default function DIDAgent({ onTranscript }) {
   }, [isProcessing, isSpeaking, avatarType, selectedAmericanGirlOutfit]);
 
   return (
-    <div className="relative w-full h-full min-h-0 flex flex-col flex-1 bg-[#fafbfc]">
-      {/* Choose outfit — shown when first picking avatar OR when clicking "Change Outfit" */}
-      {showOutfitPicker && outfitPickerFor && (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 z-20 overflow-auto min-h-0">
-          <div className="text-center max-w-2xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
+    <div className="page-container flex flex-col items-center">
+      {showOutfitPicker && outfitPickerFor ? (
+        <div className="w-full">
+          <div className="page-header">
+            <h1 className="page-title">
+              Customize <span className="gradient-text">Appearance</span>
+            </h1>
+            <p className="page-subtitle">{getOutfitPickerSubtitle()}</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-4xl mx-auto">
+            {Object.entries(getOutfitsForPicker()).map(([key, { img, label }]) => (
+              <button
+                key={key}
+                onClick={() => handleOutfitSelect(key)}
+                className="design-section group p-4 flex flex-col items-center text-center hover:scale-105 transition-all"
+              >
+                <div className="w-24 h-24 rounded-2xl overflow-hidden mb-4 shadow-md ring-2 ring-white group-hover:ring-indigo-50 transition-all">
+                  <img src={img} alt={label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <span className="font-bold text-gray-800 text-sm">{label}</span>
+                <div className="mt-3 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  Apply
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
             <button
-              type="button"
               onClick={() => { setShowOutfitPicker(false); setOutfitPickerFor(null); }}
-              className="text-sm text-gray-500 hover:text-[#667eea] font-medium mb-2"
+              className="px-8 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-500 font-bold text-sm tracking-widest uppercase hover:bg-gray-50 transition-all"
             >
-              {avatarType ? '← Back' : '← Back to avatars'}
+              Back to selection
             </button>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
-              Choose <span className="gradient-text">Outfit</span>
-            </h1>
-            <p className="text-sm text-gray-600 mb-1">
-              {getOutfitPickerSubtitle()}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              {Object.entries(getOutfitsForPicker()).map(([key, { img, label }]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleOutfitSelect(key)}
-                  className="bg-white rounded-xl border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md text-center cursor-pointer py-3 px-2"
-                >
-                  <div className="mb-1.5 flex justify-center">
-                    <img
-                      src={img}
-                      alt={label}
-                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full border border-gray-200"
-                    />
-                  </div>
-                  <span className="text-xs font-semibold text-[#1a1a1a]">{label}</span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
-      )}
-
-      {/* Avatar Selection Screen - same style as Welcome */}
-      {!avatarType && !showOutfitPicker && (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 z-10 overflow-auto min-h-0">
-          <div className="text-center max-w-3xl w-full space-y-3 sm:space-y-4 flex-shrink-0">
-            <div className="hero-badge text-xs py-1.5 px-3">Human Agent</div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a]">
-              Choose Your <span className="gradient-text">Avatar</span>
+      ) : !avatarType ? (
+        <div className="w-full">
+          <div className="page-header">
+            <h1 className="page-title">
+              Agent <span className="gradient-text">Selection</span>
             </h1>
-            <p className="text-sm text-gray-600 mb-1">
-              Select an avatar to begin your AI-powered conversation
-            </p>
+            <p className="page-subtitle">Select a professional AI agent to assist you today</p>
+          </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-              {[
-                { type: 'woman-america', label: 'American Woman', desc: 'Professional female voice', accent: 'pink' },
-                { type: 'man-america', label: 'American Man', desc: 'Professional male voice', accent: 'blue' },
-                { type: 'woman-filipino', label: 'Filipino Woman', desc: 'Warm female voice', accent: 'purple' },
-                { type: 'man-filipino', label: 'Filipino Man', desc: 'Friendly male voice', accent: 'indigo' }
-              ].map(({ type, label, desc, accent }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => handleAvatarSelect(type)}
-                  className="feature-card text-center cursor-pointer border-2 border-transparent hover:border-[#667eea] transition-all hover:shadow-md py-3 px-2"
-                >
-                  <div className="mb-1.5 flex justify-center">
-                    <img
-                      src={AVATAR_IMAGES[type]}
-                      alt={label}
-                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full border border-gray-200"
-                    />
-                  </div>
-                  <h3 className="text-sm font-semibold text-[#1a1a1a]">{label}</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">{desc}</p>
-                  <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity">
-                    Choose
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+            {Object.entries(AVATAR_IMAGES).map(([type, img]) => (
+              <button
+                key={type}
+                onClick={() => handleAvatarSelect(type)}
+                className="design-section group p-6 flex flex-col items-center text-center hover:scale-[1.02] transition-all"
+              >
+                <div className="w-32 h-32 rounded-3xl overflow-hidden mb-5 shadow-xl ring-4 ring-white group-hover:ring-indigo-50 transition-all">
+                  <img src={img} alt={type} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                </div>
+                <h3 className="section-title text-lg mb-1 capitalize">{type.replace('-', ' ')}</h3>
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-4">Professional Assistant</p>
+                <div className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                  Select
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-8">
+          <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white aspect-video bg-gray-900 rounded-3xl flex items-center justify-center">
+            <video
+              ref={videoRef}
+              src={getCurrentVideo()}
+              className="w-full h-full object-cover"
+              playsInline
+              loop={!isSpeaking && !isProcessing}
+              muted={true}
+            />
+
+            {/* HUD Overlay */}
+            <div className="absolute top-6 left-6 flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-white/50">
+              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-md">
+                <img src={AVATAR_IMAGES[avatarType]} alt="avatar" className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-widest leading-tight">{avatarType.replace('-', ' ')}</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`w-2 h-2 rounded-full ${isSpeaking ? 'bg-indigo-500 animate-ping' : isProcessing ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`}></span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">
+                    {isSpeaking ? 'Speaking' : isProcessing ? 'Thinking' : 'Online'}
                   </span>
-                </button>
-              ))}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setAvatarType(null);
+                  setMessages([]);
+                  setSessionId(null);
+                }}
+                className="ml-4 p-2 hover:bg-gray-100 rounded-xl transition-all"
+                title="Change Agent"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Video - Full Screen (hidden when outfit picker is open) */}
-      {avatarType && !showOutfitPicker && (
-        <div className="relative flex-1 flex flex-col items-center justify-center min-h-0 w-full">
-          <video
-            ref={videoRef}
-            src={getCurrentVideo()}
-            className="w-full h-full min-h-0 object-contain"
-            loop
-            muted
-            playsInline
-            preload="auto"
-            onLoadedData={() => console.log('Video loaded successfully')}
-            onError={(e) => console.error('Video load error:', e)}
-          />
+            {detectedEmotion && (
+              <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-md shadow-xl px-5 py-3 rounded-2xl border border-white/50 animate-in slide-in-from-top-10">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-indigo-600 bg-indigo-50 p-1 rounded-md">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </span>
+                  <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Analysis</span>
+                </div>
+                <p className="text-indigo-600 font-bold text-lg leading-tight">
+                  {detectedEmotion.emotion} <span className="text-[10px] text-gray-400 font-normal ml-1">{(detectedEmotion.score * 100).toFixed(0)}%</span>
+                </p>
+              </div>
+            )}
 
-          {/* Avatar Badge - light theme like Welcome */}
-          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md shadow-md px-4 py-2 rounded-full flex items-center gap-2 border border-gray-100">
-            {avatarType === 'woman-america' && (
-              <img
-                src={AMERICAN_GIRL_OUTFITS[selectedAmericanGirlOutfit].img}
-                alt="Outfit"
-                className="w-8 h-8 rounded-full object-cover border border-gray-200"
-              />
+            {error && (
+              <div className="absolute bottom-6 left-6 right-6 bg-rose-500/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-xl border border-rose-400/50 flex items-center justify-between text-sm font-bold uppercase tracking-widest animate-in slide-in-from-bottom-10">
+                <div className="flex items-center gap-3">
+                  <span>⚠️</span>
+                  {error}
+                </div>
+                <button onClick={() => setError(null)} className="opacity-60 hover:opacity-100 transition-opacity">✕</button>
+              </div>
             )}
-            {avatarType === 'woman-filipino' && (
-              <img
-                src={FILIPINO_OUTFITS[selectedFilipinoOutfit].img}
-                alt="Outfit"
-                className="w-8 h-8 rounded-full object-cover border border-gray-200"
-              />
-            )}
-            {avatarType === 'man-filipino' && (
-              <img
-                src={FILIPINO_BOY_OUTFITS[selectedFilipinoBoyOutfit].img}
-                alt="Outfit"
-                className="w-8 h-8 rounded-full object-cover border border-gray-200"
-              />
-            )}
-            {avatarType === 'man-america' && (
-              <img
-                src={AMERICAN_BOY_OUTFITS[selectedAmericanBoyOutfit].img}
-                alt="Outfit"
-                className="w-8 h-8 rounded-full object-cover border border-gray-200"
-              />
-            )}
-            <span className="text-gray-900 font-semibold">{AVATAR_LABELS[avatarType]}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setOutfitPickerFor(avatarType);
-                setShowOutfitPicker(true);
-              }}
-              className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors font-medium"
-            >
-              Change Outfit
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAvatarType(null);
-                setSessionId(null);
-                setMessages([]);
-                setShowOutfitPicker(false);
-                setOutfitPickerFor(null);
-              }}
-              className="ml-1 text-xs bg-[#667eea] hover:bg-[#5a6fd6] text-white px-2 py-1 rounded transition-colors font-medium"
-            >
-              Choose Avatar
-            </button>
           </div>
 
-          {/* Speaking indicator overlay */}
-          {isSpeaking && (
-            <div className="absolute inset-0 border-4 border-[#667eea] animate-pulse pointer-events-none rounded-2xl"></div>
-          )}
-
-          {/* Processing indicator */}
-          {isProcessing && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg px-6 py-3 rounded-full text-gray-800 text-sm font-semibold border border-gray-100">
-              Thinking...
-            </div>
-          )}
-
-          {/* Error Display */}
-          {error && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 px-6 py-3 rounded-lg text-red-700 text-sm font-semibold max-w-md">
-              {error}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Floating Controls at Bottom - voice only (hidden when outfit picker is open) */}
-      {avatarType && !showOutfitPicker && (
-        <div className="absolute bottom-0 left-0 right-0 w-full">
-          <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-lg p-4">
-            <div className="flex items-center justify-center gap-3">
+          <div className="w-full max-w-2xl">
+            <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-4 flex items-center gap-6 transition-all">
               <button
                 type="button"
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
-                className={`p-4 rounded-full transition-all ${isListening
-                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                    : 'bg-[#667eea] hover:bg-[#5a6fd6]'
-                  } disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-white`}
-                title={isListening ? 'Stop listening' : 'Start listening'}
+                className={`p-5 rounded-2xl transition-all duration-500 transform active:scale-90 shadow-lg ${isListening
+                    ? 'bg-rose-500 shadow-rose-200 animate-pulse'
+                    : 'bg-gradient-to-r from-[#667eea] to-[#764ba2] shadow-indigo-100'
+                  } disabled:opacity-50 disabled:grayscale text-white`}
               >
-                {isListening ? (
-                  <Mic size={28} className="text-white" />
-                ) : (
-                  <MicOff size={28} className="text-white" />
-                )}
+                {isListening ? <Mic size={24} /> : <MicOff size={24} />}
               </button>
 
-              <div className="text-gray-800">
-                <div className="font-semibold text-sm">
-                  {isListening ? 'Listening...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Processing...' : 'Ready to chat'}
+              <div className="flex-1 flex flex-col">
+                <div className="text-gray-800 font-bold text-sm tracking-tight">
+                  {isListening ? 'Agent is listening...' : isSpeaking ? 'Agent is speaking...' : isProcessing ? 'Agent is thinking...' : 'Voice Interaction Ready'}
                 </div>
-                <div className="text-xs text-gray-600">
-                  {isListening ? 'Speak now' : 'Click mic to speak'}
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                    {language === 'fil' ? 'Tagalog Mode' : 'English Mode'}
+                  </span>
+                  <button
+                    onClick={() => setLanguage(l => l === 'fil' ? 'eng' : 'fil')}
+                    className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-md text-[10px] font-bold text-gray-500 transition-colors"
+                  >
+                    Switch
+                  </button>
                 </div>
-                {detectedEmotion && (
-                  <div className="mt-1 text-xs font-medium">
-                    <span className="text-[#667eea]">
-                      {detectedEmotion.source || 'Hume AI'}:{' '}
-                      {detectedEmotion.emotion
-                        ? (
-                            <>
-                              {detectedEmotion.emotion}
-                              {detectedEmotion.score > 0 && (
-                                <span className="text-gray-500 ml-1">
-                                  ({Math.round(detectedEmotion.score * 100)}%)
-                                </span>
-                              )}
-                            </>
-                          )
-                        : (
-                            <span className="text-amber-600">
-                              {detectedEmotion.error || 'No emotion detected'}
-                            </span>
-                          )}
-                    </span>
-                    <div className="text-[10px] text-gray-500 mt-0.5">
-                      Speech emotion detection via Hume AI Prosody model
-                    </div>
-                  </div>
-                )}
+              </div>
+
+              <div className="flex items-center gap-2 pr-2">
+                <button
+                  onClick={() => setShowOutfitPicker(true)}
+                  className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-2xl transition-all border border-gray-100"
+                  title="Customize Outfit"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                </button>
               </div>
             </div>
+
+            <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
+
+            {detectedEmotion && (
+              <p className="mt-4 text-center text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">
+                Voice Analysis powered by Hume AI
+              </p>
+            )}
           </div>
         </div>
       )}
-
-      {/* Hidden audio player for TTS */}
-      <audio
-        ref={audioRef}
-        onEnded={handleAudioEnd}
-        className="hidden"
-      />
     </div>
   );
 }

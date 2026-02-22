@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { MdAdd, MdSearch, MdEdit, MdDelete, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
+import "../../styles/GlobalDesign.css";
 import axiosInstance from "../../utils/axios.instance";
 
 const UserManagement = () => {
@@ -163,190 +164,159 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">
-            Manage and monitor all users in the system.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          <MdAdd className="text-xl" />
-          <span>Add User</span>
-        </button>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">
+          User <span className="gradient-text">Management</span>
+        </h1>
+        <p className="page-subtitle">Manage system users, roles, and account status</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 relative">
-          <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
-          <input
-            type="text"
-            placeholder="Search users by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      <div className="design-section">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+          <div className="relative w-full md:w-96">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+            <input
+              type="text"
+              placeholder="Search users by name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#667eea] focus:bg-white transition-all shadow-sm"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3 w-full md:w-auto">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="moderator">Moderator</option>
+              <option value="user">User</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
+            >
+              <MdAdd className="text-xl" />
+              <span>Add User</span>
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <select
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="moderator">Moderator</option>
-            <option value="user">User</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Joined
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user.username}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-                        {user.username[0].toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium text-gray-900">
-                      {user.username}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                  {user.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.role.toLowerCase() === "admin"
-                        ? "bg-purple-100 text-purple-800"
-                        : user.role.toLowerCase() === "moderator"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.status.toLowerCase() === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                  {user.joined}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/admin/sessions/${user.id}`)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                      title="View sessions"
-                    >
-                      <MdSearch className="text-lg" />
-                    </button>
-                    <button
-                      onClick={() => openEditModal(user)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Edit user"
-                    >
-                      <MdEdit className="text-lg" />
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(user)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Delete user"
-                    >
-                      <MdDelete className="text-lg" />
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto rounded-xl border border-gray-50">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400 font-bold">
+                <th className="px-6 py-4">User</th>
+                <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Joined</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex justify-between items-center mt-6">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-          disabled={!pagination.hasPrev}
-          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          ← Previous
-        </button>
-        <div className="text-gray-600">
-          Page {pagination.currentPage} of {pagination.totalPages} (
-          {pagination.totalUsers} users)
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f0eeff] to-[#fef5ff] flex items-center justify-center text-[#667eea] font-bold border border-white shadow-sm overflow-hidden">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          user.username.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-800">{user.username}</div>
+                        <div className="text-xs text-gray-400 font-medium">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${user.role === 'admin' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+                        user.role === 'moderator' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                          'bg-gray-50 text-gray-600 border border-gray-100'
+                      }`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${user.status === 'Active' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-gray-300'}`}></div>
+                      <span className="text-sm font-medium text-gray-600">{user.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                    {user.joined}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => navigate(`/admin/sessions/${user.id}`)}
+                        className="p-2.5 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all"
+                        title="View sessions"
+                      >
+                        <MdSearch className="text-xl" />
+                      </button>
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
+                        title="Edit user"
+                      >
+                        <MdEdit className="text-xl" />
+                      </button>
+                      <button
+                        onClick={() => openDeleteModal(user)}
+                        className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                        title="Delete user"
+                      >
+                        <MdDelete className="text-xl" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))
-          }
-          disabled={!pagination.hasNext}
-          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next →
-        </button>
+
+        <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4 px-2">
+          <div className="text-sm text-gray-400 font-medium">
+            Showing <span className="text-gray-900 font-bold">{users.length}</span> of <span className="text-gray-900 font-bold">{pagination.totalUsers}</span> users
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={!pagination.hasPrev}
+              className="px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm active:scale-95"
+            >
+              Previous
+            </button>
+            <div className="px-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-xl text-sm font-bold text-indigo-600">
+              {pagination.currentPage} / {pagination.totalPages}
+            </div>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))
+              }
+              disabled={!pagination.hasNext}
+              className="px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm active:scale-95"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Add User Modal */}
@@ -450,7 +420,7 @@ const UserManagement = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-xl hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {isLoading ? "Creating..." : "Create User"}
                 </button>
@@ -562,7 +532,7 @@ const UserManagement = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-xl hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                 >
                   {isLoading ? "Updating..." : "Update User"}
                 </button>

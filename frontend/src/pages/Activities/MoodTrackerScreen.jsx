@@ -90,37 +90,27 @@ const moods = [
   },
 ];
 
+import axiosInstance from "../../utils/axios.instance";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../store/slices/authSelectors";
+
 const MoodTrackerScreen = ({ navigation }) => {
+  const user = useSelector(selectUser);
+  const userId = user?.id;
+
   const [selectedMood, setSelectedMood] = useState(null);
   const [reason, setReason] = useState("");
   const [moodHistory, setMoodHistory] = useState([]);
   const [moodEntries, setMoodEntries] = useState([]);
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [filter, setFilter] = useState("all"); // 'all', 'week', 'month'
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    loadMoodHistory();
-  }, []);
-
-  useEffect(() => {
-    const fetchMoodEntries = async () => {
-      try {
-        const storedMoods = localStorage.getItem("moodEntries");
-        if (storedMoods) {
-          const parsedMoods = JSON.parse(storedMoods);
-          if (Array.isArray(parsedMoods)) {
-            setMoodEntries(parsedMoods);
-          } else {
-            setMoodEntries([]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching mood entries:", error);
-      }
-    };
-
-    fetchMoodEntries();
-  }, []);
+    if (userId) {
+      loadMoodHistory();
+    }
+  }, [userId]);
 
   // Initialize Lottie animations
   useEffect(() => {
@@ -204,63 +194,88 @@ const MoodTrackerScreen = ({ navigation }) => {
   }, [moodHistory]);
 
   const saveMood = async () => {
-    if (!selectedMood) return;
+    if (!selectedMood || !userId) return;
 
     const newEntry = {
-      id: Date.now(),
       mood: selectedMood.mood,
       moodEmoji: selectedMood.emoji,
       moodColor: selectedMood.color,
       reason,
       timestamp: new Date().toISOString(),
-      date: new Date().toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      date: new Date().toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       }),
-      time: new Date().toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      time: new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
       }),
     };
 
     try {
-      const updatedHistory = [newEntry, ...moodHistory];
-      setMoodHistory(updatedHistory);
-      localStorage.setItem("moodHistory", JSON.stringify(updatedHistory));
+      setIsLoading(true);
+      await axiosInstance.post("/activities/save", {
+        activityType: "mood",
+        data: newEntry
+      });
+
+      // Refetch history after saving
+      await loadMoodHistory();
 
       setSelectedMood(null);
       setReason("");
       setShowReasonInput(false);
     } catch (error) {
       console.error("Error saving mood:", error);
+      alert("Failed to save mood. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const loadMoodHistory = async () => {
-    const savedHistory = localStorage.getItem("moodHistory");
-    if (savedHistory) {
-      setMoodHistory(JSON.parse(savedHistory));
+    if (!userId) return;
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+
+      // Filter only mood activities and extract the data
+      const history = activities
+        .filter(act => act.activity_type === "mood")
+        .map(act => ({
+          id: act.id,
+          ...act.data
+        }))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      setMoodHistory(history);
+    } catch (error) {
+      console.error("Error loading mood history:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const confirmClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear your mood history?")) {
+    if (window.confirm("Are you sure you want to clear your mood history? (This will only clear your local view, database entries require admin intervention)")) {
       clearHistory();
     }
   };
 
   const clearHistory = async () => {
-    localStorage.removeItem("moodHistory");
     setMoodHistory([]);
+    // Note: The backend activities API doesn't seem to have a bulk delete for a specific type yet.
   };
 
   const deleteEntry = (id) => {
-    if (window.confirm("Delete this mood entry?")) {
+    // Note: The backend activities API doesn't seem to have a specific delete by ID endpoint yet.
+    // We'll just filter from local state for now if we can't delete from DB.
+    if (window.confirm("Delete this mood entry from view?")) {
       const updatedHistory = moodHistory.filter(entry => entry.id !== id);
       setMoodHistory(updatedHistory);
-      localStorage.setItem("moodHistory", JSON.stringify(updatedHistory));
     }
   };
 
@@ -292,36 +307,36 @@ const MoodTrackerScreen = ({ navigation }) => {
     const doc = new jsPDF();
     const filteredHistory = getFilteredHistory();
     const moodStats = getMoodStats();
-    
+
     // Title
     doc.setFontSize(24);
     doc.setTextColor(102, 126, 234);
     doc.text("Mood Tracker Report", 105, 20, { align: "center" });
-    
+
     // Date range and filter info
     doc.setFontSize(11);
     doc.setTextColor(100, 100, 100);
     const filterText = filter === 'all' ? 'All Time' : filter === 'week' ? 'Last 7 Days' : 'Last 30 Days';
     doc.text(`Period: ${filterText}`, 105, 30, { align: "center" });
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     })}`, 105, 37, { align: "center" });
-    
+
     // Summary Statistics
     doc.setFontSize(16);
     doc.setTextColor(51, 51, 51);
     doc.text("Mood Statistics", 14, 50);
-    
+
     // Total entries
     doc.setFontSize(11);
     doc.setTextColor(102, 126, 234);
     doc.text(`Total Entries: ${filteredHistory.length}`, 14, 60);
-    
+
     // Mood distribution table
     const statsData = Object.entries(moodStats).map(([mood, count]) => {
       const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
@@ -331,13 +346,13 @@ const MoodTrackerScreen = ({ navigation }) => {
         `${percentage}%`
       ];
     });
-    
+
     autoTable(doc, {
       startY: 65,
       head: [["Mood", "Count", "Percentage"]],
       body: statsData,
       theme: "grid",
-      headStyles: { 
+      headStyles: {
         fillColor: [102, 126, 234],
         textColor: [255, 255, 255],
         fontStyle: 'bold'
@@ -347,12 +362,12 @@ const MoodTrackerScreen = ({ navigation }) => {
       },
       margin: { left: 14, right: 14 }
     });
-    
+
     // Mood History
     doc.setFontSize(16);
     doc.setTextColor(51, 51, 51);
     doc.text("Mood History", 14, (doc.lastAutoTable?.finalY || 65) + 20);
-    
+
     const historyData = filteredHistory.map((item) => {
       return [
         sanitizePdfText(item.mood),
@@ -361,13 +376,13 @@ const MoodTrackerScreen = ({ navigation }) => {
         sanitizePdfText(item.reason || "No reason provided")
       ];
     });
-    
+
     autoTable(doc, {
       startY: (doc.lastAutoTable?.finalY || 65) + 25,
       head: [["Mood", "Date", "Time", "Reason"]],
       body: historyData,
       theme: "striped",
-      headStyles: { 
+      headStyles: {
         fillColor: [102, 126, 234],
         textColor: [255, 255, 255],
         fontStyle: 'bold'
@@ -392,7 +407,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         );
       }
     });
-    
+
     // Footer with page numbers
     const pageCount = doc.internal.getNumberOfPages();
     doc.setFontSize(9);
@@ -406,7 +421,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         { align: "center" }
       );
     }
-    
+
     // Save the PDF with formatted filename
     const dateStr = new Date().toISOString().split('T')[0];
     const filterStr = filter !== 'all' ? `-${filter}` : '';
@@ -500,7 +515,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         >
           ←
         </button>
-        
+
         <h1
           style={{
             fontSize: "32px",
@@ -513,7 +528,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         >
           Mood Tracker 🌈
         </h1>
-        
+
         <div style={{ width: "40px" }} /> {/* Spacer */}
       </div>
 
@@ -533,7 +548,7 @@ const MoodTrackerScreen = ({ navigation }) => {
               >
                 How are you feeling today?
               </h2>
-              
+
               <div
                 style={{
                   display: "grid",
@@ -612,7 +627,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             >
               You selected:
             </h2>
-            
+
             <div
               style={{
                 display: "flex",
@@ -634,7 +649,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                   style={{ width: "80px", height: "80px" }}
                 />
               </div>
-              
+
               <span
                 style={{
                   fontSize: "24px",
@@ -664,7 +679,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       background: "rgba(255,255,255,0.9)",
                     }}
                   />
-                  
+
                   <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
                     <button
                       onClick={saveMood}
@@ -685,7 +700,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                     >
                       Save Mood ✨
                     </button>
-                    
+
                     <button
                       onClick={() => {
                         setSelectedMood(null);
@@ -794,7 +809,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             <h2 style={{ fontSize: "24px", color: "#333", margin: 0 }}>
               📝 Mood History
             </h2>
-            
+
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               {/* Filter Buttons */}
               <div style={{ display: "flex", gap: "5px", background: "#f0f0f0", padding: "5px", borderRadius: "50px" }}>
@@ -844,7 +859,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                   Month
                 </button>
               </div>
-              
+
               {/* Download PDF Button - Always visible when there's history */}
               {filteredHistory.length > 0 && (
                 <button
@@ -944,7 +959,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <button
                       onClick={() => deleteEntry(item.id)}
                       style={{

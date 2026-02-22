@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import axiosInstance from "../../utils/axios.instance";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../store/slices/authSelectors";
 
 // Audio from src/assets/breath/ (Vite bundles these and gives correct URLs)
 import getReadyEn from "../../assets/breath/get-ready-in.mp3";
@@ -69,6 +72,9 @@ const TEXTS = {
 };
 
 const TakeABreath = () => {
+  const user = useSelector(selectUser);
+  const userId = user?.id;
+
   const [breathingStage, setBreathingStage] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
   const [repeatCount, setRepeatCount] = useState(0);
@@ -154,11 +160,11 @@ const TakeABreath = () => {
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Easing function for smooth animation
       const easeProgress = 1 - Math.pow(1 - progress, 3);
       const newScale = startScale + (targetScale - startScale) * easeProgress;
-      
+
       setScale(newScale);
 
       if (progress < 1) {
@@ -218,38 +224,51 @@ const TakeABreath = () => {
   };
 
   const addHistory = async () => {
+    if (!userId) return;
+
     const now = new Date();
     const date = now.toLocaleDateString();
     const time = now.toLocaleTimeString();
     const preset = BREATHING_TYPES.find((p) => p.id === breathType) || BREATHING_TYPES[0];
     const typeLabel = language === "Tagalog" ? preset.nameTl : preset.name;
-    const newHistory = [
-      { session: history.length + 1, date, time, type: breathType, typeLabel },
-      ...history,
-    ];
 
-    setHistory(newHistory);
+    const newEntry = {
+      date,
+      time,
+      type: breathType,
+      typeLabel,
+      timestamp: now.toISOString(),
+    };
+
     try {
-      localStorage.setItem("breathingHistory", JSON.stringify(newHistory));
+      await axiosInstance.post("/activities/save", {
+        activityType: "breath",
+        data: newEntry
+      });
+
+      // Refetch history
+      await loadHistory();
     } catch (error) {
-      console.error("Error saving history:", error);
+      console.error("Error saving breath history:", error);
     }
   };
 
   const loadHistory = async () => {
+    if (!userId) return;
     try {
-      const savedHistory = localStorage.getItem("breathingHistory");
-      if (savedHistory) {
-        const parsed = JSON.parse(savedHistory);
-        const withType = parsed.map((entry) => ({
-          ...entry,
-          type: entry.type || "relaxing",
-          typeLabel: entry.typeLabel || (language === "Tagalog" ? "Relaks (6-7-8)" : "Relaxing (6-7-8)"),
-        }));
-        setHistory(withType.sort((a, b) => (b.session || 0) - (a.session || 0)));
-      }
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+
+      const historyItems = activities
+        .filter(act => act.activity_type === "breath")
+        .map(act => ({
+          ...act.data
+        }))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      setHistory(historyItems);
     } catch (error) {
-      console.error("Error loading history:", error);
+      console.error("Error loading breath history:", error);
     }
   };
 
@@ -259,7 +278,7 @@ const TakeABreath = () => {
     setCountdown(3);
 
     playAudio('getReady');
-    
+
     setTimeout(() => {
       setCountdown(3);
       playAudio('countdown3');
@@ -414,9 +433,9 @@ const TakeABreath = () => {
           width: '100%',
         }}>
           {!isBreathing && (
-            <div style={{ 
-              display: "flex", 
-              gap: "8px", 
+            <div style={{
+              display: "flex",
+              gap: "8px",
               marginBottom: "16px",
               justifyContent: "center",
             }}>
@@ -486,7 +505,7 @@ const TakeABreath = () => {
               transition: isBreathing ? 'none' : 'transform 0.3s ease, box-shadow 0.3s ease',
               transform: `scale(${scale})`,
             }} />
-            
+
             <p style={{
               fontSize: '28px',
               color: '#667eea',
@@ -500,20 +519,20 @@ const TakeABreath = () => {
 
             {!isBreathing && (
               <>
-                <p style={{ 
-                  marginBottom: 8, 
-                  fontWeight: 600, 
-                  color: "#667eea", 
-                  fontSize: 14 
+                <p style={{
+                  marginBottom: 8,
+                  fontWeight: 600,
+                  color: "#667eea",
+                  fontSize: 14
                 }}>
                   {t.chooseType}
                 </p>
-                <div style={{ 
-                  display: "flex", 
-                  flexWrap: "wrap", 
-                  gap: 8, 
-                  justifyContent: "center", 
-                  marginBottom: 12 
+                <div style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  justifyContent: "center",
+                  marginBottom: 12
                 }}>
                   {BREATHING_TYPES.map((preset) => (
                     <button
@@ -547,8 +566,8 @@ const TakeABreath = () => {
                     fontSize: '18px',
                     fontWeight: 'bold',
                     cursor: 'pointer',
-                    boxShadow: isStartButtonHovered 
-                      ? '0 15px 30px rgba(102, 126, 234, 0.4)' 
+                    boxShadow: isStartButtonHovered
+                      ? '0 15px 30px rgba(102, 126, 234, 0.4)'
                       : '0 10px 20px rgba(102, 126, 234, 0.3)',
                     transition: 'all 0.3s ease',
                     margin: '10px 0',
@@ -563,7 +582,7 @@ const TakeABreath = () => {
 
                 <button
                   style={{
-                    background: isHistoryToggleHovered 
+                    background: isHistoryToggleHovered
                       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                       : 'transparent',
                     color: isHistoryToggleHovered ? 'white' : '#667eea',
@@ -627,7 +646,7 @@ const TakeABreath = () => {
                     </button>
                   )}
                 </div>
-                
+
                 <div className="table-container" style={{
                   maxHeight: '300px',
                   overflowY: 'auto',
@@ -652,7 +671,7 @@ const TakeABreath = () => {
                       <div style={styles.tableHeaderCell}>{t.time}</div>
                       <div style={styles.tableHeaderCell}>{t.type}</div>
                     </div>
-                    
+
                     {history.length > 0 ? (
                       history.map((item, index) => {
                         const typeLabel = item.typeLabel || (() => {

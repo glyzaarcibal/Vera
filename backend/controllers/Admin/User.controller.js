@@ -1,5 +1,6 @@
 import { getAllUsers, getUserInfo, detectEmotionWords } from "../../service/Admin/User.service.js";
 import { getAvatarRiskStats } from "../../service/Chat/Session.service.js";
+import { getActivitiesFromDB } from "../../service/Activities.service.js";
 
 export const fetchAvatarRiskStats = async (req, res) => {
   try {
@@ -40,6 +41,17 @@ export const getUserEmotionWords = async (req, res) => {
     return res.status(200).json(result);
   } catch (e) {
     console.error("Error detecting emotion words:", e);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const fetchUserActivities = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const activities = await getActivitiesFromDB(userId);
+    return res.status(200).json({ activities });
+  } catch (e) {
+    console.error("Error fetching user activities:", e);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -10,6 +10,7 @@ import {
   MdChevronRight,
   MdHome,
   MdFolder,
+  MdBarChart,
 } from "react-icons/md";
 import SidebarLink from "./SidebarLink";
 import "./Sidebar.css";
@@ -64,6 +65,12 @@ const Sidebar = () => {
           to="/admin/resources"
           icon={<MdFolder />}
           label="Resources"
+          collapsed={collapsed}
+        />
+        <SidebarLink
+          to="/admin/reports"
+          icon={<MdBarChart />}
+          label="Reports"
           collapsed={collapsed}
         />
       </nav>

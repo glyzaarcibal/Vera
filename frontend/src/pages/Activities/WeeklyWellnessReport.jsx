@@ -70,21 +70,95 @@ const WeeklyWellnessReport = () => {
   const [isBackButtonHovered, setIsBackButtonHovered] = useState(false);
   const [isCloseButtonHovered, setIsCloseButtonHovered] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    loadSleepData();
-    loadMoodData();
-    loadBreathingHistory();
+    fetchAllActivities();
   }, []);
 
-  const getStoredArray = (key) => {
+  const fetchAllActivities = async () => {
     try {
-      const value = localStorage.getItem(key);
-      if (!value) return [];
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
+      setIsLoading(true);
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+      processAllActivities(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const processAllActivities = (activities) => {
+    // 1. Process Mood Data
+    const moodScoreMap = {
+      1: "Very Sad",
+      2: "Sad",
+      3: "Neutral",
+      4: "Happy",
+      5: "Very Happy",
+    };
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const moodLogs = activities.filter(act => act.activity_type === "mood");
+    const counts = moodLogs.reduce((acc, log) => {
+      const data = log.data || {};
+      const logDate = data.timestamp || log.created_at || data.date;
+
+      if (logDate && new Date(logDate) < sevenDaysAgo) {
+        return acc;
+      }
+
+      const moodLabel =
+        (typeof data.mood === "string" && data.mood) ||
+        (data.mood && typeof data.mood === "object" && data.mood.mood) ||
+        moodScoreMap[data.mood_score] ||
+        data.moodEmoji ||
+        "Unknown";
+
+      acc[moodLabel] = (acc[moodLabel] || 0) + 1;
+      return acc;
+    }, {});
+    setMoodCounts(counts);
+
+    // 2. Process Sleep Data
+    const sleepLogs = activities
+      .filter(act => act.activity_type === "sleep")
+      .map(act => ({
+        id: act.id,
+        ...act.data
+      }))
+      .sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
+    setSleepData(sleepLogs);
+
+    // 3. Process Breathing Data
+    const breathLogs = activities
+      .filter(act => act.activity_type === "breath")
+      .map(act => ({
+        ...act.data,
+        type: act.data.type || "relaxing",
+        typeLabel: act.data.typeLabel || BREATHING_TYPE_LABELS[act.data.type] || "Relaxing (6-7-8)",
+      }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const groupedByDay = {};
+    const groupedByType = {};
+
+    breathLogs.forEach((entry) => {
+      const date = entry.date;
+      groupedByDay[date] = (groupedByDay[date] || 0) + 1;
+
+      const label = entry.typeLabel || BREATHING_TYPE_LABELS[entry.type] || entry.type || "Other";
+      groupedByType[label] = (groupedByType[label] || 0) + 1;
+    });
+
+    setBreathingData({
+      byDay: groupedByDay,
+      byType: groupedByType,
+      raw: breathLogs
+    });
   };
 
   const parseDurationToHours = (duration) => {
@@ -100,124 +174,11 @@ const WeeklyWellnessReport = () => {
     return hours + minutes / 60;
   };
 
-  const loadSleepData = async () => {
-    try {
-      const parsedData = getStoredArray("sleepData");
-      if (parsedData.length > 0) {
-        const sortedHistory = [...parsedData].sort(
-          (a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)
-        );
-        setSleepData(sortedHistory);
-        return;
-      }
-
-      setSleepData([]);
-    } catch (error) {
-      console.error("Error loading sleep history:", error);
-    }
-  };
-
-  const loadMoodData = async () => {
-    try {
-      const moodHistory = getStoredArray("moodHistory");
-      const moodEntries = getStoredArray("moodEntries");
-
-      const localMoodData = [...moodHistory, ...moodEntries];
-
-      if (localMoodData.length > 0) {
-        processMoodData(localMoodData);
-        return;
-      }
-
-      const response = await axiosInstance.get("/moods/retrieve-daily-moods");
-      const moodData = response?.data?.moods || [];
-
-      if (moodData && moodData.length > 0) {
-        processMoodData(moodData);
-      } else {
-        setMoodCounts({});
-        console.log("No mood data found");
-      }
-    } catch (error) {
-      console.error("Error loading mood data:", error);
-    }
-  };
-
-  const processMoodData = (logs) => {
-    const moodScoreMap = {
-      1: "Very Sad",
-      2: "Sad",
-      3: "Neutral",
-      4: "Happy",
-      5: "Very Happy",
-    };
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const counts = logs.reduce((acc, log) => {
-      const logDate = log.timestamp || log.created_at || log.date;
-      if (logDate && new Date(logDate) < sevenDaysAgo) {
-        return acc;
-      }
-
-      const moodLabel =
-        (typeof log.mood === "string" && log.mood) ||
-        (log.mood && typeof log.mood === "object" && log.mood.mood) ||
-        moodScoreMap[log.mood_score] ||
-        "Unknown";
-
-      acc[moodLabel] = (acc[moodLabel] || 0) + 1;
-      return acc;
-    }, {});
-
-    setMoodCounts(counts);
-  };
-
   const BREATHING_TYPE_LABELS = {
     relaxing: "Relaxing (6-7-8)",
     box: "Box (4-4-4)",
     "478": "4-7-8 Calm",
     calm: "Calm (4-2-6)",
-  };
-
-  const loadBreathingHistory = async () => {
-    try {
-      const savedHistory = localStorage.getItem("breathingHistory");
-      if (savedHistory) {
-        const parsedHistory = JSON.parse(savedHistory);
-        const withType = Array.isArray(parsedHistory)
-          ? parsedHistory.map((entry) => ({
-              ...entry,
-              type: entry.type || "relaxing",
-              typeLabel: entry.typeLabel || BREATHING_TYPE_LABELS[entry.type] || "Relaxing (6-7-8)",
-            }))
-          : [];
-        const groupedByDay = groupByDay(withType);
-        const groupedByType = groupByType(withType);
-        setBreathingData({ byDay: groupedByDay, byType: groupedByType, raw: withType });
-      }
-    } catch (error) {
-      console.error("Error loading breathing history:", error);
-    }
-  };
-
-  const groupByDay = (history) => {
-    const grouped = {};
-    history.forEach((entry) => {
-      const date = entry.date;
-      grouped[date] = (grouped[date] || 0) + 1;
-    });
-    return grouped;
-  };
-
-  const groupByType = (history) => {
-    const grouped = {};
-    history.forEach((entry) => {
-      const label = entry.typeLabel || BREATHING_TYPE_LABELS[entry.type] || entry.type || "Other";
-      grouped[label] = (grouped[label] || 0) + 1;
-    });
-    return grouped;
   };
 
   // Prepare data for charts
@@ -355,11 +316,11 @@ const WeeklyWellnessReport = () => {
 
     const sleepTableData = sleepChartData.length
       ? sleepChartData.map((entry) => [
-          sanitizePdfText(entry.fullDate || entry.date),
-          `${Number(entry.duration || 0).toFixed(1)} h`,
-          sanitizePdfText(entry.sleepTime || "N/A"),
-          sanitizePdfText(entry.wakeTime || "N/A"),
-        ])
+        sanitizePdfText(entry.fullDate || entry.date),
+        `${Number(entry.duration || 0).toFixed(1)} h`,
+        sanitizePdfText(entry.sleepTime || "N/A"),
+        sanitizePdfText(entry.wakeTime || "N/A"),
+      ])
       : [["No data", "0.0 h", "N/A", "N/A"]];
 
     autoTable(doc, {
@@ -439,7 +400,7 @@ const WeeklyWellnessReport = () => {
           <p style={styles.modalText}><strong>Duration:</strong> {content.duration} hours</p>
           <p style={styles.modalText}><strong>Analysis:</strong> {content.message}</p>
           <p style={styles.modalQuote}>"Rest is the best investment for a productive tomorrow!"</p>
-          <button 
+          <button
             style={{
               ...styles.closeButton,
               ...(isCloseButtonHovered ? styles.closeButtonHover : {})
@@ -749,150 +710,157 @@ const WeeklyWellnessReport = () => {
         content={modalContent}
       />
 
-      <div style={styles.cardsContainer}>
-        {/* Mood Distribution Card */}
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Mood Distribution (Past 7 Days)</h2>
-          {pieData.length > 0 ? (
-            <div style={styles.chartWrapper}>
-              <div style={styles.chartContainer}>
-                <PieChart width={400} height={300} data={pieData}>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
+      {isLoading ? (
+        <div style={{ ...styles.card, textAlign: 'center', padding: '50px' }}>
+          <h2 style={styles.sectionTitle}>Loading Wellness Report...</h2>
+          <p style={styles.noData}>Please wait while we gather your data.</p>
+        </div>
+      ) : (
+        <div style={styles.cardsContainer}>
+          {/* Mood Distribution Card */}
+          <div style={styles.card}>
+            <h2 style={styles.sectionTitle}>Mood Distribution (Past 7 Days)</h2>
+            {pieData.length > 0 ? (
+              <div style={styles.chartWrapper}>
+                <div style={styles.chartContainer}>
+                  <PieChart width={400} height={300} data={pieData}>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </div>
+              </div>
+            ) : (
+              <p style={styles.noData}>No mood data available for the past week.</p>
+            )}
+          </div>
+
+          {/* Sleep Duration Card */}
+          <div style={styles.card}>
+            <h2 style={styles.sectionTitle}>Sleep Duration Report</h2>
+            {sleepChartData.length > 0 ? (
+              <div style={styles.chartWrapper}>
+                <div style={styles.chartContainer}>
+                  <LineChart
+                    width={800}
+                    height={300}
+                    data={sleepChartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    onClick={handleDataPointClick}
                   >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <Line
+                      type="monotone"
+                      dataKey="duration"
+                      stroke="#667eea"
+                      strokeWidth={2}
+                      activeDot={{ r: 8 }}
+                    />
+                    <Tooltip />
+                  </LineChart>
+                </div>
+                <p style={styles.trendAnalysis}>{analyzeSleepTrend()}</p>
               </div>
-            </div>
-          ) : (
-            <p style={styles.noData}>No mood data available for the past week.</p>
-          )}
-        </div>
+            ) : (
+              <p style={styles.noData}>No sleep data available.</p>
+            )}
+          </div>
 
-        {/* Sleep Duration Card */}
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Sleep Duration Report</h2>
-          {sleepChartData.length > 0 ? (
-            <div style={styles.chartWrapper}>
-              <div style={styles.chartContainer}>
-                <LineChart
-                  width={800}
-                  height={300}
-                  data={sleepChartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  onClick={handleDataPointClick}
-                >
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Line
-                    type="monotone"
-                    dataKey="duration"
-                    stroke="#667eea"
-                    strokeWidth={2}
-                    activeDot={{ r: 8 }}
-                  />
-                  <Tooltip />
-                </LineChart>
-              </div>
-              <p style={styles.trendAnalysis}>{analyzeSleepTrend()}</p>
-            </div>
-          ) : (
-            <p style={styles.noData}>No sleep data available.</p>
-          )}
-        </div>
-
-        {/* Breathing Sessions Card */}
-        <div style={styles.card}>
-          <h2 style={styles.sectionTitle}>Breathing Sessions Per Day</h2>
-          {breathingChartData.length > 0 ? (
-            <div style={styles.chartWrapper}>
-              <div style={styles.chartContainer}>
-                <BarChart
-                  width={800}
-                  height={300}
-                  data={breathingChartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Bar dataKey="sessions" fill="#667eea" />
-                  <Tooltip />
-                </BarChart>
-              </div>
-              <p style={styles.trendAnalysis}>
-                {breathingChartData.length > 0
-                  ? interpretBreathingData(
-                      Math.max(...breathingChartData.map((d) => d.sessions))
-                    )
-                  : "Wala pang sapat na datos para sa analysis."}
-              </p>
-            </div>
-          ) : (
-            <p style={styles.noData}>No breathing data available.</p>
-          )}
-
-          {breathingByTypeChartData.length > 0 && (
-            <>
-              <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Breathing Sessions by Type</h2>
+          {/* Breathing Sessions Card */}
+          <div style={styles.card}>
+            <h2 style={styles.sectionTitle}>Breathing Sessions Per Day</h2>
+            {breathingChartData.length > 0 ? (
               <div style={styles.chartWrapper}>
                 <div style={styles.chartContainer}>
                   <BarChart
                     width={800}
-                    height={280}
-                    data={breathingByTypeChartData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
-                    layout="vertical"
+                    height={300}
+                    data={breathingChartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="date" />
+                    <YAxis />
                     <CartesianGrid strokeDasharray="3 3" />
-                    <Bar dataKey="sessions" fill="#764ba2" name="Sessions" />
+                    <Bar dataKey="sessions" fill="#667eea" />
                     <Tooltip />
                   </BarChart>
                 </div>
+                <p style={styles.trendAnalysis}>
+                  {breathingChartData.length > 0
+                    ? interpretBreathingData(
+                      Math.max(...breathingChartData.map((d) => d.sessions))
+                    )
+                    : "Wala pang sapat na datos para sa analysis."}
+                </p>
               </div>
-            </>
-          )}
+            ) : (
+              <p style={styles.noData}>No breathing data available.</p>
+            )}
 
-          {breathingData?.raw?.length > 0 && (
-            <>
-              <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Recent Breathing History</h2>
-              <div style={{ overflowX: "auto", maxHeight: 200, border: "1px solid rgba(102,126,234,0.2)", borderRadius: 8 }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-                  <thead>
-                    <tr style={{ backgroundColor: "rgba(102,126,234,0.1)" }}>
-                      <th style={styles.tableHeaderCell}>Date</th>
-                      <th style={styles.tableHeaderCell}>Time</th>
-                      <th style={styles.tableHeaderCell}>Type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(breathingData.raw.slice(0, 10)).map((entry, idx) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid rgba(102,126,234,0.1)" }}>
-                        <td style={styles.tableCell}>{entry.date}</td>
-                        <td style={styles.tableCell}>{entry.time}</td>
-                        <td style={styles.tableCell}>{entry.typeLabel || entry.type || "—"}</td>
+            {breathingByTypeChartData.length > 0 && (
+              <>
+                <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Breathing Sessions by Type</h2>
+                <div style={styles.chartWrapper}>
+                  <div style={styles.chartContainer}>
+                    <BarChart
+                      width={800}
+                      height={280}
+                      data={breathingByTypeChartData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+                      layout="vertical"
+                    >
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Bar dataKey="sessions" fill="#764ba2" name="Sessions" />
+                      <Tooltip />
+                    </BarChart>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {breathingData?.raw?.length > 0 && (
+              <>
+                <h2 style={{ ...styles.sectionTitle, marginTop: 24 }}>Recent Breathing History</h2>
+                <div style={{ overflowX: "auto", maxHeight: 200, border: "1px solid rgba(102,126,234,0.2)", borderRadius: 8 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "rgba(102,126,234,0.1)" }}>
+                        <th style={styles.tableHeaderCell}>Date</th>
+                        <th style={styles.tableHeaderCell}>Time</th>
+                        <th style={styles.tableHeaderCell}>Type</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                    </thead>
+                    <tbody>
+                      {breathingData.raw.slice(0, 10).map((entry, idx) => (
+                        <tr key={idx} style={{ borderBottom: "1px solid rgba(102,126,234,0.1)" }}>
+                          <td style={styles.tableCell}>{entry.date}</td>
+                          <td style={styles.tableCell}>{entry.time}</td>
+                          <td style={styles.tableCell}>{entry.typeLabel || entry.type || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

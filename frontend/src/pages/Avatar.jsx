@@ -3,6 +3,7 @@ import { User, PawPrint, MessageSquare, PhoneOff } from 'lucide-react';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
 import './Welcome.css';
+import "../styles/GlobalDesign.css";
 
 export default function AvatarAI() {
   const [selectedAvatar, setSelectedAvatar] = useState(null);
@@ -53,17 +54,15 @@ export default function AvatarAI() {
   }, [transcripts]);
 
   return (
-    <div className="welcome-container max-w-4xl">
-      <div className="text-center mb-6">
-        <div className="hero-badge text-xs py-1.5 px-3 inline-block">Avatar AI</div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] mt-3 mb-1">
-          Choose Your <span className="gradient-text">Avatar</span>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">
+          Avatar <span className="gradient-text">Selection</span>
         </h1>
-        <p className="text-sm text-gray-600">Select an avatar type to start your AI-powered conversation</p>
+        <p className="page-subtitle">Choose your AI companion for a personalized interaction</p>
       </div>
 
-      {/* Avatar Selection Grid - compact cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
         {avatarOptions.map((option) => {
           const Icon = option.icon;
           const isSelected = selectedAvatar === option.id;
@@ -72,21 +71,32 @@ export default function AvatarAI() {
               key={option.id}
               type="button"
               onClick={() => setSelectedAvatar(option.id)}
-              className={`bg-white rounded-xl border-2 p-4 sm:p-5 text-left cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md ${
-                isSelected
-                  ? 'border-[#667eea] shadow-md shadow-[rgba(102,126,234,0.2)] ring-2 ring-[#667eea]/30'
-                  : 'border-transparent hover:border-gray-200'
-              }`}
+              className={`design-section text-left p-6 sm:p-8 cursor-pointer transition-all duration-500 border-2 relative overflow-hidden group ${isSelected
+                  ? 'border-indigo-400 ring-4 ring-indigo-50 shadow-xl'
+                  : 'border-transparent hover:border-indigo-100'
+                }`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#667eea] text-white' : 'bg-gray-100 text-[#667eea]'}`}>
-                <Icon size={20} className="shrink-0" />
+              <div className={`section-icon mb-6 group-hover:scale-110 transition-transform ${isSelected ? 'shadow-lg shadow-indigo-100' : ''}`}>
+                <Icon size={24} className={isSelected ? 'text-[#667eea]' : 'text-[#a78bfa]'} />
               </div>
-              <h3 className="text-base font-semibold text-[#1a1a1a] mt-3">{option.name}</h3>
-              <p className="text-sm text-gray-600 mt-0.5">{option.description}</p>
+              <h3 className="section-title mb-2">{option.name}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">{option.description}</p>
+              <div className={`mt-auto inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>
+                {isSelected ? (
+                  <>
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                    Active Selection
+                  </>
+                ) : (
+                  'Click to Select'
+                )}
+              </div>
               {isSelected && (
-                <span className="inline-block mt-2 px-2.5 py-0.5 text-xs font-semibold text-[#667eea] bg-[#f5f5ff] rounded-full">
-                  Active
-                </span>
+                <div className="absolute top-0 right-0 p-4">
+                  <div className="bg-indigo-600 text-white p-1 rounded-full shadow-lg">
+                    <Icon size={12} />
+                  </div>
+                </div>
               )}
             </button>
           );
@@ -95,64 +105,54 @@ export default function AvatarAI() {
 
       {/* Selected Avatar Component - conversation panel first on mobile so AI chat is visible on screen */}
       {selectedAvatar && SelectedComponent && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Conversation panel - first on mobile (order-1), right on desktop (lg:order-2) */}
-          <div className="bg-white rounded-2xl shadow-md border border-gray-100 flex flex-col overflow-hidden order-1 lg:order-2 min-h-[280px]">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="feature-icon w-9 h-9 flex items-center justify-center">
-                  <MessageSquare size={18} className="text-[#667eea]" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="design-section flex flex-col p-0 overflow-hidden order-1 lg:order-2 min-h-[400px]">
+            <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <MessageSquare size={18} className="text-indigo-600" />
                 </div>
-                <h3 className="text-base font-bold text-[#1a1a1a]">Conversation</h3>
+                <h3 className="text-lg font-bold text-gray-800">Conversation</h3>
               </div>
               <div className="flex items-center gap-2">
-                {transcripts.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearTranscripts}
-                    className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
-                  >
-                    Clear
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={endCall}
-                  className="text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors font-medium inline-flex items-center gap-1.5"
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-2"
                 >
                   <PhoneOff size={14} />
-                  End call
+                  End
                 </button>
               </div>
             </div>
-              
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[440px]">
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[500px]">
               {transcripts.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
-                  <MessageSquare size={40} className="mx-auto mb-2 opacity-30 text-gray-300" />
-                  <p className="text-sm font-medium text-gray-600">No messages yet</p>
-                  <p className="text-xs mt-1">Start chatting with your avatar</p>
+                <div className="text-center text-gray-300 py-20 flex flex-col items-center">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <MessageSquare size={24} className="opacity-40" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Awaiting interaction</p>
+                  <p className="text-xs mt-2 text-gray-400">Your chat history will appear here</p>
                 </div>
               ) : (
                 transcripts.map((transcript) => (
                   <div
                     key={transcript.id}
-                    className={`p-3 rounded-xl text-left ${
-                      transcript.author === 'User'
-                        ? 'bg-[#f5f5ff] ml-2 border border-[#e8e8ff]'
-                        : 'bg-gray-50 mr-2 border border-gray-100'
-                    }`}
+                    className={`p-3 rounded-xl text-left ${transcript.author === 'User'
+                      ? 'bg-[#f5f5ff] ml-2 border border-[#e8e8ff]'
+                      : 'bg-gray-50 mr-2 border border-gray-100'
+                      }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-semibold ${
-                        transcript.author === 'User' ? 'text-[#667eea]' : 'text-gray-700'
-                      }`}>
+                      <span className={`text-xs font-semibold ${transcript.author === 'User' ? 'text-[#667eea]' : 'text-gray-700'
+                        }`}>
                         {transcript.author}
                       </span>
                       <span className="text-xs text-gray-500">{transcript.timestamp}</span>
                     </div>
                     <p className="text-sm text-gray-700 break-words">{transcript.text}</p>
-                    </div>
+                  </div>
                 ))
               )}
               <div ref={conversationEndRef} />

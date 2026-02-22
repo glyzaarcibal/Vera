@@ -5,16 +5,7 @@ import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Ba
 import axiosInstance from "../../utils/axios.instance.js";
 import "./Dashboard.css";
 
-import {
-  ResponsiveContainer,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Bar,
-  Cell
-} from "recharts";
+
 
 const RISK_COLORS = {
   low: "#10b981",
@@ -132,11 +123,11 @@ const Dashboard = () => {
 
   const chartData = avatarRiskStats
     ? [
-        { name: "Low", sessions: avatarRiskStats.byLevel?.low ?? 0, color: RISK_COLORS.low },
-        { name: "Moderate", sessions: avatarRiskStats.byLevel?.moderate ?? 0, color: RISK_COLORS.moderate },
-        { name: "High", sessions: avatarRiskStats.byLevel?.high ?? 0, color: RISK_COLORS.high },
-        { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0, color: RISK_COLORS.critical },
-      ]
+      { name: "Low", sessions: avatarRiskStats.byLevel?.low ?? 0, color: RISK_COLORS.low },
+      { name: "Moderate", sessions: avatarRiskStats.byLevel?.moderate ?? 0, color: RISK_COLORS.moderate },
+      { name: "High", sessions: avatarRiskStats.byLevel?.high ?? 0, color: RISK_COLORS.high },
+      { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0, color: RISK_COLORS.critical },
+    ]
     : [];
 
   return (

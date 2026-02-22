@@ -19,8 +19,8 @@ const Login = () => {
   const navigation = useNavigation()
   const dispatch = useDispatch()
   const [formData, setFormData] = useState({
-    email: 'codog@gmail.co',
-    password: 'secret123',
+    email: '',
+    password: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -157,9 +157,8 @@ const Login = () => {
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={loading}
-              className={`mt-6 rounded-xl py-4 ${
-                loading ? 'bg-blue-400' : 'bg-blue-600'
-              }`}
+              className={`mt-6 rounded-xl py-4 ${loading ? 'bg-blue-400' : 'bg-blue-600'
+                }`}
             >
               <Text className="text-white text-center text-base font-semibold">
                 {loading ? 'Signing in...' : 'Sign in'}

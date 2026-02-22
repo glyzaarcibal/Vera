@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../utils/axios.instance";
+import "../styles/GlobalDesign.css";
 
 const VOICES = [
   {
@@ -106,12 +107,12 @@ const VoiceAI = () => {
           event.error === "network"
             ? "Check your internet connection. Speech recognition needs network access."
             : event.error === "not-allowed"
-            ? "Microphone access was denied."
-            : event.error === "no-speech"
-            ? "No speech detected. Try again."
-            : event.error === "audio-capture"
-            ? "No microphone found."
-            : `Speech recognition error: ${event.error}. You can still type below.`;
+              ? "Microphone access was denied."
+              : event.error === "no-speech"
+                ? "No speech detected. Try again."
+                : event.error === "audio-capture"
+                  ? "No microphone found."
+                  : `Speech recognition error: ${event.error}. You can still type below.`;
         setSpeechError(message);
       };
 
@@ -126,7 +127,7 @@ const VoiceAI = () => {
         recognitionStartedRef.current = false;
         try {
           recognitionInstance.stop();
-        } catch (_) {}
+        } catch (_) { }
       };
     }
   }, []);
@@ -395,7 +396,7 @@ const VoiceAI = () => {
 
           // Backup emotion-from-voice with messageId for storage (only when we have valid audio)
           if (messageId && hasValidAudio && audioBase64) {
-            axiosInstance.post("/emotion-from-voice", { audioBase64, messageId }).catch(() => {});
+            axiosInstance.post("/emotion-from-voice", { audioBase64, messageId }).catch(() => { });
           }
 
           // Switch to speaking mode and play TTS
@@ -450,387 +451,219 @@ const VoiceAI = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-80px)] py-10 px-6 bg-gray-50 from-gray-50 to-gray-100">
-      <div className="max-w-4xl w-full flex flex-col items-center gap-12">
-        <div className="flex flex-col items-center gap-6 w-full">
+    <div className="page-container flex flex-col items-center">
+      <div className="page-header w-full">
+        <h1 className="page-title">
+          Voice <span className="gradient-text">Selection</span>
+        </h1>
+        <p className="page-subtitle">Personalize your AI assistant's voice and personality</p>
+      </div>
+
+      <div className="w-full flex flex-col items-center gap-12">
+        <div className="w-full">
           {!isCallActive ? (
-            <div className="relative w-full flex items-center justify-center py-8">
-              {/* Left Arrow */}
-              <button
-                onClick={() => handleCarouselScroll("left")}
-                disabled={selectedVoiceIndex === 0}
-                className={`absolute left-4 md:left-8 z-20 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-all ${
-                  selectedVoiceIndex === 0
-                    ? "opacity-30 cursor-not-allowed"
-                    : "hover:scale-110 cursor-pointer"
-                }`}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+            <div className="design-section w-full relative overflow-hidden p-8 sm:p-12">
+              <div className="relative w-full flex items-center justify-center">
+                {/* Left Arrow */}
+                <button
+                  onClick={() => handleCarouselScroll("left")}
+                  disabled={selectedVoiceIndex === 0}
+                  className={`absolute left-0 z-20 w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all ${selectedVoiceIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:scale-110 hover:shadow-lg text-indigo-600"
+                    }`}
                 >
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
 
-              {/* Carousel Container */}
-              <div className="relative w-full max-w-full h-60 flex items-center justify-center overflow-hidden">
-                <div
-                  ref={carouselRef}
-                  className="absolute flex items-center gap-8 transition-transform duration-300 ease-out w-full"
-                  style={{
-                    transform: `translateX(calc(53% - ${
-                      selectedVoiceIndex * 160 + 125
-                    }px))`,
-                  }}
-                >
-                  {VOICES.map((voice, index) => {
-                    const isActive = index === selectedVoiceIndex;
-                    const distance = Math.abs(index - selectedVoiceIndex);
-                    const isAdjacent = distance === 1;
-
-                    return (
-                      <div
-                        key={voice.id}
-                        onClick={() => handleVoiceSelect(index)}
-                        className="relative flex-shrink-0 transition-all duration-300 cursor-pointer"
-                        style={{
-                          transform: `scale(${
-                            isActive ? 1 : isAdjacent ? 0.75 : 0.6
-                          })`,
-                          opacity: isActive ? 1 : isAdjacent ? 0.6 : 0.3,
-                          pointerEvents: distance > 1 ? "none" : "auto",
-                        }}
-                      >
+                {/* Carousel Container */}
+                <div className="relative w-full h-80 flex items-center justify-center overflow-hidden">
+                  <div
+                    ref={carouselRef}
+                    className="absolute flex items-center gap-12 transition-transform duration-500 ease-out"
+                    style={{
+                      transform: `translateX(calc(50% - ${selectedVoiceIndex * 240 + 100}px))`,
+                    }}
+                  >
+                    {VOICES.map((voice, index) => {
+                      const isActive = index === selectedVoiceIndex;
+                      return (
                         <div
-                          className={`${
-                            isActive ? "w-44 h-44 md:w-52 md:h-52" : "w-32 h-32"
-                          } relative flex items-center justify-center transition-all duration-300`}
+                          key={voice.id}
+                          onClick={() => handleVoiceSelect(index)}
+                          className={`relative flex-shrink-0 w-48 h-64 rounded-3xl transition-all duration-500 cursor-pointer overflow-hidden flex flex-col items-center justify-center gap-4 ${isActive
+                            ? "scale-110 shadow-2xl ring-4 ring-indigo-50"
+                            : "scale-90 opacity-40 blur-[1px] hover:opacity-60"
+                            }`}
+                          style={{
+                            background: isActive
+                              ? `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
+                              : '#f8fafc',
+                            border: isActive ? 'none' : '2px border-gray-100'
+                          }}
                         >
-                          <div
-                            className={`w-full h-full rounded-full bg-gradient-to-br ${
-                              voice.gradient
-                            } flex items-center justify-center text-white ${
-                              isActive ? "text-7xl md:text-8xl" : "text-5xl"
-                            } font-semibold shadow-xl relative z-10`}
-                          >
+                          <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl shadow-lg ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-400'
+                            }`}>
                             {voice.avatar}
                           </div>
-                        </div>
-                        {isActive && (
-                          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                            <p className="text-xs font-semibold text-gray-600">
+                          <div className="text-center">
+                            <p className={`text-xs font-bold uppercase tracking-widest ${isActive ? 'text-white/60' : 'text-gray-400'}`}>
                               {voice.gender}
                             </p>
+                            <p className={`text-lg font-bold mt-1 ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                              Voice {index + 1}
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {isActive && (
+                            <div className="absolute top-4 right-4 animate-pulse">
+                              <div className="w-2 h-2 rounded-full bg-white"></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                {/* Fade Overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent pointer-events-none z-20" />
-                <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent pointer-events-none z-20" />
-              </div>
 
-              {/* Right Arrow */}
-              <button
-                onClick={() => handleCarouselScroll("right")}
-                disabled={selectedVoiceIndex === VOICES.length - 1}
-                className={`absolute right-4 md:right-8 z-20 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center transition-all ${
-                  selectedVoiceIndex === VOICES.length - 1
-                    ? "opacity-30 cursor-not-allowed"
-                    : "hover:scale-110 cursor-pointer"
-                }`}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                {/* Right Arrow */}
+                <button
+                  onClick={() => handleCarouselScroll("right")}
+                  disabled={selectedVoiceIndex === VOICES.length - 1}
+                  className={`absolute right-0 z-20 w-12 h-12 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all ${selectedVoiceIndex === VOICES.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:scale-110 hover:shadow-lg text-indigo-600"
+                    }`}
                 >
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="relative p-5">
-              <div className="w-44 h-44 md:w-52 md:h-52 relative flex items-center justify-center">
-                <div
-                  className={`w-44 h-44 md:w-52 md:h-52 rounded-full bg-gradient-to-br ${
-                    VOICES[selectedVoiceIndex].gradient
-                  } flex items-center justify-center text-white text-7xl md:text-8xl font-semibold shadow-xl shadow-indigo-300 relative z-10 ${
-                    isListening ? "animate-pulse" : ""
-                  }`}
-                >
-                  {VOICES[selectedVoiceIndex].avatar}
-                </div>
-                {isListening && (
-                  <>
-                    <div className="absolute w-44 h-44 md:w-52 md:h-52 rounded-full border-2 border-indigo-500 opacity-0 animate-[ping_2s_ease-out_infinite]"></div>
-                    <div className="absolute w-44 h-44 md:w-52 md:h-52 rounded-full border-2 border-indigo-500 opacity-0 animate-[ping_2s_ease-out_infinite_0.5s]"></div>
-                    <div className="absolute w-44 h-44 md:w-52 md:h-52 rounded-full border-2 border-indigo-500 opacity-0 animate-[ping_2s_ease-out_infinite_1s]"></div>
-                  </>
+            <div className="design-section w-full max-w-2xl py-12 px-8 flex flex-col items-center gap-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gray-50">
+                <div className="h-full bg-indigo-500 animate-[loading_2s_ease-in-out_infinite]" style={{ width: '40%' }}></div>
+              </div>
+
+              <div className={`w-40 h-40 rounded-full flex items-center justify-center text-6xl shadow-2xl relative transition-all duration-700 ${conversationMode === 'speaking' ? 'scale-110' : 'scale-100'
+                }`}
+                style={{ background: 'var(--primary-gradient)', color: 'white' }}>
+                {VOICES[selectedVoiceIndex].avatar}
+                {conversationMode === 'speaking' && (
+                  <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping"></div>
                 )}
               </div>
-            </div>
-          )}
 
-          <div className="text-center">
-            <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">
-              Vera Voice Assistant
-            </h2>
-            <p className="text-base text-gray-500">
-              {isCallActive ? (
-                <span className="flex items-center gap-2 justify-center text-green-500 font-medium">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                  {formatTime(callDuration)}
-                </span>
-              ) : (
-                <span className="text-gray-400">Ready to listen</span>
-              )}
-            </p>
-          </div>
-
-          {isCallActive && speechError && (
-            <div className="w-full max-w-lg bg-amber-50 border border-amber-200 rounded-xl p-4 mt-4 flex items-start gap-3">
-              <span className="text-amber-500 shrink-0 mt-0.5" aria-hidden>⚠️</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-amber-800 m-0">Speech recognition unavailable</p>
-                <p className="text-sm text-amber-700 mt-1 m-0">{speechError}</p>
-                <p className="text-xs text-amber-600 mt-2 m-0">Try again after checking your connection, or use another network/browser.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSpeechError(null)}
-                className="text-amber-600 hover:text-amber-800 text-sm font-medium shrink-0"
-                aria-label="Dismiss"
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {isCallActive && (
-            <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-sm mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-                {conversationMode === "listening"
-                  ? "Live Transcript"
-                  : conversationMode === "thinking"
-                  ? "Processing"
-                  : "Speaking"}
-              </p>
-              <div className="min-h-[60px] text-base leading-relaxed text-gray-900">
-                {conversationMode === "listening" && isListening && !isMuted ? (
-                  <p className="text-green-500 italic m-0">Listening...</p>
-                ) : conversationMode === "thinking" ? (
-                  <p className="text-blue-500 italic m-0">Thinking...</p>
-                ) : conversationMode === "speaking" ? (
-                  <p className="text-purple-500 italic m-0">Speaking...</p>
-                ) : isMuted ? (
-                  <p className="text-red-500 italic m-0">Microphone muted</p>
-                ) : (
-                  <p className="text-gray-400 italic m-0">
-                    Waiting for input...
-                  </p>
-                )}
-              </div>
-              {detectedEmotion && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <span className="text-[#667eea] font-semibold text-xs">
-                    {detectedEmotion.source}:{" "}
-                    {detectedEmotion.emotion ? (
-                      <>{detectedEmotion.emotion}{detectedEmotion.score > 0 && ` (${Math.round(detectedEmotion.score * 100)}%)`}</>
-                    ) : (
-                      <span className="text-amber-600">{detectedEmotion.error || "No emotion detected"}</span>
-                    )}
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Voice AI Active</h2>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                  <span className="text-sm font-bold text-gray-500 tracking-widest uppercase">
+                    {formatDuration(callDuration)}
                   </span>
-                  <div className="text-[10px] text-gray-500 mt-0.5">Speech emotion via Hume AI Prosody</div>
                 </div>
-              )}
+              </div>
+
+              <div className="w-full bg-gray-50 rounded-2xl p-6 min-h-[100px] flex flex-col items-center justify-center text-center border border-gray-100">
+                <p className={`text-lg font-medium leading-relaxed ${transcript ? 'text-gray-800' : 'text-gray-400 italic'}`}>
+                  {transcript || (conversationMode === 'thinking' ? 'Processing...' : 'Awaiting speech...')}
+                </p>
+                <div className="mt-4 flex gap-1">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${conversationMode === 'thinking' ? 'bg-indigo-400 animate-bounce' : 'bg-gray-200'}`} style={{ animationDelay: `${i * 0.2}s` }}></div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="flex gap-6 items-center">
+        <div className="flex gap-4 items-center">
           {isCallActive && (
-            <>
+            <div className="flex gap-4 p-2 bg-white rounded-3xl shadow-xl border border-gray-50">
               <button
-                className={`w-14 h-14 rounded-full border-none cursor-pointer flex items-center justify-center transition-all shadow-lg hover:scale-105 hover:shadow-xl ${
-                  isMuted ? "bg-red-500 text-white" : "bg-white text-gray-600"
-                }`}
                 onClick={handleMuteToggle}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isMuted ? "bg-rose-50 text-rose-600" : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  }`}
                 title={isMuted ? "Unmute" : "Mute"}
               >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   {isMuted ? (
                     <>
                       <line x1="1" y1="1" x2="23" y2="23"></line>
                       <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
                       <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
-                      <line x1="12" y1="19" x2="12" y2="23"></line>
-                      <line x1="8" y1="23" x2="16" y2="23"></line>
                     </>
                   ) : (
                     <>
                       <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                      <line x1="12" y1="19" x2="12" y2="23"></line>
-                      <line x1="8" y1="23" x2="16" y2="23"></line>
                     </>
                   )}
                 </svg>
               </button>
 
               <button
-                className={`w-14 h-14 rounded-full border-none flex items-center justify-center transition-all shadow-lg ${
-                  conversationMode === "thinking" ||
-                  conversationMode === "speaking"
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : isRecording
-                    ? "bg-red-500 text-white cursor-pointer hover:scale-105 hover:shadow-xl"
-                    : "bg-white text-gray-600 cursor-pointer hover:scale-105 hover:shadow-xl"
-                }`}
                 onClick={handleRecordingToggle}
-                disabled={
-                  conversationMode === "thinking" ||
-                  conversationMode === "speaking"
-                }
-                title={
-                  conversationMode === "thinking" ||
-                  conversationMode === "speaking"
-                    ? "Disabled during processing"
-                    : isRecording
-                    ? "Stop Recording"
-                    : "Start Recording"
-                }
+                disabled={conversationMode === "thinking" || conversationMode === "speaking"}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${isRecording ? "bg-rose-500 text-white animate-pulse" : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  }`}
               >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill={isRecording ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                </svg>
+                <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-white' : 'bg-gray-400'}`}></div>
               </button>
-            </>
+            </div>
           )}
 
           <button
-            className={`w-18 h-18 rounded-full border-none cursor-pointer flex items-center justify-center transition-all shadow-xl hover:scale-105 ${
-              isCallActive
-                ? "bg-red-500 text-white hover:shadow-red-500/40"
-                : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:shadow-indigo-500/40"
-            }`}
             onClick={handleCallToggle}
+            className={`w-20 h-20 rounded-3xl flex items-center justify-center transition-all shadow-2xl hover:scale-105 active:scale-95 ${isCallActive
+              ? "bg-rose-500 text-white shadow-rose-200"
+              : "bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white shadow-indigo-100"
+              }`}
           >
             {isCallActive ? (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"></path>
               </svg>
             ) : (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"></path>
               </svg>
             )}
           </button>
         </div>
-
-        {isTesting && isCallActive && (
-          <div className="w-full max-w-lg bg-white rounded-2xl p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
-              Speech-to-Text Output
-            </p>
-            <textarea
-              className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={transcript}
-              readOnly
-              placeholder="Your speech will appear here..."
-              rows="6"
-            />
-          </div>
-        )}
-
-        {!isCallActive && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl">
-            <div className="bg-white p-5 rounded-xl flex flex-col items-center gap-3 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-indigo-500"
-              >
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              </svg>
-              <p className="text-sm text-gray-600 leading-snug m-0">
-                Natural voice conversation
-              </p>
-            </div>
-            <div className="bg-white p-5 rounded-xl flex flex-col items-center gap-3 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-indigo-500"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <p className="text-sm text-gray-600 leading-snug m-0">
-                Real-time support & guidance
-              </p>
-            </div>
-            <div className="bg-white p-5 rounded-xl flex flex-col items-center gap-3 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-indigo-500"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-              <p className="text-sm text-gray-600 leading-snug m-0">
-                Private & secure
-              </p>
-            </div>
-          </div>
-        )}
       </div>
+      {isTesting && isCallActive && (
+        <div className="design-section w-full max-w-2xl p-6 mt-8">
+          <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-4">
+            Speech-to-Text Debug Output
+          </p>
+          <textarea
+            className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            value={transcript}
+            readOnly
+            placeholder="Real-time transcription will appear here..."
+            rows="4"
+          />
+        </div>
+      )}
+
+      {!isCallActive && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl mt-12">
+          {[
+            { icon: '🎙️', title: 'Voice Chat', desc: 'Natural voice conversation' },
+            { icon: '💡', title: 'Support', desc: 'Real-time support & guidance' },
+            { icon: '🛡️', title: 'Private', desc: 'Private & secure interaction' }
+          ].map((feature, i) => (
+            <div key={i} className="design-section p-6 flex flex-col items-center gap-4 text-center hover:-translate-y-1 transition-transform">
+              <div className="text-3xl">{feature.icon}</div>
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-gray-800">{feature.title}</span>
+                <span className="text-xs text-gray-500 leading-tight">{feature.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

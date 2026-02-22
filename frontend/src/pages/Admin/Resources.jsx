@@ -8,6 +8,7 @@ import {
   MdImage,
 } from "react-icons/md";
 import axiosInstance from "../../utils/axios.instance";
+import "../../styles/GlobalDesign.css";
 
 const Resources = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -171,116 +172,116 @@ const Resources = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-        <div>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Resource Management</h1>
-          <p className="text-lg text-gray-500 mt-2">Manage and organize all resources in the system.</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow transition-all text-lg font-semibold"
-        >
-          <MdAdd className="text-2xl" />
-          <span>Add Resource</span>
-        </button>
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">
+          Resource <span className="gradient-text">Management</span>
+        </h1>
+        <p className="page-subtitle">Curate and organize educational and support resources</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="flex-1 relative">
-          <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-2xl" />
-          <input
-            type="text"
-            placeholder="Search resources..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-          />
+      <div className="design-section">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
+          <div className="relative w-full md:w-96">
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+            <input
+              type="text"
+              placeholder="Search resources by title or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#667eea] focus:bg-white transition-all shadow-sm"
+            />
+          </div>
+          <button
+            onClick={handleCreate}
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
+          >
+            <MdAdd className="text-xl" />
+            <span>Add Resource</span>
+          </button>
         </div>
-      </div>
 
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Image</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Title</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Description</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Category</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Links</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {resources.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="px-4 py-12 text-center text-gray-400 text-lg font-medium">
-                  No resources found
-                </td>
+        <div className="overflow-x-auto rounded-xl border border-gray-50">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400 font-bold">
+                <th className="px-6 py-4">Resource</th>
+                <th className="px-6 py-4">Details</th>
+                <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Links</th>
+                <th className="px-6 py-4 text-center">Actions</th>
               </tr>
-            ) : (
-              resources.map((resource) => (
-                <tr key={resource.id} className="hover:bg-gray-50 transition-all">
-                  <td className="px-4 py-3 align-middle">
-                    {resource.image_url ? (
-                      <img
-                        src={resource.image_url}
-                        alt={resource.title}
-                        className="w-16 h-16 rounded-xl object-cover border border-gray-200 shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-200 rounded-xl flex items-center justify-center">
-                        <MdImage className="text-gray-400 text-2xl" />
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 align-middle">
-                    <span className="font-bold text-gray-900 text-base">
-                      {resource.title}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-middle max-w-xs">
-                    <span className="text-gray-700 truncate block text-sm">
-                      {resource.description || "-"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-middle">
-                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-700 border border-blue-200">
-                      {resource.category || "N/A"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-middle">
-                    {resource.links && resource.links.length > 0 ? (
-                      <span className="text-blue-600 underline text-xs font-medium">
-                        {resource.links.length} link(s)
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 align-middle text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleEdit(resource)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
-                        title="Edit resource"
-                      >
-                        <MdEdit className="text-xl" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(resource.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-100"
-                        title="Delete resource"
-                      >
-                        <MdDelete className="text-xl" />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {resources.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-gray-400 font-medium">
+                    No resources found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                resources.map((resource) => (
+                  <tr key={resource.id} className="hover:bg-gray-50/50 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        {resource.image_url ? (
+                          <img
+                            src={resource.image_url}
+                            alt={resource.title}
+                            className="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
+                            <MdImage className="text-gray-300 text-2xl" />
+                          </div>
+                        )}
+                        <div className="font-bold text-gray-800 leading-tight">
+                          {resource.title}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <div className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {resource.description || "No description provided."}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        {resource.category || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg w-fit border border-gray-100">
+                        <span className="text-xs font-bold text-gray-600">
+                          {resource.links?.length || 0}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-gray-400">Links</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleEdit(resource)}
+                          className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
+                          title="Edit resource"
+                        >
+                          <MdEdit className="text-xl" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(resource.id)}
+                          className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Delete resource"
+                        >
+                          <MdDelete className="text-xl" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal */}

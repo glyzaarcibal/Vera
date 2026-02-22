@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import axiosInstance from "../../utils/axios.instance";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../store/slices/authSelectors";
 
 const generateHourOptions = () =>
   Array.from({ length: 12 }, (_, i) => (i + 1).toString());
@@ -48,7 +51,7 @@ const SimpleDatePicker = ({ selected, onDateChange, options }) => {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentMonth.getFullYear()}/${String(currentMonth.getMonth() + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
       const isSelected = dateStr === selectedDate;
-      
+
       days.push(
         <button
           key={day}
@@ -88,7 +91,10 @@ const SimpleDatePicker = ({ selected, onDateChange, options }) => {
   );
 };
 
-const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
+const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
+  const user = useSelector(selectUser);
+  const userId = user?.id;
+
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -103,25 +109,34 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
   const [loading, setLoading] = useState(true);
 
   const loadSleepData = async () => {
+    if (!userId) return;
     try {
-      // For demo purposes, load from localStorage
-      const savedData = localStorage.getItem("sleepData");
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        // Sort by date in descending order (latest first)
-        const sortedHistory = parsedData.sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
-        );
-        setSleepData(sortedHistory);
-      }
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+
+      const history = activities
+        .filter(act => act.activity_type === "sleep")
+        .map(act => ({
+          id: act.id,
+          ...act.data
+        }))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      setSleepData(history);
     } catch (error) {
       console.error("Error loading sleep history:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSleepData().then(() => setLoading(false));
-  }, []);
+    if (userId) {
+      loadSleepData();
+    } else {
+      setLoading(false);
+    }
+  }, [userId]);
 
   const calculateDuration = () => {
     const parseTime = (hour, minute, period) => {
@@ -141,38 +156,44 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
   };
 
   const saveSleepData = async () => {
+    if (!userId) return;
     try {
       console.log("Starting to save sleep data...");
-      
+
       const formattedDate = selectedDate.replace(/\//g, "-");
-      
+
       const newEntry = {
-        id: Date.now(),
         date: formattedDate,
         sleep_time: `${sleepHour}:${sleepMinute} ${sleepPeriod}`,
         wake_time: `${wakeHour}:${wakeMinute} ${wakePeriod}`,
         duration: calculateDuration(),
+        timestamp: new Date().toISOString(),
       };
 
-      console.log("New entry:", newEntry);
+      console.log("Saving to Supabase:", newEntry);
 
-      const updatedData = [newEntry, ...sleepData];
-      localStorage.setItem("sleepData", JSON.stringify(updatedData));
-      
-      setSleepData(updatedData);
+      await axiosInstance.post("/activities/save", {
+        activityType: "sleep",
+        data: newEntry
+      });
+
+      // Refetch after saving
+      await loadSleepData();
+
       if (onUpdateReport) onUpdateReport();
-      
-      console.log("Sleep data saved successfully");
+      alert("Sleep data saved successfully!");
     } catch (error) {
       console.error("Error saving sleep data:", error);
+      alert("Failed to save sleep data.");
     }
   };
 
   const deleteEntry = async (id) => {
-    const updatedHistory = sleepData.filter((entry) => entry.id !== id);
-    setSleepData(updatedHistory);
-    localStorage.setItem("sleepData", JSON.stringify(updatedHistory));
-    if (onUpdateReport) onUpdateReport(updatedHistory);
+    if (window.confirm("Delete this entry from view? (Backend deletion not yet supported by activities API)")) {
+      const updatedHistory = sleepData.filter((entry) => entry.id !== id);
+      setSleepData(updatedHistory);
+      if (onUpdateReport) onUpdateReport(updatedHistory);
+    }
   };
 
   const handleBack = () => {
@@ -322,7 +343,7 @@ const SleepTracker = ({ onUpdateReport = () => {}, navigation }) => {
           </div>
 
           <p style={styles.text}>Sleep Duration: {calculateDuration()}</p>
-          
+
           <button
             onClick={saveSleepData}
             style={styles.saveButton}
