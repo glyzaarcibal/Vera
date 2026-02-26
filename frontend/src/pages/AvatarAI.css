@@ -1,13 +1,39 @@
+/* Container and improved layout */
+.avatarai-outer-container {
+	width: 100vw;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #f7f7fb;
+	padding: 32px 0;
+}
 
-/* Centered Layout */
 .avatarai-container {
+	background: #fff;
+	border-radius: 24px;
+	box-shadow: 0 4px 24px rgba(108,99,255,0.08);
+	padding: 40px 32px;
+	max-width: 1200px;
+	width: 100%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	min-height: 100vh;
-	width: 100vw;
-	background: #f7f7fb;
+	margin: 0 auto;
+}
+
+.avatarai-header {
+	width: 100%;
+	margin-bottom: 24px;
+	text-align: center;
+}
+
+.avatarai-title {
+	font-size: 2.2rem;
+	font-weight: 700;
+	color: #4a4568;
+	letter-spacing: 0.02em;
 }
 
 .avatarai-main {
@@ -40,7 +66,8 @@
 	flex-direction: column;
 	gap: 24px;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-end;
+	min-height: 420px;
 }
 
 .avatarai-transcripts {
@@ -49,9 +76,17 @@
 	margin-bottom: 0;
 	margin-left: auto;
 	margin-right: auto;
+	margin-top: auto;
 }
 
 @media (max-width: 900px) {
+	.avatarai-outer-container {
+		padding: 16px 0;
+	}
+	.avatarai-container {
+		padding: 18px 6px;
+		max-width: 100vw;
+	}
 	.avatarai-main {
 		flex-direction: column;
 		gap: 18px;
@@ -71,9 +106,11 @@
 	.avatarai-content-panel {
 		gap: 14px;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-end;
+		min-height: 320px;
 	}
 	.avatarai-transcripts {
 		max-width: 100vw;
+		margin-top: auto;
 	}
 }

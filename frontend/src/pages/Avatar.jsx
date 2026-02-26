@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { User, PawPrint, MessageSquare, PhoneOff } from 'lucide-react';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
-
 import './AvatarAI.css';
 
 export default function AvatarAI() {
