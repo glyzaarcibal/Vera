@@ -8,7 +8,7 @@ import {
   MdImage,
 } from "react-icons/md";
 import axiosInstance from "../../utils/axios.instance";
-import "../../styles/GlobalDesign.css";
+import "./Resources.css";
 
 const Resources = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -172,125 +172,137 @@ const Resources = () => {
   };
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1 className="page-title">
-          Resource <span className="gradient-text">Management</span>
-        </h1>
-        <p className="page-subtitle">Curate and organize educational and support resources</p>
+    <div className="resources-container">
+      <div className="resources-header">
+        <div>
+          <div className="resources-title">Resources</div>
+          <div style={{ color: '#6b7280', fontSize: '1.1rem', marginTop: 4 }}>
+            Curate and organize educational and support resources
+          </div>
+        </div>
+        <button
+          onClick={handleCreate}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
+        >
+          <MdAdd className="text-xl" />
+          <span>Add Resource</span>
+        </button>
       </div>
 
-      <div className="design-section">
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-8">
+      <div style={{ marginTop: 24, marginBottom: 24 }}>
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:w-96">
             <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
             <input
               type="text"
-              placeholder="Search resources by title or category..."
+              placeholder="Search resources..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#667eea] focus:bg-white transition-all shadow-sm"
             />
           </div>
-          <button
-            onClick={handleCreate}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
-          >
-            <MdAdd className="text-xl" />
-            <span>Add Resource</span>
-          </button>
         </div>
+      </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-50">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400 font-bold">
-                <th className="px-6 py-4">Resource</th>
-                <th className="px-6 py-4">Details</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Links</th>
-                <th className="px-6 py-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {resources.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-gray-400 font-medium">
-                    No resources found
-                  </td>
-                </tr>
-              ) : (
-                resources.map((resource) => (
-                  <tr key={resource.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        {resource.image_url ? (
-                          <img
-                            src={resource.image_url}
-                            alt={resource.title}
-                            className="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm"
-                          />
-                        ) : (
-                          <div className="w-14 h-14 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-                            <MdImage className="text-gray-300 text-2xl" />
-                          </div>
-                        )}
-                        <div className="font-bold text-gray-800 leading-tight">
-                          {resource.title}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <div className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                        {resource.description || "No description provided."}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100">
-                        {resource.category || "N/A"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg w-fit border border-gray-100">
-                        <span className="text-xs font-bold text-gray-600">
-                          {resource.links?.length || 0}
-                        </span>
-                        <span className="text-[10px] uppercase font-bold text-gray-400">Links</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEdit(resource)}
-                          className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
-                          title="Edit resource"
-                        >
-                          <MdEdit className="text-xl" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(resource.id)}
-                          className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
-                          title="Delete resource"
-                        >
-                          <MdDelete className="text-xl" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <div className="resources-listing" style={{ width: '100%', marginTop: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', fontWeight: 700, color: '#a0aec0', fontSize: 13, height: 38 }}>
+          <div style={{ width: 56, minWidth: 56 }}></div>
+          <div style={{ flex: 2 }}>Title</div>
+          <div style={{ flex: 2 }}>Description</div>
+          <div style={{ flex: 1 }}>Category</div>
+          <div style={{ flex: 2 }}>Links</div>
+          <div style={{ width: 90, textAlign: 'center' }}>Actions</div>
         </div>
+        <div style={{ borderTop: '1px solid #e3e8f0' }} />
+        {resources.length === 0 ? (
+          <div style={{ width: '100%', textAlign: 'center', color: '#a0aec0', fontWeight: 500, padding: '48px 0' }}>
+            No resources found
+          </div>
+        ) : (
+          resources.map((resource) => (
+            <div key={resource.id} style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #f1f5f9', background: '#fff', transition: 'background 0.15s' }} className="hover:bg-gray-50 group">
+              {/* Avatar/Image */}
+              <div style={{ width: 56, minWidth: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                {resource.image_url ? (
+                  <img
+                    src={resource.image_url}
+                    alt={resource.title}
+                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e3e8f0' }}
+                  />
+                ) : (
+                  <div style={{ width: 40, height: 40, background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e3e8f0', fontWeight: 700, color: '#a0aec0', fontSize: 18 }}>
+                    <MdImage className="text-gray-300 text-xl" />
+                  </div>
+                )}
+              </div>
+              {/* Title */}
+              <div style={{ flex: 2, fontWeight: 600, color: '#22223b', fontSize: 16 }}>{resource.title}</div>
+              {/* Description */}
+              <div style={{ flex: 2, color: '#6b7280', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resource.description || 'No description provided.'}</div>
+              {/* Category */}
+              <div style={{ flex: 1 }}>
+                <span style={{
+                  background: '#eef2ff',
+                  color: '#6366f1',
+                  border: '1px solid #e0e7ff',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '3px 12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                }}>
+                  {resource.category || 'N/A'}
+                </span>
+              </div>
+              {/* Links */}
+              <div style={{ flex: 2, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {resource.links && resource.links.length > 0 ? (
+                  resource.links.map((link, idx) => (
+                    <a
+                      key={idx}
+                      href={link}
+                      className="resource-card-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120, fontSize: 13 }}
+                    >
+                      {link}
+                    </a>
+                  ))
+                ) : (
+                  <span style={{ color: '#a0aec0', fontSize: 13 }}>No links</span>
+                )}
+              </div>
+              {/* Actions */}
+              <div style={{ width: 90, display: 'flex', justifyContent: 'center', gap: 8 }}>
+                <button
+                  onClick={() => handleEdit(resource)}
+                  className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
+                  title="Edit resource"
+                >
+                  <MdEdit className="text-xl" />
+                </button>
+                <button
+                  onClick={() => handleDelete(resource.id)}
+                  className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                  title="Delete resource"
+                >
+                  <MdDelete className="text-xl" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 my-8 shadow-xl border border-gray-200">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-extrabold text-gray-900">
-                {modalMode === "create" ? "Create Resource" : "Edit Resource"}
+          <div className="bg-white rounded-2xl p-0 max-w-lg w-full mx-4 my-8 shadow-xl border border-gray-200">
+            <div className="flex justify-between items-center px-8 pt-8 pb-4 border-b border-gray-100">
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                {modalMode === "create" ? "Add Resource" : "Edit Resource"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -299,9 +311,8 @@ const Resources = () => {
                 <MdClose className="text-3xl" />
               </button>
             </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
+            <form onSubmit={handleSubmit} className="px-8 pt-6 pb-8">
+              <div className="grid grid-cols-1 gap-6">
                 {/* Image Upload */}
                 <div>
                   <label className="block text-base font-semibold text-gray-700 mb-2">Image</label>
@@ -310,7 +321,7 @@ const Resources = () => {
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="w-24 h-24 rounded-lg object-cover border border-gray-200 shadow"
+                        className="w-20 h-20 rounded-lg object-cover border border-gray-200 shadow"
                       />
                     )}
                     <label className="cursor-pointer flex items-center gap-2 px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium border border-gray-300">
@@ -327,7 +338,7 @@ const Resources = () => {
                 </div>
 
                 <div>
-                  <label className="block text-base font-semibold text-gray-700 mb-2">Title *</label>
+                  <label className="block text-base font-semibold text-gray-700 mb-2">Title <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     name="title"
@@ -345,7 +356,7 @@ const Resources = () => {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    rows="3"
+                    rows="2"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
                     placeholder="Resource description"
                   />
@@ -364,7 +375,7 @@ const Resources = () => {
                 </div>
 
                 <div>
-                  <label className="block text-base font-semibold text-gray-700 mb-2">Links (comma-separated)</label>
+                  <label className="block text-base font-semibold text-gray-700 mb-2">Links <span className="text-xs text-gray-400">(comma-separated)</span></label>
                   <input
                     type="text"
                     name="links"
