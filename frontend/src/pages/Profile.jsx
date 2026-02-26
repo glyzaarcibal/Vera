@@ -301,11 +301,10 @@ const Profile = () => {
 
       {message.text && (
         <div
-          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${
-            message.type === "success"
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
-              : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
-          }`}
+          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
+            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
+            : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
+            }`}
         >
           {message.text}
         </div>
@@ -501,11 +500,10 @@ const Profile = () => {
     <>
       {message.text && (
         <div
-          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${
-            message.type === "success"
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
-              : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
-          }`}
+          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
+            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
+            : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
+            }`}
         >
           {message.text}
         </div>
@@ -576,20 +574,18 @@ const Profile = () => {
             {chatSessions.map((session) => (
               <div
                 key={session.id}
-                className={`p-4.5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-                  selectedSession?.id === session.id
-                    ? "border-indigo-500 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg shadow-indigo-500/20 translate-x-1"
-                    : "border-gray-200 bg-white hover:border-indigo-500 hover:bg-purple-50 hover:translate-x-1"
-                }`}
+                className={`p-4.5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${selectedSession?.id === session.id
+                  ? "border-indigo-500 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg shadow-indigo-500/20 translate-x-1"
+                  : "border-gray-200 bg-white hover:border-indigo-500 hover:bg-purple-50 hover:translate-x-1"
+                  }`}
                 onClick={() => setSelectedSession(session)}
               >
                 <div className="flex gap-2 mb-2.5 flex-wrap">
                   <span
-                    className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                      session.type === "text"
-                        ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
-                        : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
-                    }`}
+                    className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${session.type === "text"
+                      ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
+                      : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
+                      }`}
                   >
                     {session.type}
                   </span>
@@ -628,11 +624,10 @@ const Profile = () => {
                     </h3>
                     <div className="flex gap-2">
                       <span
-                        className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                          selectedSession.type === "text"
-                            ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
-                            : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
-                        }`}
+                        className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${selectedSession.type === "text"
+                          ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
+                          : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
+                          }`}
                       >
                         {selectedSession.type}
                       </span>
@@ -653,6 +648,39 @@ const Profile = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Appointment Banner */}
+                  {selectedSession?.doctor_notes?.find((n) => n.next_appointment) && (
+                    <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-100 rounded-2xl p-5 flex items-center gap-4 shadow-sm animate-[fadeIn_0.4s_ease-out]">
+                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md">
+                        <svg
+                          className="w-6 h-6 text-indigo-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-0.5">
+                          Next Appointment
+                        </p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {formatDate(
+                            selectedSession.doctor_notes.find((n) => n.next_appointment)
+                              .next_appointment
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3.5">
                     <div className="text-sm text-gray-700 leading-relaxed">
                       <strong className="text-gray-900 font-bold">Date:</strong>{" "}
@@ -682,18 +710,16 @@ const Profile = () => {
                       {selectedSession.chat_messages.map((message) => (
                         <div
                           key={message.id}
-                          className={`px-5 py-4.5 rounded-2xl max-w-[80%] animate-[messageSlide_0.3s_ease-out] ${
-                            message.sent_by === "user"
-                              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white self-end ml-auto shadow-lg shadow-indigo-500/30"
-                              : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 border-2 border-gray-200 self-start"
-                          }`}
+                          className={`px-5 py-4.5 rounded-2xl max-w-[80%] animate-[messageSlide_0.3s_ease-out] ${message.sent_by === "user"
+                            ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white self-end ml-auto shadow-lg shadow-indigo-500/30"
+                            : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 border-2 border-gray-200 self-start"
+                            }`}
                         >
                           <div
-                            className={`text-xs font-bold mb-2 uppercase tracking-wider ${
-                              message.sent_by === "user"
-                                ? "text-white/90"
-                                : "text-indigo-500"
-                            }`}
+                            className={`text-xs font-bold mb-2 uppercase tracking-wider ${message.sent_by === "user"
+                              ? "text-white/90"
+                              : "text-indigo-500"
+                              }`}
                           >
                             {message.sent_by === "user" ? "You" : "Sentinel"}
                           </div>
@@ -720,6 +746,100 @@ const Profile = () => {
     </div>
   );
 
+  const renderAppointmentsTab = () => {
+    const appointments = chatSessions
+      .flatMap((session) =>
+        (session.doctor_notes || [])
+          .filter((note) => note.next_appointment)
+          .map((note) => ({
+            ...note,
+            sessionId: session.id,
+            sessionType: session.type,
+          }))
+      )
+      .sort(
+        (a, b) => new Date(b.next_appointment) - new Date(a.next_appointment)
+      );
+
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h2>
+        {appointments.length === 0 ? (
+          <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+            No appointments found
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {appointments.map((appointment) => (
+              <div
+                key={appointment.id}
+                className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-3xl p-6 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-indigo-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-0.5">
+                      Session #{appointment.sessionId.substring(0, 8)}...
+                    </p>
+                    <p className="text-sm font-semibold text-gray-500">
+                      {appointment.sessionType} Session
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                      Appointment Date & Time
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {formatDate(appointment.next_appointment)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                      Doctor
+                    </p>
+                    <p className="text-sm font-bold text-indigo-600">
+                      Dr. {appointment.profiles?.first_name || ""}{" "}
+                      {appointment.profiles?.last_name || "Unknown"}
+                    </p>
+                  </div>
+
+                  {appointment.clinical_observations && (
+                    <div className="bg-white/50 rounded-2xl p-4 border border-gray-100">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                        Clinical Observations
+                      </p>
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                        {appointment.clinical_observations}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <style>{scrollbarStyles}</style>
@@ -731,6 +851,7 @@ const Profile = () => {
               { label: "Profile", value: "profile" },
               { label: "Privacy", value: "privacy" },
               { label: "Sessions", value: "sessions" },
+              { label: "Appointments", value: "appointments" },
             ]}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -741,6 +862,7 @@ const Profile = () => {
             {activeTab === "profile" && renderProfileTab()}
             {activeTab === "privacy" && renderPrivacyTab()}
             {activeTab === "sessions" && renderSessionsTab()}
+            {activeTab === "appointments" && renderAppointmentsTab()}
           </div>
         </div>
       </div>

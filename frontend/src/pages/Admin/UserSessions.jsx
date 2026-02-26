@@ -627,29 +627,15 @@ const UserSessions = () => {
                       </div>
                     </div>
 
-                    {/* Activities */}
-                    <div className="border-t border-gray-100 pt-6">
-                      <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <MdFitnessCenter className="text-lg" />
-                        Activities
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                          <div className="text-sm text-gray-600 mb-1">Mood Entries</div>
-                          <div className="text-2xl font-bold text-yellow-700">{activitiesData.moodEntries}</div>
-                          <div className="text-xs text-gray-500 mt-1">Mood tracking entries</div>
-                        </div>
-                        <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                          <div className="text-sm text-gray-600 mb-1">Sleep Entries</div>
-                          <div className="text-2xl font-bold text-indigo-700">{activitiesData.sleepEntries}</div>
-                          <div className="text-xs text-gray-500 mt-1">Sleep tracking entries</div>
-                        </div>
-                        <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
-                          <div className="text-sm text-gray-600 mb-1">Breathing Sessions</div>
-                          <div className="text-2xl font-bold text-teal-700">{activitiesData.breathingSessions}</div>
-                          <div className="text-xs text-gray-500 mt-1">Breathing exercises</div>
-                        </div>
-                      </div>
+                {/* Emotion-Hinting Words Section */}
+                <div className="border-t border-gray-100 pt-4">
+                  <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    Emotion-Hinting Words Detected
+                  </h4>
+                  {Object.keys().length === 0 ? (
+                    <div className="bg-gray-50 p-8 rounded-lg text-center">
+                      <p className="text-gray-500">No emotion-hinting words detected yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">Words that indicate emotions will appear here as the user interacts.</p>
                     </div>
 
                     {/* Daily Emotion Detection Chart */}

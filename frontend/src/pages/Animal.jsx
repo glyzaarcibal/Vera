@@ -387,25 +387,25 @@ export default function AnimalAI({ onTranscript }) {
                         <p className="page-subtitle">Select a friendly animal avatar to start your conversation</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-4xl">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-4xl pb-12">
                         {[
-                            { id: 'cat', name: 'Cat AI', icon: '🐱', color: 'indigo', desc: 'Sassy and playful feline friend' },
-                            { id: 'dog', name: 'Dog AI', icon: '🐶', color: 'purple', desc: 'Loyal and energetic canine companion' }
+                            { id: 'cat', name: 'Cat AI', icon: '🐱', desc: 'Sassy and playful feline friend' },
+                            { id: 'dog', name: 'Dog AI', icon: '🐶', desc: 'Loyal and energetic canine companion' }
                         ].map(animal => (
                             <button
                                 key={animal.id}
                                 onClick={() => handleAnimalSelect(animal.id)}
-                                className="design-section text-left p-8 group hover:scale-[1.02] flex flex-col items-center text-center"
+                                className="design-section glass-card text-left p-10 group flex flex-col items-center text-center transition-all duration-500"
                             >
-                                <div className="text-6xl mb-6 transform group-hover:scale-110 transition-transform duration-500">
+                                <div className="text-7xl mb-8 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 drop-shadow-xl">
                                     {animal.icon}
                                 </div>
-                                <h3 className="section-title mb-2 capitalize">{animal.name}</h3>
-                                <p className="text-sm text-gray-500 leading-relaxed max-w-[200px]">
+                                <h3 className="section-title text-2xl mb-2 capitalize">{animal.name}</h3>
+                                <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-[240px] mb-8">
                                     {animal.desc}
                                 </p>
-                                <div className="mt-6 inline-flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                    Select Companion
+                                <div className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-indigo-200 transition-all duration-300">
+                                    Start Session
                                 </div>
                             </button>
                         ))}
@@ -487,44 +487,45 @@ export default function AnimalAI({ onTranscript }) {
                         )}
                     </div>
 
-                    <div className="w-full max-w-md">
-                        <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-4 flex items-center gap-4 transition-all">
+                    <div className="w-full max-w-2xl">
+                        <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[32px] p-6 flex items-center gap-6 transition-all hover:shadow-indigo-100/50">
                             <button
                                 type="button"
                                 onClick={toggleListening}
                                 disabled={isProcessing || isSpeaking}
-                                className={`p-5 rounded-2xl transition-all duration-500 transform active:scale-90 ${isListening
-                                    ? 'bg-rose-500 shadow-lg shadow-rose-200 animate-pulse'
-                                    : 'bg-gradient-to-r from-[#667eea] to-[#764ba2] shadow-lg shadow-indigo-100'
+                                className={`p-6 rounded-[24px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
+                                    ? 'bg-rose-500 shadow-rose-200 animate-pulse'
+                                    : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
                                     } disabled:opacity-50 disabled:grayscale text-white`}
                                 title={isListening ? 'Stop listening' : 'Start listening'}
                             >
                                 {isListening ? (
-                                    <Mic size={24} className="text-white" />
+                                    <Mic size={28} className="text-white" />
                                 ) : (
-                                    <MicOff size={24} className="text-white" />
+                                    <MicOff size={28} className="text-white" />
                                 )}
                             </button>
 
-                            <div className="flex-1">
-                                <div className="text-gray-800 font-bold text-sm tracking-tight">
-                                    {isListening ? 'Listening to you...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Tap Mic to Start Chat'}
+                            <div className="flex-1 flex flex-col">
+                                <div className="text-slate-800 font-extrabold text-lg tracking-tight">
+                                    {isListening ? 'Listening to you...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Tap Mic to Chat'}
                                 </div>
-                                <div className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mt-0.5">
-                                    {isListening ? 'Companion is attentive' : isSpeaking ? 'Interactive guidance' : 'Processing AI Response'}
+                                <div className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] mt-1.5">
+                                    {isListening ? 'Companion is attentive' : isSpeaking ? 'Interactive guidance' : 'Companion at your service'}
                                 </div>
                             </div>
 
                             {/* Speech Activity Indicator */}
                             {isListening && (
-                                <div className="flex items-end gap-0.5 h-6 px-2">
-                                    {[1, 2, 3, 4, 5].map(i => (
+                                <div className="flex items-end gap-1 h-8 px-4">
+                                    {[1, 2, 3, 4, 5, 6].map(i => (
                                         <div
                                             key={i}
-                                            className="w-1 bg-rose-400 rounded-full animate-bounce"
+                                            className="w-1.5 bg-rose-400 rounded-full animate-bounce"
                                             style={{
-                                                height: `${Math.random() * 100}%`,
-                                                animationDuration: `${0.5 + Math.random()}s`
+                                                height: `${30 + Math.random() * 70}%`,
+                                                animationDuration: `${0.4 + Math.random() * 0.6}s`,
+                                                animationDelay: `${i * 0.05}s`
                                             }}
                                         ></div>
                                     ))}
