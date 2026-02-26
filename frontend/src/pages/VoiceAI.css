@@ -1,0 +1,22 @@
+/* VoiceAI Page Styles */
+.voice-ai-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.voice-ai-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.voice-ai-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+/* Add more specific styles for VoiceAI page here */

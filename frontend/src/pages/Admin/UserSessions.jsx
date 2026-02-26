@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import "../../styles/GlobalDesign.css";
+import "./UserSessions.css";
 import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend } from "recharts";
 import axiosInstance from "../../utils/axios.instance";
@@ -450,22 +450,29 @@ const UserSessions = () => {
   const overallRisk = getOverallRisk();
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <button
-          className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-xl text-[#667eea] text-[15px] font-medium shadow-sm border border-[#e2e8f0] hover:bg-[#f5f5ff] hover:-translate-x-0.5 transition-all mb-8 absolute left-0"
-          onClick={() => navigate(-1)}
-        >
-          <MdArrowBack className="text-xl" />
-          <span>Back</span>
-        </button>
-        <h1 className="page-title">
-          User <span className="gradient-text">Sessions</span>
-        </h1>
-        <p className="page-subtitle">View and manage user activity, risk assessments, and reports</p>
+    <div className="user-sessions-container">
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 32 }}>
+        {/* Sidebar with Back button */}
+        <div style={{ minWidth: 80, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <button
+            className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl text-[#667eea] text-[15px] font-medium shadow-sm border border-[#e2e8f0] hover:bg-[#f5f5ff] transition-all"
+            style={{ marginBottom: 16, width: '100%' }}
+            onClick={() => navigate(-1)}
+          >
+            <MdArrowBack className="text-xl" />
+            <span>Back</span>
+          </button>
+        </div>
+        {/* Main header */}
+        <div style={{ flex: 1 }}>
+          <h1 className="page-title">
+            User <span className="gradient-text">Sessions</span>
+          </h1>
+          <p className="page-subtitle">View and manage user activity, risk assessments, and reports</p>
+        </div>
       </div>
 
-      <div className="design-section">
+      <div className="design-section" style={{ padding: 32 }}>
         {loading ? (
           <div className="flex items-center gap-5">
             <Skeleton variant="avatar" width="80px" height="80px" />
@@ -509,7 +516,7 @@ const UserSessions = () => {
         ) : null}
       </div>
 
-      <div className="design-section">
+      <div className="design-section" style={{ padding: 32 }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
           <div>
             <h3 className="section-title mb-1">Overall Risk Assessment</h3>
@@ -555,7 +562,7 @@ const UserSessions = () => {
       </div>
 
       {/* Reports Section */}
-      <div className="design-section">
+      <div className="design-section" style={{ padding: 32 }}>
         <div className="flex items-center justify-between mb-6">
           <h3 className="section-title mb-0 flex items-center gap-2">
             <div className="bg-indigo-50 p-2 rounded-lg">
@@ -767,7 +774,7 @@ const UserSessions = () => {
       </div>
 
       {/* Available Resources Section */}
-      <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
+      <div className="bg-white p-8 rounded-xl shadow-sm mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Assign Resources</h3>
           <button
@@ -836,7 +843,7 @@ const UserSessions = () => {
       </div>
 
       {/* Assigned Resources Section */}
-      <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
+      <div className="bg-white p-8 rounded-xl shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Assigned Resources ({assignedResources.length})
         </h3>
@@ -895,7 +902,7 @@ const UserSessions = () => {
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-xl shadow-sm mb-6">
+      <div className="bg-white p-8 rounded-xl shadow-sm mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
             Sessions ({pagination.totalSessions})

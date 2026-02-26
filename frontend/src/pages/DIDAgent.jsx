@@ -27,7 +27,6 @@ import filipinoBoy1 from '../assets/filipino-boy-1.png';
 import filipinoBoy2 from '../assets/filipino-boy-2.png';
 import filipinoBoy3 from '../assets/filipino-boy-3.png';
 import axiosInstance from '../utils/axios.instance';
-import "../styles/GlobalDesign.css";
 
 
 export default function DIDAgent({ onTranscript }) {

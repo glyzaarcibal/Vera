@@ -1,0 +1,79 @@
+
+/* Centered Layout */
+.avatarai-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	width: 100vw;
+	background: #f7f7fb;
+}
+
+.avatarai-main {
+	display: flex;
+	flex-direction: row;
+	gap: 36px;
+	width: 100%;
+	max-width: 900px;
+	min-height: 420px;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto;
+}
+
+.avatarai-options {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	min-width: 240px;
+	max-width: 320px;
+	flex: 0 0 260px;
+	margin-bottom: 0;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatarai-content-panel {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatarai-transcripts {
+	width: 100%;
+	max-width: 420px;
+	margin-bottom: 0;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+@media (max-width: 900px) {
+	.avatarai-main {
+		flex-direction: column;
+		gap: 18px;
+		align-items: center;
+		justify-content: center;
+	}
+	.avatarai-options {
+		flex-direction: row;
+		min-width: unset;
+		max-width: unset;
+		flex: unset;
+		gap: 10px;
+		margin-bottom: 14px;
+		align-items: center;
+		justify-content: center;
+	}
+	.avatarai-content-panel {
+		gap: 14px;
+		align-items: center;
+		justify-content: center;
+	}
+	.avatarai-transcripts {
+		max-width: 100vw;
+	}
+}
