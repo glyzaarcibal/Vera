@@ -8,6 +8,7 @@ import MainLayout from "./layouts/MainLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import Welcome from "./pages/Welcome";
 import About from "./pages/About";
+import Notifications from "./pages/Notifications";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -46,6 +47,7 @@ const App = () => {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Welcome />} />
         <Route path="/about" element={<About />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/chat" element={<ChatAI />} />
         <Route path="/voice" element={<VoiceAI />} />

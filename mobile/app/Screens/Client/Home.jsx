@@ -106,13 +106,26 @@ const Home = ({ navigation }) => {
   return (
     <ScrollView className="flex-1 bg-gray-50">
       <View className="max-w-[1200px] mx-auto px-5 py-10">
-        {/* Hero Section */}
-        <View className="items-center mb-20">
-          <View className="px-5 py-2 bg-purple-50 border border-purple-100 rounded-full mb-6">
+        {/* Header with Notification Bell */}
+        <View className="flex-row justify-between items-center mb-10">
+          <View className="px-5 py-2 bg-purple-50 border border-purple-100 rounded-full">
             <Text className="text-indigo-500 text-sm font-semibold tracking-wide">
               Mental Health Support
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Notifications')}
+            className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100 active:bg-gray-50"
+          >
+            <View className="relative">
+              <Ionicons name="notifications-outline" size={24} color="#6366f1" />
+              <View className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Hero Section */}
+        <View className="items-center mb-20">
 
           <Text className="text-5xl font-bold text-gray-900 text-center mb-4 px-4">
             Welcome to <Text className="text-indigo-500">V.E.R.A.</Text>

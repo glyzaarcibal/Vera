@@ -296,11 +296,10 @@ const Profile = ({ navigation }) => {
 
       {message.text && (
         <View
-          className={`!px-5 !py-4 rounded-xl mb-6 ${
-            message.type === 'success'
+          className={`!px-5 !py-4 rounded-xl mb-6 ${message.type === 'success'
               ? 'bg-green-100 border border-green-200'
               : 'bg-red-100 border border-red-200'
-          }`}
+            }`}
         >
           <Text
             className={
@@ -496,11 +495,10 @@ const Profile = ({ navigation }) => {
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {message.text && (
         <View
-          className={`!px-5 !py-4 rounded-xl mb-6 ${
-            message.type === 'success'
+          className={`!px-5 !py-4 rounded-xl mb-6 ${message.type === 'success'
               ? 'bg-green-100 border border-green-200'
               : 'bg-red-100 border border-red-200'
-          }`}
+            }`}
         >
           <Text
             className={
@@ -580,18 +578,16 @@ const Profile = ({ navigation }) => {
               </Text>
               <View className="flex-row gap-2">
                 <View
-                  className={`!px-3 !py-2 rounded-lg ${
-                    selectedSession.type === 'text'
+                  className={`!px-3 !py-2 rounded-lg ${selectedSession.type === 'text'
                       ? 'bg-blue-200'
                       : 'bg-pink-200'
-                  }`}
+                    }`}
                 >
                   <Text
-                    className={`text-xs font-bold uppercase ${
-                      selectedSession.type === 'text'
+                    className={`text-xs font-bold uppercase ${selectedSession.type === 'text'
                         ? 'text-blue-800'
                         : 'text-pink-800'
-                    }`}
+                      }`}
                   >
                     {selectedSession.type}
                   </Text>
@@ -641,11 +637,10 @@ const Profile = ({ navigation }) => {
                   {selectedSession.chat_messages.map(message => (
                     <View
                       key={message.id}
-                      className={`!px-5 !py-5 rounded-2xl mb-4 ${
-                        message.sent_by === 'user'
+                      className={`!px-5 !py-5 rounded-2xl mb-4 ${message.sent_by === 'user'
                           ? 'bg-indigo-500 self-end'
                           : 'bg-gray-200 self-start'
-                      }`}
+                        }`}
                       style={{
                         maxWidth: '80%',
                         alignSelf:
@@ -655,29 +650,26 @@ const Profile = ({ navigation }) => {
                       }}
                     >
                       <Text
-                        className={`text-xs font-bold mb-2 uppercase ${
-                          message.sent_by === 'user'
+                        className={`text-xs font-bold mb-2 uppercase ${message.sent_by === 'user'
                             ? 'text-white'
                             : 'text-indigo-500'
-                        }`}
+                          }`}
                       >
                         {message.sent_by === 'user' ? 'You' : 'Sentinel'}
                       </Text>
                       <Text
-                        className={`text-sm mb-2 ${
-                          message.sent_by === 'user'
+                        className={`text-sm mb-2 ${message.sent_by === 'user'
                             ? 'text-white'
                             : 'text-gray-900'
-                        }`}
+                          }`}
                       >
                         {message.content || '(No content)'}
                       </Text>
                       <Text
-                        className={`text-xs text-right ${
-                          message.sent_by === 'user'
+                        className={`text-xs text-right ${message.sent_by === 'user'
                             ? 'text-white opacity-70'
                             : 'text-gray-500'
-                        }`}
+                          }`}
                       >
                         {formatDate(message.created_at)}
                       </Text>
@@ -725,11 +717,10 @@ const Profile = ({ navigation }) => {
               {chatSessions.map(session => (
                 <TouchableOpacity
                   key={session.id}
-                  className={`p-5 rounded-2xl border-2 mb-4 ${
-                    selectedSession?.id === session.id
+                  className={`p-5 rounded-2xl border-2 mb-4 ${selectedSession?.id === session.id
                       ? 'border-indigo-500 bg-purple-50'
                       : 'border-gray-200 bg-white'
-                  }`}
+                    }`}
                   onPress={() => {
                     setSelectedSession(session)
                     setShowSessionModal(false)
@@ -737,16 +728,14 @@ const Profile = ({ navigation }) => {
                 >
                   <View className="flex-row gap-2 mb-2 flex-wrap">
                     <View
-                      className={`!px-3 !py-1 rounded-lg ${
-                        session.type === 'text' ? 'bg-blue-200' : 'bg-pink-200'
-                      }`}
+                      className={`!px-3 !py-1 rounded-lg ${session.type === 'text' ? 'bg-blue-200' : 'bg-pink-200'
+                        }`}
                     >
                       <Text
-                        className={`text-xs font-bold uppercase ${
-                          session.type === 'text'
+                        className={`text-xs font-bold uppercase ${session.type === 'text'
                             ? 'text-blue-800'
                             : 'text-pink-800'
-                        }`}
+                          }`}
                       >
                         {session.type}
                       </Text>

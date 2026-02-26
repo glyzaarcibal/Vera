@@ -707,14 +707,14 @@ export default function DIDAgent({ onTranscript }) {
               <button
                 key={key}
                 onClick={() => handleOutfitSelect(key)}
-                className="design-section group p-4 flex flex-col items-center text-center hover:scale-105 transition-all"
+                className="design-section glass-card group p-6 flex flex-col items-center text-center hover:scale-[1.05] transition-all duration-500"
               >
-                <div className="w-24 h-24 rounded-2xl overflow-hidden mb-4 shadow-md ring-2 ring-white group-hover:ring-indigo-50 transition-all">
-                  <img src={img} alt={label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="w-28 h-28 rounded-2xl overflow-hidden mb-4 shadow-lg ring-2 ring-white/50 group-hover:ring-indigo-400/50 transition-all duration-500">
+                  <img src={img} alt={label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 </div>
-                <span className="font-bold text-gray-800 text-sm">{label}</span>
-                <div className="mt-3 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                  Apply
+                <span className="font-extrabold text-slate-800 text-sm tracking-tight">{label}</span>
+                <div className="mt-4 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                  Select Style
                 </div>
               </button>
             ))}
@@ -738,20 +738,20 @@ export default function DIDAgent({ onTranscript }) {
             <p className="page-subtitle">Select a professional AI agent to assist you today</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full pb-12">
             {Object.entries(AVATAR_IMAGES).map(([type, img]) => (
               <button
                 key={type}
                 onClick={() => handleAvatarSelect(type)}
-                className="design-section group p-6 flex flex-col items-center text-center hover:scale-[1.02] transition-all"
+                className="design-section glass-card group p-8 flex flex-col items-center text-center transition-all duration-500"
               >
-                <div className="w-32 h-32 rounded-3xl overflow-hidden mb-5 shadow-xl ring-4 ring-white group-hover:ring-indigo-50 transition-all">
-                  <img src={img} alt={type} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div className="w-40 h-40 rounded-[32px] overflow-hidden mb-6 shadow-2xl ring-4 ring-white/50 group-hover:ring-indigo-400/50 transition-all duration-500">
+                  <img src={img} alt={type} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                 </div>
-                <h3 className="section-title text-lg mb-1 capitalize">{type.replace('-', ' ')}</h3>
-                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-4">Professional Assistant</p>
-                <div className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                  Select
+                <h3 className="section-title text-xl mb-2 capitalize">{type.replace('-', ' ')}</h3>
+                <p className="text-[10px] text-indigo-500/60 uppercase font-black tracking-[0.2em] mb-6">Expert Assistant</p>
+                <div className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-indigo-200 transition-all duration-300">
+                  Connect Now
                 </div>
               </button>
             ))}
@@ -826,43 +826,46 @@ export default function DIDAgent({ onTranscript }) {
           </div>
 
           <div className="w-full max-w-2xl">
-            <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl p-4 flex items-center gap-6 transition-all">
+            <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[32px] p-6 flex items-center gap-6 transition-all hover:shadow-indigo-100/50">
               <button
                 type="button"
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
-                className={`p-5 rounded-2xl transition-all duration-500 transform active:scale-90 shadow-lg ${isListening
-                    ? 'bg-rose-500 shadow-rose-200 animate-pulse'
-                    : 'bg-gradient-to-r from-[#667eea] to-[#764ba2] shadow-indigo-100'
+                className={`p-6 rounded-[24px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
+                  ? 'bg-rose-500 shadow-rose-200 animate-pulse'
+                  : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
                   } disabled:opacity-50 disabled:grayscale text-white`}
               >
-                {isListening ? <Mic size={24} /> : <MicOff size={24} />}
+                {isListening ? <Mic size={28} /> : <MicOff size={28} />}
               </button>
 
               <div className="flex-1 flex flex-col">
-                <div className="text-gray-800 font-bold text-sm tracking-tight">
-                  {isListening ? 'Agent is listening...' : isSpeaking ? 'Agent is speaking...' : isProcessing ? 'Agent is thinking...' : 'Voice Interaction Ready'}
+                <div className="text-slate-800 font-extrabold text-lg tracking-tight">
+                  {isListening ? 'Assistant is listening...' : isSpeaking ? 'Assistant is speaking...' : isProcessing ? 'Assistant is thinking...' : 'Voice Command Center'}
                 </div>
-                <div className="flex items-center gap-3 mt-1.5">
-                  <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
-                    {language === 'fil' ? 'Tagalog Mode' : 'English Mode'}
-                  </span>
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
+                      {language === 'fil' ? 'Tagalog' : 'English'}
+                    </span>
+                  </div>
                   <button
                     onClick={() => setLanguage(l => l === 'fil' ? 'eng' : 'fil')}
-                    className="px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded-md text-[10px] font-bold text-gray-500 transition-colors"
+                    className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-colors"
                   >
-                    Switch
+                    Switch Language
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pr-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowOutfitPicker(true)}
-                  className="p-3 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-2xl transition-all border border-gray-100"
-                  title="Customize Outfit"
+                  className="p-4 bg-slate-50 hover:bg-white hover:shadow-md text-slate-600 rounded-2xl transition-all border border-slate-100"
+                  title="Customize Appearance"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                   </svg>
                 </button>

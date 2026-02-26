@@ -211,6 +211,26 @@ const UserChat = () => {
               Session ID: {sessionId}
             </Text>
 
+            {/* Next Appointment Banner */}
+            {sessionInfo?.doctor_notes?.find(n => n.next_appointment) && (
+              <View className="mb-5 bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex-row items-center gap-3">
+                <View className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm">
+                  <Ionicons name="calendar" size={20} color="#6366f1" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+                    Next Appointment
+                  </Text>
+                  <Text className="text-base font-bold text-gray-800">
+                    {formatDate(
+                      sessionInfo.doctor_notes.find(n => n.next_appointment)
+                        .next_appointment,
+                    )}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {chat.length === 0 ? (
               <View className="py-10 items-center">
                 <Text className="text-gray-400">
@@ -230,17 +250,15 @@ const UserChat = () => {
                   return (
                     <View
                       key={message.id}
-                      className={`flex-row gap-3 ${
-                        message.sent_by === 'user' ? 'flex-row-reverse' : ''
-                      }`}
+                      className={`flex-row gap-3 ${message.sent_by === 'user' ? 'flex-row-reverse' : ''
+                        }`}
                     >
                       {/* Avatar */}
                       <View
-                        className={`w-10 h-10 rounded-full items-center justify-center ${
-                          message.sent_by === 'user'
+                        className={`w-10 h-10 rounded-full items-center justify-center ${message.sent_by === 'user'
                             ? 'bg-indigo-100'
                             : 'bg-gray-100'
-                        }`}
+                          }`}
                       >
                         <Ionicons
                           name={
@@ -256,18 +274,16 @@ const UserChat = () => {
                       {/* Message Content */}
                       <View className="flex-1">
                         <View
-                          className={`flex-row items-center gap-2 mb-1 ${
-                            message.sent_by === 'user'
+                          className={`flex-row items-center gap-2 mb-1 ${message.sent_by === 'user'
                               ? 'justify-end'
                               : 'justify-start'
-                          }`}
+                            }`}
                         >
                           <Text
-                            className={`text-xs font-semibold uppercase ${
-                              message.sent_by === 'user'
+                            className={`text-xs font-semibold uppercase ${message.sent_by === 'user'
                                 ? 'text-indigo-600'
                                 : 'text-gray-600'
-                            }`}
+                              }`}
                           >
                             {message.sent_by === 'user' ? 'User' : 'Sentinel'}
                           </Text>
@@ -285,9 +301,8 @@ const UserChat = () => {
                               }
                               className="px-2 py-1 rounded-full"
                               style={{
-                                backgroundColor: `${
-                                  emotionColors[dominantEmotion.name]
-                                }30`,
+                                backgroundColor: `${emotionColors[dominantEmotion.name]
+                                  }30`,
                               }}
                             >
                               <Text
@@ -303,18 +318,16 @@ const UserChat = () => {
                         </View>
 
                         <View
-                          className={`px-4 py-3 rounded-lg ${
-                            message.sent_by === 'user'
+                          className={`px-4 py-3 rounded-lg ${message.sent_by === 'user'
                               ? 'bg-indigo-500'
                               : 'bg-gray-100'
-                          }`}
+                            }`}
                         >
                           <Text
-                            className={`text-sm ${
-                              message.sent_by === 'user'
+                            className={`text-sm ${message.sent_by === 'user'
                                 ? 'text-white'
                                 : 'text-gray-800'
-                            }`}
+                              }`}
                           >
                             {message.content || '(No content)'}
                           </Text>
@@ -382,28 +395,24 @@ const UserChat = () => {
             <View className="flex-row border-b border-gray-100">
               <Pressable
                 onPress={() => setActiveTab('info')}
-                className={`flex-1 py-4 px-5 items-center ${
-                  activeTab === 'info' ? 'border-b-2 border-indigo-600' : ''
-                }`}
+                className={`flex-1 py-4 px-5 items-center ${activeTab === 'info' ? 'border-b-2 border-indigo-600' : ''
+                  }`}
               >
                 <Text
-                  className={`text-sm font-semibold ${
-                    activeTab === 'info' ? 'text-indigo-600' : 'text-gray-500'
-                  }`}
+                  className={`text-sm font-semibold ${activeTab === 'info' ? 'text-indigo-600' : 'text-gray-500'
+                    }`}
                 >
                   Session Info
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => setActiveTab('notes')}
-                className={`flex-1 py-4 px-5 items-center ${
-                  activeTab === 'notes' ? 'border-b-2 border-indigo-600' : ''
-                }`}
+                className={`flex-1 py-4 px-5 items-center ${activeTab === 'notes' ? 'border-b-2 border-indigo-600' : ''
+                  }`}
               >
                 <Text
-                  className={`text-sm font-semibold ${
-                    activeTab === 'notes' ? 'text-indigo-600' : 'text-gray-500'
-                  }`}
+                  className={`text-sm font-semibold ${activeTab === 'notes' ? 'text-indigo-600' : 'text-gray-500'
+                    }`}
                 >
                   Doctor's Notes
                 </Text>
@@ -541,7 +550,7 @@ const UserChat = () => {
                           </Text>
                           <View className="gap-1">
                             {sessionInfo.risk_level === 'high' ||
-                            sessionInfo.risk_level === 'critical' ? (
+                              sessionInfo.risk_level === 'critical' ? (
                               <>
                                 <Text className="text-xs text-amber-900">
                                   • Elevated distress signals detected
@@ -609,11 +618,10 @@ const UserChat = () => {
                           className="px-4 py-3"
                         >
                           <Text
-                            className={`text-sm ${
-                              problemCategory
+                            className={`text-sm ${problemCategory
                                 ? 'text-gray-800'
                                 : 'text-gray-400'
-                            }`}
+                              }`}
                           >
                             {problemCategory ||
                               'Select category (Anxiety, Depression, etc.)'}
@@ -632,18 +640,16 @@ const UserChat = () => {
                           <Pressable
                             key={rating}
                             onPress={() => setSeverityRating(rating)}
-                            className={`flex-1 py-3 border-2 rounded-lg items-center ${
-                              severityRating === rating
+                            className={`flex-1 py-3 border-2 rounded-lg items-center ${severityRating === rating
                                 ? 'border-indigo-500 bg-indigo-500'
                                 : 'border-gray-300'
-                            }`}
+                              }`}
                           >
                             <Text
-                              className={`text-sm font-semibold ${
-                                severityRating === rating
+                              className={`text-sm font-semibold ${severityRating === rating
                                   ? 'text-white'
                                   : 'text-gray-800'
-                              }`}
+                                }`}
                             >
                               {rating}
                             </Text>
@@ -704,9 +710,8 @@ const UserChat = () => {
                     <Pressable
                       onPress={saveDoctorNotes}
                       disabled={savingNotes}
-                      className={`py-3 rounded-lg items-center ${
-                        savingNotes ? 'bg-gray-400' : 'bg-indigo-500'
-                      }`}
+                      className={`py-3 rounded-lg items-center ${savingNotes ? 'bg-gray-400' : 'bg-indigo-500'
+                        }`}
                     >
                       <Text className="text-white font-semibold">
                         {savingNotes ? 'Saving...' : 'Save Notes'}
@@ -728,7 +733,7 @@ const UserChat = () => {
                     </View>
 
                     {!sessionInfo?.doctor_notes ||
-                    sessionInfo.doctor_notes.length === 0 ? (
+                      sessionInfo.doctor_notes.length === 0 ? (
                       <View className="py-12 items-center">
                         <Text className="text-gray-400 mb-4">
                           No doctor's notes yet
@@ -774,22 +779,20 @@ const UserChat = () => {
                                 {[1, 2, 3, 4, 5].map(level => (
                                   <View
                                     key={level}
-                                    className={`w-6 h-6 rounded items-center justify-center ${
-                                      level <= note.severity_rating
+                                    className={`w-6 h-6 rounded items-center justify-center ${level <= note.severity_rating
                                         ? level <= 2
                                           ? 'bg-green-500'
                                           : level <= 3
                                             ? 'bg-yellow-500'
                                             : 'bg-red-500'
                                         : 'bg-gray-200'
-                                    }`}
+                                      }`}
                                   >
                                     <Text
-                                      className={`text-xs font-bold ${
-                                        level <= note.severity_rating
+                                      className={`text-xs font-bold ${level <= note.severity_rating
                                           ? 'text-white'
                                           : 'text-gray-400'
-                                      }`}
+                                        }`}
                                     >
                                       {level}
                                     </Text>
