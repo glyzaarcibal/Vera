@@ -843,7 +843,7 @@ const Profile = () => {
   return (
     <>
       <style>{scrollbarStyles}</style>
-      <div className="max-w-[1400px] mx-auto px-5 py-10">
+      <div className="max-w-[1800px] mx-auto px-10 py-14">
         <div className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-gray-900/10 animate-[fadeIn_0.6s_ease-in]">
           {/* Tabs Navigation */}
           <TabGroup

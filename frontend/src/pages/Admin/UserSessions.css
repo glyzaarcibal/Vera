@@ -1,0 +1,117 @@
+.user-sessions-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.user-sessions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 20px;
+}
+
+.user-sessions-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.user-sessions-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.user-sessions-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.user-sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-sessions-table th {
+  padding: 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #fafbfc;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-sessions-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 15px;
+  color: #333;
+}
+
+.user-sessions-row {
+  transition: background 0.2s;
+}
+.user-sessions-row:hover {
+  background: #fafbfc;
+}
+
+.user-sessions-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-sessions-pagination button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  color: #666;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-sessions-pagination button:hover:not(:disabled) {
+  background: #f5f5ff;
+  color: #667eea;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+.user-sessions-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-sessions-pagination span {
+  font-size: 15px;
+  color: #666;
+}
+
+@media (max-width: 1024px) {
+  .user-sessions-table-wrapper {
+    overflow-x: auto;
+  }
+  .user-sessions-table {
+    min-width: 800px;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-sessions-header {
+    flex-direction: column;
+  }
+  .user-sessions-title {
+    font-size: 24px;
+  }
+}

@@ -4,7 +4,6 @@ import './Welcome.css';
 import meowVideo from '../assets/meow+meow+.mp4';
 import arfarfVideo from '../assets/++arf+arf+.mp4';
 import axiosInstance from '../utils/axios.instance';
-import "../styles/GlobalDesign.css";
 
 /**
  * AnimalAI — AI-powered avatar with speech recognition and synthesis

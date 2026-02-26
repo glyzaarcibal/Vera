@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../utils/axios.instance";
-import "../styles/GlobalDesign.css";
+import "./VoiceAI.css";
 
 const VOICES = [
   {
@@ -451,7 +451,7 @@ const VoiceAI = () => {
   };
 
   return (
-    <div className="page-container flex flex-col items-center">
+    <div className="voice-ai-container flex flex-col items-center">
       <div className="page-header w-full">
         <h1 className="page-title">
           Voice <span className="gradient-text">Selection</span>
