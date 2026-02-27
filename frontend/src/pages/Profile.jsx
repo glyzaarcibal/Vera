@@ -61,6 +61,8 @@ const Profile = () => {
   const [chatSessions, setChatSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [appointments, setAppointments] = useState([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
   const fileInputRef = useRef(null);
 
   const getProfile = async () => {
@@ -101,6 +103,18 @@ const Profile = () => {
       console.error("Failed to load chat sessions:", e);
     } finally {
       setLoadingSessions(false);
+    }
+  };
+
+  const getAppointments = async () => {
+    try {
+      setLoadingAppointments(true);
+      const res = await axiosInstance.get("/profile/fetch-appointments");
+      setAppointments(res.data.appointments || []);
+    } catch (e) {
+      console.error("Failed to load appointments:", e);
+    } finally {
+      setLoadingAppointments(false);
     }
   };
 
@@ -233,6 +247,7 @@ const Profile = () => {
   useEffect(() => {
     getProfile();
     getChatSessions();
+    getAppointments();
   }, []);
 
   const SkeletonLoader = () => (
@@ -747,24 +762,15 @@ const Profile = () => {
   );
 
   const renderAppointmentsTab = () => {
-    const appointments = chatSessions
-      .flatMap((session) =>
-        (session.doctor_notes || [])
-          .filter((note) => note.next_appointment)
-          .map((note) => ({
-            ...note,
-            sessionId: session.id,
-            sessionType: session.type,
-          }))
-      )
-      .sort(
-        (a, b) => new Date(b.next_appointment) - new Date(a.next_appointment)
-      );
-
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h2>
-        {appointments.length === 0 ? (
+        {loadingAppointments ? (
+          <div className="text-center py-16 px-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-3"></div>
+            <p className="text-gray-500">Loading appointments...</p>
+          </div>
+        ) : appointments.length === 0 ? (
           <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
             No appointments found
           </div>
@@ -793,10 +799,10 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-0.5">
-                      Session #{appointment.sessionId.substring(0, 8)}...
+                      Session #{(typeof appointment.chat_sessions?.id === "string" ? appointment.chat_sessions.id.substring(0, 8) : (typeof appointment.session_id === "string" ? appointment.session_id.substring(0, 8) : "N/A"))}...
                     </p>
                     <p className="text-sm font-semibold text-gray-500">
-                      {appointment.sessionType} Session
+                      {appointment.chat_sessions?.type || "Unknown"} Session
                     </p>
                   </div>
                 </div>
@@ -804,7 +810,7 @@ const Profile = () => {
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                      Appointment Date & Time
+                      Appointment Date &amp; Time
                     </p>
                     <p className="text-lg font-bold text-gray-900">
                       {formatDate(appointment.next_appointment)}
