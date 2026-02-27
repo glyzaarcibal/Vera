@@ -453,12 +453,11 @@ const UserSessions = () => {
     <div className="user-sessions-outer-container">
       <div className="user-sessions-container">
         {/* Header Section */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 32 }}>
+        <div className="user-sessions-header-row">
           {/* Sidebar with Back button */}
-          <div style={{ minWidth: 80, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <div className="user-sessions-back-col">
             <button
-              className="flex items-center gap-2 px-4 py-3 bg-white rounded-lg text-[#667eea] text-[15px] font-medium shadow-sm border border-[#e2e8f0] hover:bg-[#f5f5ff] transition-all"
-              style={{ marginBottom: 16, width: '100%' }}
+              className="user-sessions-back-btn"
               onClick={() => navigate(-1)}
             >
               <MdArrowBack className="text-xl" />
@@ -466,7 +465,7 @@ const UserSessions = () => {
             </button>
           </div>
           {/* Main header */}
-          <div style={{ flex: 1 }}>
+          <div className="user-sessions-main-head">
             <h1 className="page-title">
               User <span className="gradient-text">Sessions</span>
             </h1>
@@ -567,10 +566,10 @@ const UserSessions = () => {
 
         {/* Reports Section */}
         <div className="design-section user-reports-section">
-          <div className="user-analytics-container bg-white p-8 rounded-lg shadow-md mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="section-title mb-0 flex items-center gap-2">
-                <div className="bg-indigo-50 p-2 rounded-lg">
+          <div className="user-analytics-container">
+            <div className="user-analytics-head">
+              <h3 className="section-title user-analytics-title">
+                <div className="user-analytics-title-icon">
                   <MdBarChart className="text-xl text-indigo-600" />
                 </div>
                 User Analytics
@@ -582,45 +581,45 @@ const UserSessions = () => {
                   }
                   setShowReports(!showReports);
                 }}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white hover:opacity-90 transition-all shadow-md active:scale-95"
+                className="user-analytics-toggle-btn"
               >
                 {showReports ? "Hide Analytics" : "View Analytics"}
               </button>
             </div>
 
             {showReports && (
-              <div className="space-y-8">
+              <div className="user-analytics-content">
                 {reportsLoading ? (
-                  <div className="py-8 text-center">
+                  <div className="user-analytics-loading">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
                     <p className="mt-2 text-sm text-gray-500">Loading reports...</p>
                   </div>
                 ) : (
                   <>
                     {/* AI Usage Statistics */}
-                    <div className="border-t border-gray-100 pt-6">
-                      <h4 className="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className="user-analytics-block">
+                      <h4 className="user-analytics-block-title">
                         <MdPsychology className="text-lg" />
                         AI Usage Statistics
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                        <div className="bg-indigo-50 p-4 rounded-lg">
+                      <div className="user-analytics-stats-grid">
+                        <div className="user-stat-card user-stat-indigo">
                           <div className="text-sm text-gray-600 mb-1">Total Sessions</div>
                           <div className="text-2xl font-bold text-indigo-600">{aiUsageStats.totalSessions}</div>
                         </div>
-                        <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="user-stat-card user-stat-blue">
                           <div className="text-sm text-gray-600 mb-1">Total Messages</div>
                           <div className="text-2xl font-bold text-blue-600">{aiUsageStats.totalMessages}</div>
                         </div>
-                        <div className="bg-purple-50 p-4 rounded-lg">
+                        <div className="user-stat-card user-stat-purple">
                           <div className="text-sm text-gray-600 mb-1">Voice Sessions</div>
                           <div className="text-2xl font-bold text-purple-600">{aiUsageStats.voiceSessions}</div>
                         </div>
-                        <div className="bg-green-50 p-4 rounded-lg">
+                        <div className="user-stat-card user-stat-green">
                           <div className="text-sm text-gray-600 mb-1">Text Sessions</div>
                           <div className="text-2xl font-bold text-green-600">{aiUsageStats.textSessions}</div>
                         </div>
-                        <div className="bg-pink-50 p-4 rounded-lg">
+                        <div className="user-stat-card user-stat-pink">
                           <div className="text-sm text-gray-600 mb-1">Avatar Sessions</div>
                           <div className="text-2xl font-bold text-pink-600">{aiUsageStats.avatarSessions}</div>
                         </div>
@@ -629,12 +628,12 @@ const UserSessions = () => {
 
 
                     {/* Daily Emotion Detection Chart */}
-                    <div className="border-t border-gray-100 pt-6">
-                      <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    <div className="user-analytics-block">
+                      <h4 className="user-analytics-block-title">
                         Daily Emotion Detection (Hume AI Voice Analysis)
                       </h4>
                       {dailyEmotions.length === 0 ? (
-                        <div className="bg-gray-50 p-8 rounded-lg text-center">
+                        <div className="user-analytics-empty">
                           <p className="text-gray-500 font-medium">No emotion data available yet.</p>
                           <p className="text-sm text-gray-400 mt-2">
                             Emotions are detected from <strong>voice</strong> and <strong>avatar</strong> sessions using Hume AI Prosody model.
@@ -646,7 +645,7 @@ const UserSessions = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="user-analytics-chart-wrap">
                           <ResponsiveContainer width="100%" height={400}>
                             <BarChart
                               data={dailyEmotions}
@@ -690,17 +689,17 @@ const UserSessions = () => {
                     </div>
 
                     {/* Emotion-Hinting Words Section */}
-                    <div className="border-t border-gray-100 pt-6">
-                      <h4 className="text-base font-semibold text-gray-800 mb-4">
+                    <div className="user-analytics-block">
+                      <h4 className="user-analytics-block-title">
                         Emotion-Hinting Words Detected
                       </h4>
                       {Object.keys(emotionWords).length === 0 ? (
-                        <div className="bg-gray-50 p-8 rounded-lg text-center">
+                        <div className="user-analytics-empty">
                           <p className="text-gray-500">No emotion-hinting words detected yet.</p>
                           <p className="text-sm text-gray-400 mt-1">Words that indicate emotions will appear here as the user interacts.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="user-emotion-words-grid">
                           {Object.entries(emotionWords).map(([emotion, data]) => {
                             const emotionColors = {
                               sad: "bg-blue-50 border-blue-200 text-blue-800",
@@ -756,7 +755,7 @@ const UserSessions = () => {
         </div>
 
         {/* Available Resources Section */}
-        <div className="user-resources-section">
+        <div className="design-section user-resources-section">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-800">Assign Resources</h3>
             <button
@@ -825,7 +824,7 @@ const UserSessions = () => {
         </div>
 
         {/* Assigned Resources Section */}
-        <div className="user-assigned-section">
+        <div className="design-section user-assigned-section">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Assigned Resources ({assignedResources.length})
           </h3>
@@ -884,7 +883,7 @@ const UserSessions = () => {
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-xl shadow-sm mb-6">
+        <div className="design-section user-sessions-controls">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
               Sessions ({pagination.totalSessions})
