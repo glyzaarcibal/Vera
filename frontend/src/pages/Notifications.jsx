@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../utils/axios.instance";
-import "./About.css";
+import "./Admin/UserManagement.css";
 
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
@@ -77,92 +77,137 @@ const Notifications = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto px-5 py-10">
-            <div className="bg-white rounded-3xl shadow-xl p-10 animate-[fadeIn_0.6s_ease-in]">
-                <div className="flex items-center gap-4 mb-10 pb-6 border-b-2 border-gray-100">
-                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                        <svg
-                            className="w-8 h-8 text-indigo-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                            />
-                        </svg>
-                    </div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-                        Notifications & Updates
-                    </h1>
-                </div>
+        <div
+            className="user-management-container"
+            style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 0" }}
+        >
+            <div className="page-header" style={{ marginBottom: 32 }}>
+                <h1
+                    className="page-title"
+                    style={{
+                        fontSize: 36,
+                        fontWeight: 800,
+                        color: "#22223b",
+                        marginBottom: 8,
+                    }}
+                >
+                    Notifications {" "}
+                    <span
+                        className="gradient-text"
+                        style={{
+                            background: "linear-gradient(90deg,#667eea,#764ba2)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                        }}
+                    >
+                        & Updates
+                    </span>
+                </h1>
+                <p
+                    className="page-subtitle"
+                    style={{ color: "#6b7280", fontSize: 18, fontWeight: 500 }}
+                >
+                    Track your appointment alerts and product updates
+                </p>
+            </div>
 
+            <div
+                className="design-section"
+                style={{
+                    background: "#fff",
+                    borderRadius: 24,
+                    boxShadow: "0 8px 32px rgba(102,126,234,0.08)",
+                    padding: 32,
+                    marginBottom: 32,
+                }}
+            >
                 {loading ? (
-                    <div className="text-center py-20 text-gray-500">
+                    <div className="text-center py-20" style={{ color: "#6b7280", fontSize: 16 }}>
                         Loading notifications...
                     </div>
                 ) : notifications.length === 0 ? (
-                    <div className="text-center py-20 text-gray-400">
+                    <div className="text-center py-20" style={{ color: "#9ca3af", fontSize: 16 }}>
                         No new notifications
                     </div>
                 ) : (
-                    <div className="space-y-6">
-                        {notifications.map((n) => (
-                            <div
-                                key={n.id}
-                                className={`group p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15 ${n.type === "appointment" ? "border-l-4 border-l-indigo-500" : ""
-                                    }`}
-                            >
-                                <div className="flex gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center flex-shrink-0">
-                                        <svg
-                                            className="w-6 h-6 text-indigo-500"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            {n.icon}
-                                        </svg>
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                                {n.title}
-                                            </h3>
-                                            <span className="text-xs font-semibold text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                                                {n.time}
-                                            </span>
-                                        </div>
-                                        <p className="text-gray-600 leading-relaxed mb-3">
-                                            {n.message}
-                                        </p>
-                                        {n.type === "appointment" && (
-                                            <div className="bg-white/80 rounded-xl p-3 border border-indigo-100 mb-3">
-                                                <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">
-                                                    Appointment Date
-                                                </p>
-                                                <p className="text-sm font-bold text-gray-800">
-                                                    {formatDate(n.date)}
-                                                </p>
+                    <div
+                        className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm"
+                        style={{ background: "#fff" }}
+                    >
+                        <table className="w-full text-left border-collapse" style={{ fontSize: 15 }}>
+                            <thead>
+                                <tr
+                                    style={{
+                                        background: "#f8fafc",
+                                        textTransform: "uppercase",
+                                        letterSpacing: 1.2,
+                                        color: "#a0aec0",
+                                        fontWeight: 700,
+                                        fontSize: 12,
+                                    }}
+                                >
+                                    <th style={{ padding: "18px 24px" }}>Notification</th>
+                                    <th style={{ padding: "18px 24px" }}>Type</th>
+                                    <th style={{ padding: "18px 24px" }}>Created</th>
+                                    <th style={{ padding: "18px 24px" }}>Appointment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {notifications.map((n) => (
+                                    <tr key={n.id} style={{ transition: "background 0.15s" }} className="hover:bg-gray-50 group">
+                                        <td style={{ padding: "18px 24px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                                                <div
+                                                    style={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: "50%",
+                                                        background: "linear-gradient(135deg,#f0eeff,#fef5ff)",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        color: "#667eea",
+                                                        border: "1px solid #fff",
+                                                        boxShadow: "0 2px 8px rgba(102,126,234,0.08)",
+                                                    }}
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        {n.icon}
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, color: "#22223b", fontSize: 16 }}>{n.title}</div>
+                                                    <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{n.message}</div>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div className="flex gap-2">
+                                        </td>
+                                        <td style={{ padding: "18px 24px" }}>
                                             <span
-                                                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${n.type === "appointment"
-                                                        ? "bg-indigo-100 text-indigo-700"
-                                                        : "bg-blue-100 text-blue-700"
-                                                    }`}
+                                                style={{
+                                                    background: n.type === "appointment" ? "#ede9fe" : "#dbeafe",
+                                                    color: n.type === "appointment" ? "#7c3aed" : "#2563eb",
+                                                    border: "1px solid " + (n.type === "appointment" ? "#ddd6fe" : "#bfdbfe"),
+                                                    borderRadius: 8,
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    padding: "4px 14px",
+                                                    textTransform: "uppercase",
+                                                    letterSpacing: 1,
+                                                }}
                                             >
                                                 {n.type}
                                             </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                                        </td>
+                                        <td style={{ padding: "18px 24px", fontSize: 14, color: "#64748b", fontWeight: 500 }}>
+                                            {n.time}
+                                        </td>
+                                        <td style={{ padding: "18px 24px", fontSize: 14, color: "#64748b", fontWeight: 500 }}>
+                                            {n.type === "appointment" ? formatDate(n.date) : "-"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

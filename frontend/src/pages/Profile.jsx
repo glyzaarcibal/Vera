@@ -5,6 +5,7 @@ import axiosInstance from "../utils/axios.instance";
 import { FaUserCircle } from "react-icons/fa";
 import Switch from "../components/Switch";
 import TabGroup from "../components/TabGroup";
+import "./Profile.css";
 
 const Profile = () => {
   // Custom scrollbar styles
@@ -252,22 +253,22 @@ const Profile = () => {
 
   const SkeletonLoader = () => (
     <div className="animate-pulse">
-      <div className="h-8 bg-gray-200 rounded-lg w-48 mb-6"></div>
+      <div className="h-8 bg-gray-200 rounded-none w-48 mb-6"></div>
       <div className="space-y-5">
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
-        <div className="h-12 bg-gray-200 rounded-xl"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
+        <div className="h-12 bg-gray-200 rounded-none"></div>
       </div>
     </div>
   );
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-5 py-10">
-        <div className="bg-white rounded-3xl shadow-lg p-10">
+      <div className="profile-page-container">
+        <div className="profile-page-card p-10">
           <SkeletonLoader />
         </div>
       </div>
@@ -306,7 +307,7 @@ const Profile = () => {
         </h1>
         {!isEditMode && (
           <button
-            className="px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300"
+            className="px-7 py-3 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300"
             onClick={handleEdit}
           >
             Edit Profile
@@ -316,7 +317,7 @@ const Profile = () => {
 
       {message.text && (
         <div
-          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
+          className={`px-5 py-4 rounded-none mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
             ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
             : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
             }`}
@@ -325,7 +326,7 @@ const Profile = () => {
         </div>
       )}
 
-      <div className="flex flex-col items-center py-10 mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl">
+      <div className="flex flex-col items-center py-10 mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-none">
         <div className="relative mb-5">
           {profile.avatar_url ? (
             <img
@@ -340,7 +341,7 @@ const Profile = () => {
 
         {!isEditingAvatar ? (
           <button
-            className="px-7 py-3 rounded-xl border-2 border-indigo-500 bg-white text-indigo-500 font-semibold hover:bg-indigo-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 mt-3"
+            className="px-7 py-3 rounded-none border-2 border-indigo-500 bg-white text-indigo-500 font-semibold hover:bg-indigo-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 mt-3"
             onClick={handleAvatarClick}
           >
             Update Profile Picture
@@ -357,14 +358,14 @@ const Profile = () => {
             <button
               onClick={handleFileSelect}
               disabled={uploadingAvatar}
-              className="px-7 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-7 py-3 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {uploadingAvatar ? "Uploading..." : "Choose File"}
             </button>
             <button
               onClick={handleCancelAvatar}
               disabled={uploadingAvatar}
-              className="px-7 py-3 rounded-xl bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-7 py-3 rounded-none bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -383,7 +384,7 @@ const Profile = () => {
             value={profile.email}
             onChange={handleInputChange}
             disabled={true}
-            className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 bg-gray-50 text-gray-500 cursor-not-allowed"
+            className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 bg-gray-50 text-gray-500 cursor-not-allowed"
           />
         </div>
 
@@ -398,10 +399,10 @@ const Profile = () => {
               value={profile.username}
               onChange={handleInputChange}
               placeholder="Username"
-              className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-gray-900 text-base">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
               {profile.username || "Not set"}
             </div>
           )}
@@ -418,10 +419,10 @@ const Profile = () => {
               value={profile.first_name}
               onChange={handleInputChange}
               placeholder="First Name"
-              className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-gray-900 text-base">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
               {profile.first_name || "Not set"}
             </div>
           )}
@@ -438,10 +439,10 @@ const Profile = () => {
               value={profile.last_name}
               onChange={handleInputChange}
               placeholder="Last Name"
-              className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-gray-900 text-base">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
               {profile.last_name || "Not set"}
             </div>
           )}
@@ -457,10 +458,10 @@ const Profile = () => {
               name="birthday"
               value={profile.birthday}
               onChange={handleInputChange}
-              className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-gray-900 text-base">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
               {profile.birthday || "Not set"}
             </div>
           )}
@@ -475,7 +476,7 @@ const Profile = () => {
               name="gender"
               value={profile.gender}
               onChange={handleInputChange}
-              className="px-4 py-3.5 rounded-xl border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 cursor-pointer"
+              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 cursor-pointer"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -484,7 +485,7 @@ const Profile = () => {
               <option value="prefer_not_to_say">Prefer not to say</option>
             </select>
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl text-gray-900 text-base">
+            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
               {profile.gender || "Not set"}
             </div>
           )}
@@ -493,14 +494,14 @@ const Profile = () => {
         {isEditMode && (
           <div className="col-span-full flex gap-3 pt-2">
             <button
-              className="flex-1 px-7 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-7 py-4 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               onClick={handleSave}
               disabled={saving}
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
             <button
-              className="flex-1 px-7 py-4 rounded-xl bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300"
+              className="flex-1 px-7 py-4 rounded-none bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300"
               onClick={handleCancel}
             >
               Cancel
@@ -515,7 +516,7 @@ const Profile = () => {
     <>
       {message.text && (
         <div
-          className={`px-5 py-4 rounded-xl mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
+          className={`px-5 py-4 rounded-none mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
             ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
             : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
             }`}
@@ -529,7 +530,7 @@ const Profile = () => {
           Privacy & Consent
         </h2>
 
-        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
+        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-2.5">
               Store Conversations
@@ -548,7 +549,7 @@ const Profile = () => {
           />
         </div>
 
-        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
+        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-2.5">
               AI Analysis of Conversations
@@ -575,11 +576,11 @@ const Profile = () => {
   const renderSessionsTab = () => (
     <div className="space-y-6">
       {loadingSessions ? (
-        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
           Loading sessions...
         </div>
       ) : chatSessions.length === 0 ? (
-        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
           No chat sessions found
         </div>
       ) : (
@@ -589,7 +590,7 @@ const Profile = () => {
             {chatSessions.map((session) => (
               <div
                 key={session.id}
-                className={`p-4.5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${selectedSession?.id === session.id
+                className={`p-4.5 rounded-none border-2 cursor-pointer transition-all duration-300 ${selectedSession?.id === session.id
                   ? "border-indigo-500 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg shadow-indigo-500/20 translate-x-1"
                   : "border-gray-200 bg-white hover:border-indigo-500 hover:bg-purple-50 hover:translate-x-1"
                   }`}
@@ -597,7 +598,7 @@ const Profile = () => {
               >
                 <div className="flex gap-2 mb-2.5 flex-wrap">
                   <span
-                    className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${session.type === "text"
+                    className={`inline-block px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider ${session.type === "text"
                       ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
                       : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
                       }`}
@@ -606,7 +607,7 @@ const Profile = () => {
                   </span>
                   {session.risk_level && (
                     <span
-                      className="inline-block px-3 py-1.5 rounded-lg text-xs font-bold capitalize tracking-wider text-white shadow-md"
+                      className="inline-block px-3 py-1.5 rounded-none text-xs font-bold capitalize tracking-wider text-white shadow-md"
                       style={{
                         backgroundColor: getRiskColor(session.risk_level),
                       }}
@@ -632,14 +633,14 @@ const Profile = () => {
           <div className="flex flex-col gap-6 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
             {selectedSession ? (
               <>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-2xl p-7">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none p-7">
                   <div className="flex justify-between items-center mb-5 pb-5 border-b-2 border-gray-200">
                     <h3 className="text-xl font-bold text-gray-900">
                       Session Details
                     </h3>
                     <div className="flex gap-2">
                       <span
-                        className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider ${selectedSession.type === "text"
+                        className={`inline-block px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider ${selectedSession.type === "text"
                           ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
                           : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
                           }`}
@@ -648,7 +649,7 @@ const Profile = () => {
                       </span>
                       {selectedSession.risk_level && (
                         <span
-                          className="inline-block px-3 py-1.5 rounded-lg text-xs font-bold capitalize tracking-wider text-white shadow-md"
+                          className="inline-block px-3 py-1.5 rounded-none text-xs font-bold capitalize tracking-wider text-white shadow-md"
                           style={{
                             backgroundColor: getRiskColor(
                               selectedSession.risk_level
@@ -666,8 +667,8 @@ const Profile = () => {
 
                   {/* Appointment Banner */}
                   {selectedSession?.doctor_notes?.find((n) => n.next_appointment) && (
-                    <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-100 rounded-2xl p-5 flex items-center gap-4 shadow-sm animate-[fadeIn_0.4s_ease-out]">
-                      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md">
+                    <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-100 rounded-none p-5 flex items-center gap-4 shadow-sm animate-[fadeIn_0.4s_ease-out]">
+                      <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-md">
                         <svg
                           className="w-6 h-6 text-indigo-500"
                           fill="none"
@@ -712,12 +713,12 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-white border-2 border-gray-200 rounded-2xl p-7">
+                <div className="bg-white border-2 border-gray-200 rounded-none p-7">
                   <h4 className="text-lg font-bold text-gray-900 mb-5">
                     Conversation
                   </h4>
                   {selectedSession.chat_messages.length === 0 ? (
-                    <div className="text-center py-16 px-10 text-gray-500 italic bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
+                    <div className="text-center py-16 px-10 text-gray-500 italic bg-gradient-to-br from-gray-50 to-gray-100 rounded-none">
                       No messages in this session
                     </div>
                   ) : (
@@ -725,7 +726,7 @@ const Profile = () => {
                       {selectedSession.chat_messages.map((message) => (
                         <div
                           key={message.id}
-                          className={`px-5 py-4.5 rounded-2xl max-w-[80%] animate-[messageSlide_0.3s_ease-out] ${message.sent_by === "user"
+                          className={`px-5 py-4.5 rounded-none max-w-[80%] animate-[messageSlide_0.3s_ease-out] ${message.sent_by === "user"
                             ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white self-end ml-auto shadow-lg shadow-indigo-500/30"
                             : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 border-2 border-gray-200 self-start"
                             }`}
@@ -751,7 +752,7 @@ const Profile = () => {
                 </div>
               </>
             ) : (
-              <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+              <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
                 Select a session to view details
               </div>
             )}
@@ -766,12 +767,12 @@ const Profile = () => {
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h2>
         {loadingAppointments ? (
-          <div className="text-center py-16 px-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="text-center py-16 px-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-3"></div>
             <p className="text-gray-500">Loading appointments...</p>
           </div>
         ) : appointments.length === 0 ? (
-          <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-dashed border-gray-200">
+          <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
             No appointments found
           </div>
         ) : (
@@ -779,10 +780,10 @@ const Profile = () => {
             {appointments.map((appointment) => (
               <div
                 key={appointment.id}
-                className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-3xl p-6 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300"
+                className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-none p-6 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-none flex items-center justify-center">
                     <svg
                       className="w-6 h-6 text-indigo-500"
                       fill="none"
@@ -828,7 +829,7 @@ const Profile = () => {
                   </div>
 
                   {appointment.clinical_observations && (
-                    <div className="bg-white/50 rounded-2xl p-4 border border-gray-100">
+                    <div className="bg-white/50 rounded-none p-4 border border-gray-100">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
                         Clinical Observations
                       </p>
@@ -849,8 +850,17 @@ const Profile = () => {
   return (
     <>
       <style>{scrollbarStyles}</style>
-      <div className="max-w-[1800px] mx-auto px-10 py-14">
-        <div className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-gray-900/10 animate-[fadeIn_0.6s_ease-in]">
+      <div className="profile-page-container">
+        <div className="profile-page-header">
+          <h1 className="profile-page-title">
+            Profile <span className="profile-page-title-accent">& Settings</span>
+          </h1>
+          <p className="profile-page-subtitle">
+            Manage your account details, privacy preferences, sessions, and appointments
+          </p>
+        </div>
+
+        <div className="profile-page-card">
           {/* Tabs Navigation */}
           <TabGroup
             tabs={[
@@ -864,7 +874,7 @@ const Profile = () => {
           />
 
           {/* Tab Content */}
-          <div className="p-10 animate-[slideIn_0.4s_ease-out]">
+          <div className="profile-page-content animate-[slideIn_0.4s_ease-out]">
             {activeTab === "profile" && renderProfileTab()}
             {activeTab === "privacy" && renderPrivacyTab()}
             {activeTab === "sessions" && renderSessionsTab()}
@@ -877,3 +887,4 @@ const Profile = () => {
 };
 
 export default Profile;
+
