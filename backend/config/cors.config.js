@@ -2,18 +2,31 @@ import dotenv from "dotenv";
 dotenv.config();
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
-// Allow multiple frontend origins for different environments
 const allowedOrigins = [
   FRONTEND_URL,
   "https://vera-7nnk.vercel.app",
-  "http://localhost:5173", // Local Vite dev
-  "http://localhost:3000", // Alternative local port
-  "http://192.168.100.129:5000", // Mobile app backend
-].filter(Boolean); // Remove any undefined values
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://192.168.100.129:5000",
+].filter(Boolean);
 
 const corsConfig = {
   credentials: true,
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow any vercel.app preview URL
+    if (origin.match(/https:\/\/vera-7nnk.*\.vercel\.app$/)) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error("Not allowed by CORS"));
+  },
 };
 
 export default corsConfig;
