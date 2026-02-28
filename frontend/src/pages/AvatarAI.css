@@ -1,161 +1,214 @@
-/* Container and improved layout */
+/* AvatarAI Page Styles — V.E.R.A. Theme */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --vera-gradient: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #67e8f9 100%);
+  --vera-gradient-soft: linear-gradient(135deg, #fdf4ff 0%, #ede9fe 60%, #e0f2fe 100%);
+  --vera-primary: #7c3aed;
+  --vera-primary-mid: #8b5cf6;
+  --vera-primary-light: #a78bfa;
+  --vera-primary-btn: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  --vera-border: rgba(167, 139, 250, 0.22);
+  --vera-border-strong: rgba(139, 92, 246, 0.38);
+  --vera-surface: rgba(255, 255, 255, 0.92);
+  --vera-text: #1e1b4b;
+  --vera-text-muted: #6b7280;
+  --vera-shadow: 0 8px 32px rgba(124, 58, 237, 0.10);
+  --vera-shadow-lg: 0 20px 56px rgba(124, 58, 237, 0.16);
+  --vera-r: 24px;
+  --vera-r-sm: 16px;
+  --vera-r-xs: 10px;
+}
+
+/* ── Outer Wrapper ── */
 .avatarai-outer-container {
   width: 100%;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #f3effa 0%, #f7f7fb 100%);
-  padding: 32px 20px;
-  box-sizing: border-box;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--vera-text);
 }
 
-.avatarai-container {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(108, 99, 255, 0.08);
-  padding: 28px;
-  max-width: 1200px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  margin: 0 auto;
-  border: 1px solid #f0ebff;
-}
-
-.avatarai-header {
-  width: 100%;
-  margin-bottom: 18px;
+/* ── Page Header ── */
+.avatarai-page-header {
   text-align: center;
+  padding: 44px 0 36px;
+}
+
+.avatarai-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vera-primary);
+  background: linear-gradient(135deg, #ede9fe, #fce7f3);
+  border: 1px solid var(--vera-border);
+  padding: 5px 16px;
+  border-radius: 999px;
+  margin-bottom: 18px;
 }
 
 .avatarai-title {
-  font-size: 2.1rem;
-  font-weight: 800;
-  color: #1f2430;
-  letter-spacing: 0.01em;
-  margin: 0;
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(28px, 4vw, 46px);
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  color: var(--vera-text);
 }
 
 .avatarai-title-accent {
-  color: #6c63ff;
+  font-style: italic;
+  background: var(--vera-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.avatarai-main {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  width: 100%;
+.avatarai-subtitle {
+  font-size: 15px;
+  color: var(--vera-text-muted);
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
-/* Top row: Human + Animal cards */
+/* ── Avatar Type Cards ── */
 .avatarai-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  width: 100%;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .avatarai-option {
-  width: 100%;
-  border: 2px solid #ecebf5;
-  background: #fafafa;
-  border-radius: 18px;
-  padding: 26px 28px;
+  background: var(--vera-surface);
+  border: 1.5px solid #e9eaf0;
+  border-radius: var(--vera-r);
+  padding: 24px 26px;
   text-align: left;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: 180px;
+  transition: all 0.25s ease;
+  outline: none;
 }
 
 .avatarai-option:hover {
-  border-color: #d6d3ff;
-  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.08);
-  transform: translateY(-1px);
+  border-color: var(--vera-primary-light);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.10);
+  transform: translateY(-2px);
 }
 
 .avatarai-option.selected {
-  border-color: #7c74ff;
-  background: #f9f8ff;
-  box-shadow: 0 10px 28px rgba(108, 99, 255, 0.12);
+  border-color: var(--vera-primary-mid);
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  box-shadow: 0 10px 32px rgba(124, 58, 237, 0.14);
 }
 
 .avatarai-option-icon {
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
-  background: #f2f0ff;
-  color: #6c63ff;
+  background: linear-gradient(135deg, #ede9fe, #fce7f3);
+  color: var(--vera-primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid var(--vera-border);
 }
 
 .avatarai-option-name {
-  font-size: 2rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #1f2430;
+  color: var(--vera-text);
+  line-height: 1.2;
 }
 
 .avatarai-option-desc {
-  font-size: 0.95rem;
-  line-height: 1.45;
-  color: #6b7280;
-  max-width: 90%;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--vera-text-muted);
+  max-width: 92%;
 }
 
 .avatarai-option-status {
-  margin-top: 2px;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   color: #9ca3af;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .avatarai-option-status.is-selected {
-  color: #5b52f5;
+  color: var(--vera-primary);
 }
 
-/* Bottom row: Agent panel + Conversation */
+/* ── Content Panel (video + conversation side by side) ── */
 .avatarai-content-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(320px, 1fr);
-  gap: 22px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
+/* ── Agent Shell — KEY FIX: portrait ratio, object-position top ── */
 .avatarai-agent-shell {
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid #ecebf5;
-  box-shadow: 0 8px 26px rgba(16, 24, 40, 0.05);
-  padding: 18px 14px;
-  min-height: 420px;
+  background: var(--vera-surface);
+  border-radius: var(--vera-r);
+  border: 1px solid var(--vera-border);
+  box-shadow: var(--vera-shadow);
   overflow: hidden;
-}
-
-.avatarai-transcripts {
-  width: 100%;
-  background: #fff;
-  border-radius: 20px;
-  border: 1px solid #ecebf5;
-  box-shadow: 0 8px 26px rgba(16, 24, 40, 0.05);
-  padding: 18px;
+  /* Portrait-ish ratio so the face is fully visible */
+  aspect-ratio: 3 / 4;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  position: relative;
+  max-height: 600px;
+  /* Prevent it from being too tall on large screens */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make DIDAgent video fill correctly */
+.avatarai-agent-shell video,
+.avatarai-agent-shell .did-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Conversation Panel ── */
+.avatarai-transcripts {
+  background: var(--vera-surface);
+  border-radius: var(--vera-r);
+  border: 1px solid var(--vera-border);
+  box-shadow: var(--vera-shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* Match height of agent shell approx */
+  min-height: 480px;
+  height: 600px;
+  /* Fixed height to match agent shell max-height */
 }
 
 .avatarai-conversation-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #f0f0f5;
 }
 
 .avatarai-conversation-title-wrap {
@@ -165,13 +218,13 @@
 }
 
 .avatarai-conversation-icon {
-  color: #6c63ff;
+  color: var(--vera-primary);
 }
 
 .avatarai-conversation-title {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: #1f2430;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--vera-text);
 }
 
 .avatarai-clear-btn {
@@ -179,124 +232,241 @@
   align-items: center;
   gap: 5px;
   border: none;
-  background: transparent;
+  background: #fff1f2;
   color: #e11d48;
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #fecdd3;
+  transition: background 0.2s;
 }
 
 .avatarai-clear-btn:hover {
-  color: #be123c;
+  background: #ffe4e6;
 }
 
 .avatarai-transcript-list {
-  max-height: 330px;
+  flex: 1;
   overflow-y: auto;
   padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
 }
 
 .avatarai-transcript-list::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .avatarai-transcript-list::-webkit-scrollbar-thumb {
-  background: #ded9ff;
-  border-radius: 999px;
+  background: rgba(167, 139, 250, 0.35);
+  border-radius: 3px;
 }
 
 .avatarai-transcript-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  color: #b3b8c6;
-  padding: 46px 0;
+  color: #c4c9d8;
+  padding: 40px 20px;
 }
 
 .avatarai-transcript-empty-icon {
-  opacity: 0.35;
-  margin-bottom: 10px;
+  opacity: 0.4;
+  margin-bottom: 12px;
+  color: var(--vera-primary-light);
 }
 
 .avatarai-transcript-empty-title {
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
 }
 
 .avatarai-transcript-empty-subtitle {
-  font-size: 0.9rem;
-  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #c4c9d8;
 }
 
 .avatarai-transcript-item {
-  border: 1px solid #efedf9;
-  border-radius: 12px;
-  background: #fcfcff;
-  padding: 10px 12px;
-  margin-bottom: 10px;
+  border: 1.5px solid #f0eef9;
+  border-radius: 14px;
+  background: #fafaff;
+  padding: 12px 14px;
+  animation: msgPop 0.25s ease-out both;
+}
+
+@keyframes msgPop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .avatarai-transcript-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.75rem;
-  color: #8f96aa;
-  margin-bottom: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-bottom: 5px;
 }
 
 .avatarai-transcript-text {
-  font-size: 0.95rem;
-  color: #1f2430;
-  line-height: 1.45;
+  font-size: 0.9rem;
+  color: var(--vera-text);
+  line-height: 1.5;
 }
 
 .avatarai-message-count {
   text-align: center;
-  color: #8f96aa;
-  font-size: 0.86rem;
+  color: #c4c9d8;
+  font-size: 0.8rem;
   margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f5f5f8;
 }
 
+/* ── Placeholder when no avatar selected ── */
 .avatarai-placeholder {
   width: 100%;
-  min-height: 420px;
-  border: 2px dashed #dcd7ff;
-  border-radius: 20px;
+  aspect-ratio: 3 / 4;
+  border: 1.5px dashed rgba(167, 139, 250, 0.3);
+  border-radius: var(--vera-r);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #8f96aa;
+  color: #9ca3af;
   font-weight: 600;
-  background: #faf9ff;
-  padding: 20px;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, #fafafa, #f5f3ff20);
+  padding: 24px;
+  gap: 10px;
 }
 
-@media (max-width: 900px) {
-  .avatarai-outer-container {
-    padding: 16px 10px;
-  }
+.avatarai-placeholder-icon {
+  font-size: 36px;
+  margin-bottom: 4px;
+  opacity: 0.5;
+}
 
-  .avatarai-container {
-    padding: 16px 10px;
-    border-radius: 16px;
-  }
+/* ─────────────────────────────────────────
+   DIDAgent video container override
+   Makes the face fully visible
+───────────────────────────────────────── */
 
-  .avatarai-title {
-    font-size: 1.8rem;
-  }
+/* The inner page-container used by DIDAgent */
+.avatarai-agent-shell .page-container {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
 
+/* Video wrapper inside DIDAgent */
+.avatarai-agent-shell .design-section.w-full {
+  flex: 1;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  aspect-ratio: unset !important;
+  min-height: 0;
+}
+
+/* The actual video tag — portrait, face at top */
+.avatarai-agent-shell video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Ensure the nested wrapper inside components is also flexible */
+.avatarai-agent-shell .page-container>div {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  gap: 0 !important;
+}
+
+/* Control bar container should NOT grow, but take its natural height */
+.avatarai-agent-shell .w-full.max-w-2xl {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Control bar refinement */
+.avatarai-agent-shell .glass-card {
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--vera-border) !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  gap: 12px !important;
+  background: white !important;
+}
+
+/* Ensure icons are visible and not squashed */
+.avatarai-agent-shell button svg {
+  flex-shrink: 0;
+}
+
+/* Selection wrapper for Animal AI and others */
+.avatarai-selection-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 20px !important;
+  width: 100% !important;
+  scrollbar-width: thin;
+}
+
+.avatarai-selection-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.avatarai-selection-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.2);
+  border-radius: 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
   .avatarai-options {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .avatarai-option {
-    min-height: 150px;
-    padding: 20px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 
   .avatarai-content-panel {
@@ -304,13 +474,32 @@
     gap: 16px;
   }
 
-  .avatarai-agent-shell,
-  .avatarai-transcripts,
-  .avatarai-placeholder {
-    min-height: 340px;
+  .avatarai-agent-shell {
+    aspect-ratio: 3 / 4;
+    max-height: 480px;
   }
 
-  .avatarai-transcript-list {
-    max-height: 250px;
+  .avatarai-transcripts {
+    min-height: 320px;
+    max-height: 400px;
+  }
+
+  .avatarai-placeholder {
+    aspect-ratio: unset;
+    min-height: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .avatarai-options {
+    grid-template-columns: 1fr;
+  }
+
+  .avatarai-title {
+    font-size: 26px;
+  }
+
+  .avatarai-agent-shell {
+    max-height: 420px;
   }
 }

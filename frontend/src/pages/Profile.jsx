@@ -8,38 +8,7 @@ import TabGroup from "../components/TabGroup";
 import "./Profile.css";
 
 const Profile = () => {
-  // Custom scrollbar styles
-  const scrollbarStyles = `
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
-      border-radius: 10px;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 10px;
-      transition: all 0.3s ease;
-    }
-
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
-      box-shadow: 0 0 6px rgba(102, 126, 234, 0.5);
-    }
-
-    /* Firefox scrollbar */
-    .custom-scrollbar {
-      scrollbar-width: thin;
-      scrollbar-color: #667eea #f5f5f5;
-    }
-  `;
-
   const user = useSelector(selectUser);
-  console.log(user);
   const [activeTab, setActiveTab] = useState("profile");
   const [profile, setProfile] = useState({
     email: "",
@@ -66,25 +35,26 @@ const Profile = () => {
   const [loadingAppointments, setLoadingAppointments] = useState(true);
   const fileInputRef = useRef(null);
 
+  /* ── Data Fetching ── */
   const getProfile = async () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/auth/fetch-profile");
-      const { profile: fetchedProfile } = res.data;
-      const formattedProfile = {
-        email: fetchedProfile.email || "",
-        username: fetchedProfile.username || "",
-        first_name: fetchedProfile.first_name || "",
-        last_name: fetchedProfile.last_name || "",
-        birthday: fetchedProfile.birthday || "",
-        gender: fetchedProfile.gender || "",
-        avatar_url: fetchedProfile.avatar_url || "",
-        permit_store: fetchedProfile.permit_store || false,
-        permit_analyze: fetchedProfile.permit_analyze || false,
+      const { profile: p } = res.data;
+      const formatted = {
+        email: p.email || "",
+        username: p.username || "",
+        first_name: p.first_name || "",
+        last_name: p.last_name || "",
+        birthday: p.birthday || "",
+        gender: p.gender || "",
+        avatar_url: p.avatar_url || "",
+        permit_store: p.permit_store || false,
+        permit_analyze: p.permit_analyze || false,
       };
-      setProfile(formattedProfile);
-      setOriginalProfile(formattedProfile);
-    } catch (e) {
+      setProfile(formatted);
+      setOriginalProfile(formatted);
+    } catch {
       setMessage({ type: "error", text: "Failed to load profile" });
     } finally {
       setLoading(false);
@@ -97,9 +67,7 @@ const Profile = () => {
       const res = await axiosInstance.get("/profile/fetch-sessions");
       const { chat_sessions } = res.data;
       setChatSessions(chat_sessions);
-      if (chat_sessions.length > 0) {
-        setSelectedSession(chat_sessions[0]);
-      }
+      if (chat_sessions.length > 0) setSelectedSession(chat_sessions[0]);
     } catch (e) {
       console.error("Failed to load chat sessions:", e);
     } finally {
@@ -119,6 +87,13 @@ const Profile = () => {
     }
   };
 
+  useEffect(() => {
+    getProfile();
+    getChatSessions();
+    getAppointments();
+  }, []);
+
+  /* ── Handlers ── */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
@@ -138,20 +113,18 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const res = await axiosInstance.put("/auth/update-profile", {
+      await axiosInstance.put("/auth/update-profile", {
         username: profile.username,
         first_name: profile.first_name,
         last_name: profile.last_name,
         birthday: profile.birthday,
         gender: profile.gender,
       });
-
       setOriginalProfile(profile);
       setIsEditMode(false);
       setMessage({ type: "success", text: "Profile updated successfully!" });
-
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
-    } catch (e) {
+    } catch {
       setMessage({ type: "error", text: "Failed to update profile" });
     } finally {
       setSaving(false);
@@ -163,45 +136,29 @@ const Profile = () => {
     setMessage({ type: "", text: "" });
   };
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
+  const handleFileSelect = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     try {
       setUploadingAvatar(true);
       const formData = new FormData();
       formData.append("avatar", file);
-
       const res = await axiosInstance.put("/auth/upload-avatar", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      const updatedProfile = {
-        ...profile,
-        avatar_url: res.data.profile.avatar_url,
-      };
-      setProfile(updatedProfile);
-      setOriginalProfile(updatedProfile);
+      const updated = { ...profile, avatar_url: res.data.profile.avatar_url };
+      setProfile(updated);
+      setOriginalProfile(updated);
       setIsEditingAvatar(false);
-      setMessage({
-        type: "success",
-        text: "Profile picture updated successfully!",
-      });
-
+      setMessage({ type: "success", text: "Profile picture updated successfully!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
-    } catch (e) {
+    } catch {
       setMessage({ type: "error", text: "Failed to upload profile picture" });
     } finally {
       setUploadingAvatar(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -213,71 +170,24 @@ const Profile = () => {
   const handlePermissionChange = async (permissionType) => {
     try {
       const updatedValue = !profile[permissionType];
-
-      const res = await axiosInstance.post("/auth/update-permissions", {
-        permit_store:
-          permissionType === "permit_store"
-            ? updatedValue
-            : profile.permit_store,
-        permit_analyze:
-          permissionType === "permit_analyze"
-            ? updatedValue
-            : profile.permit_analyze,
+      await axiosInstance.post("/auth/update-permissions", {
+        permit_store: permissionType === "permit_store" ? updatedValue : profile.permit_store,
+        permit_analyze: permissionType === "permit_analyze" ? updatedValue : profile.permit_analyze,
       });
-      const updatedProfile = {
-        ...profile,
-        [permissionType]: updatedValue,
-      };
-      setProfile(updatedProfile);
-      setOriginalProfile(updatedProfile);
-
-      setMessage({
-        type: "success",
-        text: "Privacy preferences updated successfully!",
-      });
-
+      const updated = { ...profile, [permissionType]: updatedValue };
+      setProfile(updated);
+      setOriginalProfile(updated);
+      setMessage({ type: "success", text: "Privacy preferences updated!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
-    } catch (e) {
-      setMessage({
-        type: "error",
-        text: "Failed to update privacy preferences",
-      });
+    } catch {
+      setMessage({ type: "error", text: "Failed to update privacy preferences" });
     }
   };
 
-  useEffect(() => {
-    getProfile();
-    getChatSessions();
-    getAppointments();
-  }, []);
-
-  const SkeletonLoader = () => (
-    <div className="animate-pulse">
-      <div className="h-8 bg-gray-200 rounded-none w-48 mb-6"></div>
-      <div className="space-y-5">
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-        <div className="h-12 bg-gray-200 rounded-none"></div>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="profile-page-container">
-        <div className="profile-page-card p-10">
-          <SkeletonLoader />
-        </div>
-      </div>
-    );
-  }
-
+  /* ── Helpers ── */
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -288,66 +198,78 @@ const Profile = () => {
 
   const getRiskColor = (riskLevel) => {
     switch (riskLevel?.toLowerCase()) {
-      case "low":
-        return "#16a34a";
-      case "moderate":
-        return "#f59e0b";
-      case "high":
-        return "#dc2626";
-      default:
-        return "#9ca3af";
+      case "low": return "#16a34a";
+      case "moderate": return "#f59e0b";
+      case "high": return "#dc2626";
+      default: return "#9ca3af";
     }
   };
 
+  /* ── Skeleton ── */
+  const SkeletonLoader = () => (
+    <div className="animate-pulse flex flex-col gap-4 p-10">
+      <div className="profile-skeleton-item w-48 h-6" />
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="profile-skeleton-item" />
+      ))}
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="profile-page-container">
+        <div className="profile-page-card">
+          <SkeletonLoader />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Toast helper ── */
+  const Toast = () =>
+    message.text ? (
+      <div className={`vera-toast ${message.type}`}>
+        <span>{message.type === "success" ? "✓" : "⚠"}</span>
+        {message.text}
+      </div>
+    ) : null;
+
+  /* ────────────────────────────
+     PROFILE TAB
+  ──────────────────────────── */
   const renderProfileTab = () => (
     <>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-          Personal Information
-        </h1>
+      <div className="profile-tab-header">
+        <h2 className="section-title">Personal Information</h2>
         {!isEditMode && (
-          <button
-            className="px-7 py-3 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300"
-            onClick={handleEdit}
-          >
+          <button className="vera-btn primary" onClick={handleEdit}>
             Edit Profile
           </button>
         )}
       </div>
 
-      {message.text && (
-        <div
-          className={`px-5 py-4 rounded-none mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
-            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
-            : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
-            }`}
-        >
-          {message.text}
-        </div>
-      )}
+      <Toast />
 
-      <div className="flex flex-col items-center py-10 mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-none">
-        <div className="relative mb-5">
+      {/* Avatar */}
+      <div className="profile-avatar-section">
+        <div style={{ position: "relative", marginBottom: 16 }}>
           {profile.avatar_url ? (
             <img
               src={profile.avatar_url}
               alt="Profile Avatar"
-              className="w-36 h-36 rounded-full object-cover border-4 border-white shadow-xl shadow-indigo-500/20 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300"
+              className="profile-avatar-img"
             />
           ) : (
-            <FaUserCircle className="w-36 h-36 text-gray-300 hover:text-indigo-500 hover:scale-105 transition-all duration-300" />
+            <FaUserCircle className="profile-avatar-icon" />
           )}
         </div>
 
         {!isEditingAvatar ? (
-          <button
-            className="px-7 py-3 rounded-none border-2 border-indigo-500 bg-white text-indigo-500 font-semibold hover:bg-indigo-500 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 mt-3"
-            onClick={handleAvatarClick}
-          >
+          <button className="vera-btn outline" onClick={handleAvatarClick}>
             Update Profile Picture
           </button>
         ) : (
-          <div className="flex gap-3 mt-3">
+          <div className="profile-actions-row" style={{ marginTop: 4 }}>
             <input
               type="file"
               ref={fileInputRef}
@@ -356,16 +278,16 @@ const Profile = () => {
               className="hidden"
             />
             <button
+              className="vera-btn primary"
               onClick={handleFileSelect}
               disabled={uploadingAvatar}
-              className="px-7 py-3 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {uploadingAvatar ? "Uploading..." : "Choose File"}
+              {uploadingAvatar ? "Uploading…" : "Choose File"}
             </button>
             <button
+              className="vera-btn ghost"
               onClick={handleCancelAvatar}
               disabled={uploadingAvatar}
-              className="px-7 py-3 rounded-none bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -373,25 +295,23 @@ const Profile = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="col-span-full flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            Email
-          </label>
+      {/* Form */}
+      <div className="profile-form-grid">
+        {/* Email */}
+        <div className="profile-field col-full">
+          <label className="profile-label">Email</label>
           <input
             type="email"
             name="email"
             value={profile.email}
-            onChange={handleInputChange}
-            disabled={true}
-            className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 bg-gray-50 text-gray-500 cursor-not-allowed"
+            disabled
+            className="vera-input"
           />
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            Username
-          </label>
+        {/* Username */}
+        <div className="profile-field">
+          <label className="profile-label">Username</label>
           {isEditMode ? (
             <input
               type="text"
@@ -399,19 +319,16 @@ const Profile = () => {
               value={profile.username}
               onChange={handleInputChange}
               placeholder="Username"
-              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="vera-input"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
-              {profile.username || "Not set"}
-            </div>
+            <div className="vera-value">{profile.username || "Not set"}</div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            First Name
-          </label>
+        {/* First Name */}
+        <div className="profile-field">
+          <label className="profile-label">First Name</label>
           {isEditMode ? (
             <input
               type="text"
@@ -419,19 +336,16 @@ const Profile = () => {
               value={profile.first_name}
               onChange={handleInputChange}
               placeholder="First Name"
-              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="vera-input"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
-              {profile.first_name || "Not set"}
-            </div>
+            <div className="vera-value">{profile.first_name || "Not set"}</div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            Last Name
-          </label>
+        {/* Last Name */}
+        <div className="profile-field">
+          <label className="profile-label">Last Name</label>
           {isEditMode ? (
             <input
               type="text"
@@ -439,44 +353,38 @@ const Profile = () => {
               value={profile.last_name}
               onChange={handleInputChange}
               placeholder="Last Name"
-              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="vera-input"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
-              {profile.last_name || "Not set"}
-            </div>
+            <div className="vera-value">{profile.last_name || "Not set"}</div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            Birthday
-          </label>
+        {/* Birthday */}
+        <div className="profile-field">
+          <label className="profile-label">Birthday</label>
           {isEditMode ? (
             <input
               type="date"
               name="birthday"
               value={profile.birthday}
               onChange={handleInputChange}
-              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+              className="vera-input"
             />
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
-              {profile.birthday || "Not set"}
-            </div>
+            <div className="vera-value">{profile.birthday || "Not set"}</div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <label className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            Gender
-          </label>
+        {/* Gender */}
+        <div className="profile-field">
+          <label className="profile-label">Gender</label>
           {isEditMode ? (
             <select
               name="gender"
               value={profile.gender}
               onChange={handleInputChange}
-              className="px-4 py-3.5 rounded-none border-2 border-gray-200 text-base transition-all duration-300 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 cursor-pointer"
+              className="vera-select"
             >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
@@ -485,23 +393,24 @@ const Profile = () => {
               <option value="prefer_not_to_say">Prefer not to say</option>
             </select>
           ) : (
-            <div className="px-4 py-3.5 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none text-gray-900 text-base">
-              {profile.gender || "Not set"}
-            </div>
+            <div className="vera-value">{profile.gender || "Not set"}</div>
           )}
         </div>
 
+        {/* Save / Cancel */}
         {isEditMode && (
-          <div className="col-span-full flex gap-3 pt-2">
+          <div className="col-full profile-actions-row" style={{ paddingTop: 8 }}>
             <button
-              className="flex-1 px-7 py-4 rounded-none bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="vera-btn primary"
+              style={{ flex: 1 }}
               onClick={handleSave}
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Saving…" : "Save Changes"}
             </button>
             <button
-              className="flex-1 px-7 py-4 rounded-none bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 hover:-translate-y-0.5 transition-all duration-300"
+              className="vera-btn ghost"
+              style={{ flex: 1 }}
               onClick={handleCancel}
             >
               Cancel
@@ -512,34 +421,24 @@ const Profile = () => {
     </>
   );
 
+  /* ────────────────────────────
+     PRIVACY TAB
+  ──────────────────────────── */
   const renderPrivacyTab = () => (
     <>
-      {message.text && (
-        <div
-          className={`px-5 py-4 rounded-none mb-6 flex items-center gap-3 animate-[slideDown_0.3s_ease-in] ${message.type === "success"
-            ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-200"
-            : "bg-gradient-to-r from-red-50 to-rose-50 text-red-600 border border-red-200"
-            }`}
-        >
-          {message.text}
-        </div>
-      )}
+      <h2 className="section-title">Privacy &amp; Consent</h2>
+      <Toast />
 
-      <div className="space-y-5">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Privacy & Consent
-        </h2>
-
-        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2.5">
-              Store Conversations
-            </h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Allow V.E.R.A. to store your conversations with the AI
-              (chat/voice). This data will only be accessible to our staff and
-              licensed doctors to help them better understand your situation and
-              provide more personalized support and care.
+      <div className="flex flex-col gap-4">
+        {/* Store Conversations */}
+        <div className="privacy-card">
+          <div style={{ flex: 1 }}>
+            <p className="privacy-card-title">Store Conversations</p>
+            <p className="privacy-card-desc">
+              Allow V.E.R.A. to store your conversations with the AI (chat/voice).
+              This data will only be accessible to our staff and licensed doctors to
+              help them better understand your situation and provide more personalised
+              support and care.
             </p>
           </div>
           <Switch
@@ -549,18 +448,16 @@ const Profile = () => {
           />
         </div>
 
-        <div className="flex justify-between items-start gap-6 p-7 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-indigo-50 hover:border-indigo-500 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/15">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2.5">
-              AI Analysis of Conversations
-            </h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Consent to V.E.R.A. using AI to analyze your conversations for
-              patterns in emotional state, mental well-being, and potential risk
-              indicators. This analysis helps provide early detection of
-              emotional distress, generate personalized recommendations, and
-              improve the quality of support you receive through predictive
-              analytics and mood tracking.
+        {/* AI Analysis */}
+        <div className="privacy-card">
+          <div style={{ flex: 1 }}>
+            <p className="privacy-card-title">AI Analysis of Conversations</p>
+            <p className="privacy-card-desc">
+              Consent to V.E.R.A. using AI to analyse your conversations for patterns
+              in emotional state, mental well-being, and potential risk indicators.
+              This analysis helps provide early detection of emotional distress,
+              generate personalised recommendations, and improve the quality of
+              support you receive.
             </p>
           </div>
           <Switch
@@ -573,318 +470,267 @@ const Profile = () => {
     </>
   );
 
-  const renderSessionsTab = () => (
-    <div className="space-y-6">
-      {loadingSessions ? (
-        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
-          Loading sessions...
+  /* ────────────────────────────
+     SESSIONS TAB
+  ──────────────────────────── */
+  const renderSessionsTab = () => {
+    if (loadingSessions) {
+      return (
+        <div className="vera-empty-state">
+          <div className="vera-spinner" />
+          <span>Loading sessions…</span>
         </div>
-      ) : chatSessions.length === 0 ? (
-        <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
-          No chat sessions found
+      );
+    }
+
+    if (chatSessions.length === 0) {
+      return (
+        <div className="vera-empty-state">
+          <span className="empty-icon">💬</span>
+          <span>No chat sessions found</span>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-7 min-h-[500px]">
-          {/* Sidebar */}
-          <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-            {chatSessions.map((session) => (
-              <div
-                key={session.id}
-                className={`p-4.5 rounded-none border-2 cursor-pointer transition-all duration-300 ${selectedSession?.id === session.id
-                  ? "border-indigo-500 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg shadow-indigo-500/20 translate-x-1"
-                  : "border-gray-200 bg-white hover:border-indigo-500 hover:bg-purple-50 hover:translate-x-1"
-                  }`}
-                onClick={() => setSelectedSession(session)}
-              >
-                <div className="flex gap-2 mb-2.5 flex-wrap">
+      );
+    }
+
+    return (
+      <div className="sessions-layout">
+        {/* Sidebar */}
+        <div className="sessions-sidebar">
+          {chatSessions.map((session) => (
+            <div
+              key={session.id}
+              className={`session-item ${selectedSession?.id === session.id ? "active" : ""}`}
+              onClick={() => setSelectedSession(session)}
+            >
+              <div className="session-badges">
+                <span className={`badge ${session.type === "text" ? "text-type" : "voice-type"}`}>
+                  {session.type}
+                </span>
+                {session.risk_level && (
                   <span
-                    className={`inline-block px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider ${session.type === "text"
-                      ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
-                      : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
-                      }`}
+                    className="badge risk"
+                    style={{ backgroundColor: getRiskColor(session.risk_level) }}
                   >
-                    {session.type}
+                    {session.risk_level}
                   </span>
-                  {session.risk_level && (
-                    <span
-                      className="inline-block px-3 py-1.5 rounded-none text-xs font-bold capitalize tracking-wider text-white shadow-md"
-                      style={{
-                        backgroundColor: getRiskColor(session.risk_level),
-                      }}
-                    >
-                      {session.risk_level}
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-gray-500 font-medium mb-2.5">
-                  {formatDate(session.created_at)}
-                </div>
-                {session.summary && (
-                  <div className="text-sm text-gray-700 leading-relaxed">
-                    {session.summary.substring(0, 60)}
-                    {session.summary.length > 60 ? "..." : ""}
-                  </div>
                 )}
               </div>
-            ))}
-          </div>
+              <div className="session-item-date">{formatDate(session.created_at)}</div>
+              {session.summary && (
+                <div className="session-item-summary">
+                  {session.summary.substring(0, 65)}
+                  {session.summary.length > 65 ? "…" : ""}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
-          {/* Main Panel */}
-          <div className="flex flex-col gap-6 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-            {selectedSession ? (
-              <>
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-none p-7">
-                  <div className="flex justify-between items-center mb-5 pb-5 border-b-2 border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-900">
-                      Session Details
-                    </h3>
-                    <div className="flex gap-2">
+        {/* Main panel */}
+        <div className="sessions-main">
+          {selectedSession ? (
+            <>
+              {/* Detail card */}
+              <div className="session-detail-card">
+                <div className="session-detail-header">
+                  <h3>Session Details</h3>
+                  <div className="session-badges">
+                    <span className={`badge ${selectedSession.type === "text" ? "text-type" : "voice-type"}`}>
+                      {selectedSession.type}
+                    </span>
+                    {selectedSession.risk_level && (
                       <span
-                        className={`inline-block px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider ${selectedSession.type === "text"
-                          ? "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800"
-                          : "bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800"
-                          }`}
+                        className="badge risk"
+                        style={{ backgroundColor: getRiskColor(selectedSession.risk_level) }}
                       >
-                        {selectedSession.type}
+                        {selectedSession.risk_level}
+                        {selectedSession.risk_score ? ` (${selectedSession.risk_score})` : ""}
                       </span>
-                      {selectedSession.risk_level && (
-                        <span
-                          className="inline-block px-3 py-1.5 rounded-none text-xs font-bold capitalize tracking-wider text-white shadow-md"
-                          style={{
-                            backgroundColor: getRiskColor(
-                              selectedSession.risk_level
-                            ),
-                          }}
-                        >
-                          {selectedSession.risk_level}
-                          {selectedSession.risk_score
-                            ? ` (${selectedSession.risk_score})`
-                            : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Appointment Banner */}
-                  {selectedSession?.doctor_notes?.find((n) => n.next_appointment) && (
-                    <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-100 rounded-none p-5 flex items-center gap-4 shadow-sm animate-[fadeIn_0.4s_ease-out]">
-                      <div className="w-12 h-12 bg-white rounded-none flex items-center justify-center shadow-md">
-                        <svg
-                          className="w-6 h-6 text-indigo-500"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-0.5">
-                          Next Appointment
-                        </p>
-                        <p className="text-lg font-bold text-gray-900">
-                          {formatDate(
-                            selectedSession.doctor_notes.find((n) => n.next_appointment)
-                              .next_appointment
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-3.5">
-                    <div className="text-sm text-gray-700 leading-relaxed">
-                      <strong className="text-gray-900 font-bold">Date:</strong>{" "}
-                      {formatDate(selectedSession.created_at)}
-                    </div>
-                    {selectedSession.summary && (
-                      <div className="text-sm text-gray-700 leading-relaxed">
-                        <strong className="text-gray-900 font-bold">
-                          Summary:
-                        </strong>{" "}
-                        {selectedSession.summary}
-                      </div>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-white border-2 border-gray-200 rounded-none p-7">
-                  <h4 className="text-lg font-bold text-gray-900 mb-5">
-                    Conversation
-                  </h4>
-                  {selectedSession.chat_messages.length === 0 ? (
-                    <div className="text-center py-16 px-10 text-gray-500 italic bg-gradient-to-br from-gray-50 to-gray-100 rounded-none">
-                      No messages in this session
+                {/* Appointment banner */}
+                {selectedSession?.doctor_notes?.find((n) => n.next_appointment) && (
+                  <div className="appt-banner">
+                    <div className="appt-banner-icon">
+                      <svg className="w-5 h-5" style={{ color: "#7c3aed" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {selectedSession.chat_messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`px-5 py-4.5 rounded-none max-w-[80%] animate-[messageSlide_0.3s_ease-out] ${message.sent_by === "user"
-                            ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white self-end ml-auto shadow-lg shadow-indigo-500/30"
-                            : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 border-2 border-gray-200 self-start"
-                            }`}
-                        >
-                          <div
-                            className={`text-xs font-bold mb-2 uppercase tracking-wider ${message.sent_by === "user"
-                              ? "text-white/90"
-                              : "text-indigo-500"
-                              }`}
-                          >
-                            {message.sent_by === "user" ? "You" : "Sentinel"}
-                          </div>
-                          <div className="text-sm leading-relaxed mb-2">
-                            {message.content || "(No content)"}
-                          </div>
-                          <div className="text-xs opacity-70 text-right font-medium">
-                            {formatDate(message.created_at)}
-                          </div>
+                    <div>
+                      <p className="appt-banner-label">Next Appointment</p>
+                      <p className="appt-banner-date">
+                        {formatDate(selectedSession.doctor_notes.find((n) => n.next_appointment).next_appointment)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  <p className="session-meta-row">
+                    <strong>Date:</strong> {formatDate(selectedSession.created_at)}
+                  </p>
+                  {selectedSession.summary && (
+                    <p className="session-meta-row">
+                      <strong>Summary:</strong> {selectedSession.summary}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Conversation */}
+              <div className="conversation-card">
+                <h4>Conversation</h4>
+                {selectedSession.chat_messages.length === 0 ? (
+                  <div className="vera-empty-state" style={{ padding: "40px 24px" }}>
+                    <span className="empty-icon">🗒️</span>
+                    <span>No messages in this session</span>
+                  </div>
+                ) : (
+                  <div className="messages-list">
+                    {selectedSession.chat_messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`message-bubble ${msg.sent_by === "user" ? "user" : "bot"}`}
+                      >
+                        <div className="msg-sender">
+                          {msg.sent_by === "user" ? "You" : "V.E.R.A."}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
-                Select a session to view details
+                        <div className="msg-content">{msg.content || "(No content)"}</div>
+                        <div className="msg-time">{formatDate(msg.created_at)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="vera-empty-state">
+              <span className="empty-icon">👈</span>
+              <span>Select a session to view details</span>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-
-  const renderAppointmentsTab = () => {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">My Appointments</h2>
-        {loadingAppointments ? (
-          <div className="text-center py-16 px-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mb-3"></div>
-            <p className="text-gray-500">Loading appointments...</p>
-          </div>
-        ) : appointments.length === 0 ? (
-          <div className="text-center py-16 px-10 text-gray-500 bg-gradient-to-br from-gray-50 to-gray-100 rounded-none border-2 border-dashed border-gray-200">
-            No appointments found
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {appointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100 rounded-none p-6 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-none flex items-center justify-center">
-                    <svg
-                      className="w-6 h-6 text-indigo-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-0.5">
-                      Session #{(typeof appointment.chat_sessions?.id === "string" ? appointment.chat_sessions.id.substring(0, 8) : (typeof appointment.session_id === "string" ? appointment.session_id.substring(0, 8) : "N/A"))}...
-                    </p>
-                    <p className="text-sm font-semibold text-gray-500">
-                      {appointment.chat_sessions?.type || "Unknown"} Session
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                      Appointment Date &amp; Time
-                    </p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {formatDate(appointment.next_appointment)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                      Doctor
-                    </p>
-                    <p className="text-sm font-bold text-indigo-600">
-                      Dr. {appointment.profiles?.first_name || ""}{" "}
-                      {appointment.profiles?.last_name || "Unknown"}
-                    </p>
-                  </div>
-
-                  {appointment.clinical_observations && (
-                    <div className="bg-white/50 rounded-none p-4 border border-gray-100">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                        Clinical Observations
-                      </p>
-                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                        {appointment.clinical_observations}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     );
   };
 
-  return (
-    <>
-      <style>{scrollbarStyles}</style>
-      <div className="profile-page-container">
-        <div className="profile-page-header">
-          <h1 className="profile-page-title">
-            Profile <span className="profile-page-title-accent">& Settings</span>
-          </h1>
-          <p className="profile-page-subtitle">
-            Manage your account details, privacy preferences, sessions, and appointments
-          </p>
+  /* ────────────────────────────
+     APPOINTMENTS TAB
+  ──────────────────────────── */
+  const renderAppointmentsTab = () => {
+    if (loadingAppointments) {
+      return (
+        <div className="vera-empty-state">
+          <div className="vera-spinner" />
+          <span>Loading appointments…</span>
         </div>
+      );
+    }
 
-        <div className="profile-page-card">
-          {/* Tabs Navigation */}
-          <TabGroup
-            tabs={[
-              { label: "Profile", value: "profile" },
-              { label: "Privacy", value: "privacy" },
-              { label: "Sessions", value: "sessions" },
-              { label: "Appointments", value: "appointments" },
-            ]}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+    if (appointments.length === 0) {
+      return (
+        <div className="vera-empty-state">
+          <span className="empty-icon">📅</span>
+          <span>No appointments found</span>
+        </div>
+      );
+    }
 
-          {/* Tab Content */}
-          <div className="profile-page-content animate-[slideIn_0.4s_ease-out]">
-            {activeTab === "profile" && renderProfileTab()}
-            {activeTab === "privacy" && renderPrivacyTab()}
-            {activeTab === "sessions" && renderSessionsTab()}
-            {activeTab === "appointments" && renderAppointmentsTab()}
-          </div>
+    return (
+      <>
+        <h2 className="section-title">My Appointments</h2>
+        <div className="appointments-grid">
+          {appointments.map((appt) => (
+            <div key={appt.id} className="appointment-card">
+              <div className="appointment-card-header">
+                <div className="appointment-icon-wrap">
+                  <svg className="w-5 h-5" style={{ color: "#7c3aed" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="appointment-sublabel">
+                    Session #{(typeof appt.chat_sessions?.id === "string"
+                      ? appt.chat_sessions.id.substring(0, 8)
+                      : typeof appt.session_id === "string"
+                        ? appt.session_id.substring(0, 8)
+                        : "N/A")}…
+                  </p>
+                  <p className="appointment-subtitle">
+                    {appt.chat_sessions?.type || "Unknown"} Session
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="appt-field-label">Appointment Date &amp; Time</p>
+                  <p className="appt-field-value">{formatDate(appt.next_appointment)}</p>
+                </div>
+
+                <div>
+                  <p className="appt-field-label">Doctor</p>
+                  <p className="appt-field-doctor">
+                    Dr. {appt.profiles?.first_name || ""} {appt.profiles?.last_name || "Unknown"}
+                  </p>
+                </div>
+
+                {appt.clinical_observations && (
+                  <div className="appt-observations">
+                    <p className="appt-field-label" style={{ marginBottom: 6 }}>
+                      Clinical Observations
+                    </p>
+                    <p>{appt.clinical_observations}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  };
+
+  /* ── Render ── */
+  return (
+    <div className="profile-page-container">
+      {/* Header */}
+      <div className="profile-page-header">
+        <div className="eyebrow">👤 Account</div>
+        <h1 className="profile-page-title">
+          Profile <span className="profile-page-title-accent">&amp; Settings</span>
+        </h1>
+        <p className="profile-page-subtitle">
+          Manage your account details, privacy preferences, sessions, and appointments
+        </p>
+      </div>
+
+      {/* Card */}
+      <div className="profile-page-card">
+        <TabGroup
+          tabs={[
+            { label: "Profile", value: "profile" },
+            { label: "Privacy", value: "privacy" },
+            { label: "Sessions", value: "sessions" },
+            { label: "Appointments", value: "appointments" },
+          ]}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        <div className="profile-page-content">
+          {activeTab === "profile"      && renderProfileTab()}
+          {activeTab === "privacy"      && renderPrivacyTab()}
+          {activeTab === "sessions"     && renderSessionsTab()}
+          {activeTab === "appointments" && renderAppointmentsTab()}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
 export default Profile;
-

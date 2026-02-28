@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import './Welcome.css';
 import meowVideo from '../assets/meow+meow+.mp4';
 import arfarfVideo from '../assets/++arf+arf+.mp4';
@@ -13,7 +13,7 @@ import axiosInstance from '../utils/axios.instance';
  * - Choose between Cat and Dog avatars
  * - Saves session data to backend
  */
-export default function AnimalAI({ onTranscript }) {
+export default function AnimalAI({ onTranscript, onEnd }) {
     const [animalType, setAnimalType] = useState(null); // 'cat' or 'dog'
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
@@ -379,41 +379,41 @@ export default function AnimalAI({ onTranscript }) {
     return (
         <div className="page-container flex flex-col items-center">
             {!animalType ? (
-                <>
+                <div className="avatarai-selection-wrapper">
                     <div className="page-header w-full">
                         <h1 className="page-title">
                             Companion <span className="gradient-text">Selection</span>
                         </h1>
-                        <p className="page-subtitle">Select a friendly animal avatar to start your conversation</p>
+                        <p className="page-subtitle">Select a friendly animal avatar</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-4xl pb-12">
+                    <div className="grid grid-cols-1 gap-6 w-full max-w-lg pb-12">
                         {[
-                            { id: 'cat', name: 'Cat AI', icon: '🐱', desc: 'Sassy and playful feline friend' },
-                            { id: 'dog', name: 'Dog AI', icon: '🐶', desc: 'Loyal and energetic canine companion' }
+                            { id: 'cat', name: 'Cat AI', icon: '🐱', desc: 'Sassy feline friend' },
+                            { id: 'dog', name: 'Dog AI', icon: '🐶', desc: 'Loyal canine companion' }
                         ].map(animal => (
                             <button
                                 key={animal.id}
                                 onClick={() => handleAnimalSelect(animal.id)}
-                                className="design-section glass-card text-left p-10 group flex flex-col items-center text-center transition-all duration-500"
+                                className="design-section glass-card text-left p-6 group flex flex-col items-center text-center transition-all duration-500"
                             >
-                                <div className="text-7xl mb-8 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 drop-shadow-xl">
+                                <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform duration-500">
                                     {animal.icon}
                                 </div>
-                                <h3 className="section-title text-2xl mb-2 capitalize">{animal.name}</h3>
-                                <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-[240px] mb-8">
+                                <h3 className="section-title text-xl mb-1 capitalize">{animal.name}</h3>
+                                <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[200px] mb-4">
                                     {animal.desc}
                                 </p>
-                                <div className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-lg group-hover:shadow-indigo-200 transition-all duration-300">
+                                <div className="inline-flex items-center gap-2 px-6 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[9px] font-bold uppercase tracking-widest group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                                     Start Session
                                 </div>
                             </button>
                         ))}
                     </div>
-                </>
+                </div>
             ) : (
                 <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-8">
-                    <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white aspect-video bg-gray-900 rounded-3xl flex items-center justify-center">
+                    <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white bg-gray-900 rounded-3xl flex items-center justify-center">
                         <video
                             ref={videoRef}
                             src={VIDEO_MAP[animalType]}
@@ -488,49 +488,66 @@ export default function AnimalAI({ onTranscript }) {
                     </div>
 
                     <div className="w-full max-w-2xl">
-                        <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[32px] p-6 flex items-center gap-6 transition-all hover:shadow-indigo-100/50">
-                            <button
-                                type="button"
-                                onClick={toggleListening}
-                                disabled={isProcessing || isSpeaking}
-                                className={`p-6 rounded-[24px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
-                                    ? 'bg-rose-500 shadow-rose-200 animate-pulse'
-                                    : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
-                                    } disabled:opacity-50 disabled:grayscale text-white`}
-                                title={isListening ? 'Stop listening' : 'Start listening'}
-                            >
-                                {isListening ? (
-                                    <Mic size={28} className="text-white" />
-                                ) : (
-                                    <MicOff size={28} className="text-white" />
-                                )}
-                            </button>
+                        <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[40px] p-6 flex flex-col items-center gap-6 transition-all hover:shadow-indigo-100/50">
 
-                            <div className="flex-1 flex flex-col">
-                                <div className="text-slate-800 font-extrabold text-lg tracking-tight">
-                                    {isListening ? 'Listening to you...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Tap Mic to Chat'}
-                                </div>
-                                <div className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] mt-1.5">
-                                    {isListening ? 'Companion is attentive' : isSpeaking ? 'Interactive guidance' : 'Companion at your service'}
-                                </div>
+                            <div className="flex items-center justify-center gap-6 w-full relative">
+                                <button
+                                    type="button"
+                                    onClick={toggleListening}
+                                    disabled={isProcessing || isSpeaking}
+                                    className={`p-7 rounded-[28px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
+                                        ? 'bg-rose-500 shadow-rose-200 animate-pulse'
+                                        : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
+                                        } disabled:opacity-50 disabled:grayscale text-white`}
+                                    title={isListening ? 'Stop listening' : 'Start listening'}
+                                >
+                                    {isListening ? (
+                                        <Mic size={32} className="text-white" />
+                                    ) : (
+                                        <MicOff size={32} className="text-white" />
+                                    )}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (onEnd) onEnd();
+                                        setAnimalType(null);
+                                        setMessages([]);
+                                        setSessionId(null);
+                                    }}
+                                    className="p-7 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-[28px] transition-all border border-rose-100 shadow-sm hover:shadow-md active:scale-95"
+                                    title="End Conversation"
+                                >
+                                    <PhoneOff size={32} />
+                                </button>
+
+                                {/* Speech Activity Indicator - Floating to the right */}
+                                {isListening && (
+                                    <div className="absolute right-0 flex items-end gap-1 h-8 px-4 opacity-40">
+                                        {[1, 2, 3, 4].map(i => (
+                                            <div
+                                                key={i}
+                                                className="w-1 bg-rose-400 rounded-full animate-bounce"
+                                                style={{
+                                                    height: `${30 + Math.random() * 70}%`,
+                                                    animationDuration: `${0.4 + Math.random() * 0.6}s`,
+                                                    animationDelay: `${i * 0.05}s`
+                                                }}
+                                            ></div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Speech Activity Indicator */}
-                            {isListening && (
-                                <div className="flex items-end gap-1 h-8 px-4">
-                                    {[1, 2, 3, 4, 5, 6].map(i => (
-                                        <div
-                                            key={i}
-                                            className="w-1.5 bg-rose-400 rounded-full animate-bounce"
-                                            style={{
-                                                height: `${30 + Math.random() * 70}%`,
-                                                animationDuration: `${0.4 + Math.random() * 0.6}s`,
-                                                animationDelay: `${i * 0.05}s`
-                                            }}
-                                        ></div>
-                                    ))}
+                            <div className="text-center">
+                                <div className="text-slate-800 font-extrabold text-base tracking-tight">
+                                    {isListening ? 'Listening to you...' : isSpeaking ? 'Speaking...' : isProcessing ? 'Thinking...' : 'Tap Mic to Chat'}
                                 </div>
-                            )}
+                                {!isListening && !isSpeaking && !isProcessing && (
+                                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest opacity-60 mt-1">Ready for interaction</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
