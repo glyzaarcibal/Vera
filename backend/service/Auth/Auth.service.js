@@ -6,67 +6,19 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../Email.service.
 import { v4 as uuidv4 } from "uuid";
 
 export async function createUsers(user) {
-  const requireEmailConfirmation =
-    process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email: user.email,
+    password: user.password,
+    user_metadata: { name: user.username },
+    email_confirm: false,
+  });
 
-  if (requireEmailConfirmation) {
-    console.log(`Creating pending user for: ${user.email}`);
-
-    // Generate a unique token
-    const token = uuidv4();
-
-    // Check if the user already exists in pending_users
-    const { data: pendingUsers } = await supabaseAdmin
-      .from('pending_users')
-      .select('id')
-      .eq('email', user.email);
-
-    if (pendingUsers && pendingUsers.length > 0) {
-      // If user exists, update their record with new token and password
-      const { error: updateError } = await supabaseAdmin
-        .from('pending_users')
-        .update({
-          password: user.password,
-          user_metadata: { name: user.username },
-          token: token,
-          created_at: new Date()
-        })
-        .eq('email', user.email);
-
-      if (updateError) throw updateError;
-    } else {
-      // Store in pending_users table
-      const { error: insertError } = await supabaseAdmin
-        .from('pending_users')
-        .insert({
-          email: user.email,
-          password: user.password,
-          user_metadata: { name: user.username },
-          token: token
-        });
-
-      if (insertError) throw insertError;
-    }
-
-    // Send custom verification link
-    // Link format: FRONTEND_URL/email-verified?token=xyz
-    const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
-
-    console.log(`Sending verification email to ${user.email}`);
-    await sendVerificationEmail(user.email, verificationLink);
-
-    return { message: "Confirmation email sent" };
-  } else {
-    // Legacy flow (direct creation)
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email: user.email,
-      password: user.password,
-      user_metadata: { name: user.username },
-      email_confirm: true,
-    });
-    if (error) throw error;
-    return data;
+  if (error) {
+    console.error("Error creating user:", error);
+    throw error;
   }
+
+  return { message: "Confirmation email sent" };
 }
 
 export async function verifyUserRegistration(token) {
