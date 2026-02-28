@@ -13,6 +13,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import UpdatePassword from "./pages/UpdatePassword";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import Profile from "./pages/Profile";
 import ChatAI from "./pages/ChatAI";
 import VoiceAI from "./pages/VoiceAI";
@@ -78,6 +80,8 @@ const App = () => {
       <Route path="/email-verified" element={<EmailVerified />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
     </Routes>
   );
 };
