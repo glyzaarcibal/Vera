@@ -1,22 +1,446 @@
-/* VoiceAI Page Styles */
+/* VoiceAI Page Styles — V.E.R.A. Theme */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --vera-gradient: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #67e8f9 100%);
+  --vera-gradient-soft: linear-gradient(135deg, #fdf4ff 0%, #ede9fe 50%, #e0f2fe 100%);
+  --vera-primary: #7c3aed;
+  --vera-primary-light: #a78bfa;
+  --vera-accent: #ec4899;
+  --vera-accent-soft: #fce7f3;
+  --vera-indigo: #6366f1;
+  --vera-surface: rgba(255, 255, 255, 0.85);
+  --vera-surface-hover: rgba(255, 255, 255, 0.95);
+  --vera-border: rgba(167, 139, 250, 0.2);
+  --vera-text: #1e1b4b;
+  --vera-text-muted: #6b7280;
+  --vera-shadow: 0 8px 32px rgba(124, 58, 237, 0.12);
+  --vera-shadow-lg: 0 20px 60px rgba(124, 58, 237, 0.18);
+  --vera-radius: 24px;
+  --vera-radius-sm: 16px;
+}
+
+/* ── Container ── */
 .voice-ai-container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
+  padding: 0 24px 64px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--vera-text);
 }
 
-.voice-ai-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  gap: 20px;
+/* ── Page Header ── */
+.voice-ai-page-header {
+  text-align: center;
+  padding: 48px 0 40px;
 }
 
-.voice-ai-title {
-  font-size: 32px;
+.voice-ai-page-header .page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
   font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vera-primary);
+  background: linear-gradient(135deg, #ede9fe, #fce7f3);
+  border: 1px solid var(--vera-border);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 20px;
 }
 
-/* Add more specific styles for VoiceAI page here */
+.voice-ai-page-header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 400;
+  line-height: 1.1;
+  margin: 0 0 16px;
+  color: var(--vera-text);
+  letter-spacing: -0.02em;
+}
+
+.voice-ai-page-header h1 em {
+  font-style: italic;
+  background: var(--vera-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.voice-ai-page-header .page-subtitle {
+  font-size: 16px;
+  color: var(--vera-text-muted);
+  font-weight: 400;
+  max-width: 400px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Design Section (card) ── */
+.design-section {
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-border);
+  border-radius: var(--vera-radius);
+  box-shadow: var(--vera-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Voice Carousel Card ── */
+.voice-carousel-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.voice-carousel-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--vera-gradient-soft);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.voice-carousel-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Voice Cards ── */
+.voice-card-active {
+  background: var(--vera-gradient) !important;
+  box-shadow: 0 24px 60px rgba(124, 58, 237, 0.35) !important;
+}
+
+.voice-card-inactive {
+  background: white !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+/* ── Active Call Section ── */
+.active-call-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.active-call-section::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.active-call-section::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(103, 232, 249, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Avatar Orb ── */
+.voice-avatar-orb {
+  background: var(--vera-gradient);
+  box-shadow: 0 16px 48px rgba(124, 58, 237, 0.4);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+
+.voice-avatar-orb.speaking {
+  transform: scale(1.1);
+  box-shadow: 0 20px 60px rgba(124, 58, 237, 0.5);
+  animation: breathe 2s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1.1); }
+  50% { transform: scale(1.13); }
+}
+
+.voice-avatar-orb .ping-ring {
+  border: 3px solid rgba(255,255,255,0.4);
+  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Transcript Box ── */
+.transcript-box {
+  background: rgba(249, 250, 251, 0.8);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: var(--vera-radius-sm);
+}
+
+/* ── Progress Bar ── */
+.call-progress-bar {
+  height: 3px;
+  background: rgba(167, 139, 250, 0.15);
+  border-radius: 0 0 0 0;
+  overflow: hidden;
+}
+
+.call-progress-bar .bar-fill {
+  height: 100%;
+  width: 45%;
+  background: var(--vera-gradient);
+  border-radius: 999px;
+  animation: loading 2.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ── Emotion Badge ── */
+.emotion-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #ede9fe, #fce7f3);
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vera-primary);
+}
+
+/* ── Call Controls ── */
+.call-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: white;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+
+.ctrl-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.ctrl-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.ctrl-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ctrl-btn.muted {
+  background: #fff1f2;
+  color: #f43f5e;
+}
+
+.ctrl-btn.unmuted {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.ctrl-btn.recording {
+  background: #f43f5e;
+  color: white;
+  animation: pulse-record 1.4s ease-in-out infinite;
+}
+
+.ctrl-btn.idle-record {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+@keyframes pulse-record {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+}
+
+/* ── Main Call Button ── */
+.call-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.call-btn.start {
+  background: var(--vera-gradient);
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.4);
+  color: white;
+}
+
+.call-btn.start::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
+
+.call-btn.end {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  box-shadow: 0 12px 32px rgba(244, 63, 94, 0.35);
+  color: white;
+}
+
+.call-btn:hover {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.call-btn:active {
+  transform: scale(0.96);
+}
+
+/* ── Feature Cards ── */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 40px;
+}
+
+@media (max-width: 640px) {
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-card {
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  cursor: default;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--vera-shadow-lg);
+}
+
+.feature-card .icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: var(--vera-gradient-soft);
+  border: 1px solid var(--vera-border);
+}
+
+.feature-card .feat-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vera-text);
+}
+
+.feature-card .feat-desc {
+  font-size: 12px;
+  color: var(--vera-text-muted);
+  line-height: 1.5;
+}
+
+/* ── Debug / Transcript textarea ── */
+.debug-section {
+  width: 100%;
+  max-width: 680px;
+  margin-top: 24px;
+}
+
+.debug-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+.debug-textarea {
+  width: 100%;
+  background: rgba(249, 250, 251, 0.8);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: var(--vera-radius-sm);
+  padding: 16px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--vera-text);
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.debug-textarea:focus {
+  border-color: rgba(167, 139, 250, 0.45);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.08);
+}
+
+/* ── Status dots ── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Thinking dots ── */
+.thinking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--vera-primary-light);
+  animation: bounce-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.3); border-radius: 3px; }

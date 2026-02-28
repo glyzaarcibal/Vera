@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import './Welcome.css';
 import womanAmericaVideo from '../assets/Unleash+yo.mp4';
 import americanGirlVideo from '../assets/american-girl.mp4';
@@ -9,7 +9,18 @@ import americanGirl2Video from '../assets/american-girl-2.mp4';
 import americanGirl3Video from '../assets/american-girl-3.mp4';
 import manAmericaVideo from '../assets/_Removed+D.mp4';
 import womanFilipinoVideo from '../assets/pinoywomen.mp4';
-import manFilipinoVideo from '../assets/pinoyman.mp4';
+import manFilipinoVideo from '../assets/filipino-boy.mp4';
+import americanBoyVideo from '../assets/american-boy.mp4';
+import americanBoy1Video from '../assets/american-boy-1.mp4';
+import americanBoy2Video from '../assets/american-boy-2.mp4';
+import americanBoy3Video from '../assets/american-boy-3.mp4';
+import filipinoBoy1Video from '../assets/filipino-boy-1.mp4';
+import filipinoBoy2Video from '../assets/filipino-boy-2.mp4';
+import filipinoBoy3Video from '../assets/filipino-boy-3.mp4';
+import filipinoGirlVideo from '../assets/filipino-girl.mp4';
+import filipinoGirl1Video from '../assets/filipino-girl-1.mp4';
+import filipinoGirl2Video from '../assets/filipino-girl-2.mp4';
+import filipinoGirl3Video from '../assets/filipino-girl-3.mp4';
 import americanGirlImg from '../assets/american-girl.png';
 import americanGirl1 from '../assets/american-girl-1.png';
 import americanGirl2 from '../assets/american-girl-2.png';
@@ -29,7 +40,7 @@ import filipinoBoy3 from '../assets/filipino-boy-3.png';
 import axiosInstance from '../utils/axios.instance';
 
 
-export default function DIDAgent({ onTranscript }) {
+export default function DIDAgent({ onTranscript, onEnd }) {
   const [avatarType, setAvatarType] = useState(null); // 'woman-america', 'man-america', 'woman-filipino', 'man-filipino'
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -89,6 +100,27 @@ export default function DIDAgent({ onTranscript }) {
     '3': americanGirl3Video
   };
 
+  const AMERICAN_BOY_VIDEOS = {
+    default: americanBoyVideo,
+    '1': americanBoy1Video,
+    '2': americanBoy2Video,
+    '3': americanBoy3Video
+  };
+
+  const FILIPINO_BOY_VIDEOS = {
+    default: manFilipinoVideo,
+    '1': filipinoBoy1Video,
+    '2': filipinoBoy2Video,
+    '3': filipinoBoy3Video
+  };
+
+  const FILIPINO_GIRL_VIDEOS = {
+    default: filipinoGirlVideo,
+    '1': filipinoGirl1Video,
+    '2': filipinoGirl2Video,
+    '3': filipinoGirl3Video
+  };
+
   const getAmericanGirlThinkingVideo = () => {
     if (selectedAmericanGirlOutfit === '1') return americanGirl1ThinkingVideo;
     return AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit] || americanGirlVideo;
@@ -104,6 +136,15 @@ export default function DIDAgent({ onTranscript }) {
         return getAmericanGirlThinkingVideo();
       }
       return AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit] || americanGirlVideo;
+    }
+    if (avatarType === 'man-america') {
+      return AMERICAN_BOY_VIDEOS[selectedAmericanBoyOutfit] || americanBoyVideo;
+    }
+    if (avatarType === 'man-filipino') {
+      return FILIPINO_BOY_VIDEOS[selectedFilipinoBoyOutfit] || manFilipinoVideo;
+    }
+    if (avatarType === 'woman-filipino') {
+      return FILIPINO_GIRL_VIDEOS[selectedFilipinoOutfit] || filipinoGirlVideo;
     }
     return VIDEO_MAP[avatarType] || womanAmericaVideo;
   };
@@ -758,11 +799,12 @@ export default function DIDAgent({ onTranscript }) {
         </div>
       ) : (
         <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-8">
-          <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white aspect-video bg-gray-900 rounded-3xl flex items-center justify-center">
+          <div className="design-section w-full p-0 overflow-hidden relative shadow-2xl border-4 border-white bg-gray-900 rounded-3xl flex items-center justify-center">
             <video
               ref={videoRef}
               src={getCurrentVideo()}
-              className="w-full h-full object-cover"
+              className="w-full h-full"
+              style={{ objectFit: 'contain' }}
               playsInline
               loop={!isSpeaking && !isProcessing}
               muted={true}
@@ -825,49 +867,54 @@ export default function DIDAgent({ onTranscript }) {
           </div>
 
           <div className="w-full max-w-2xl">
-            <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[32px] p-6 flex items-center gap-6 transition-all hover:shadow-indigo-100/50">
-              <button
-                type="button"
-                onClick={toggleListening}
-                disabled={isProcessing || isSpeaking}
-                className={`p-6 rounded-[24px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
-                  ? 'bg-rose-500 shadow-rose-200 animate-pulse'
-                  : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
-                  } disabled:opacity-50 disabled:grayscale text-white`}
-              >
-                {isListening ? <Mic size={28} /> : <MicOff size={28} />}
-              </button>
+            <div className="glass-card w-full border border-white/50 shadow-2xl rounded-[40px] p-6 flex flex-col items-center gap-6 transition-all hover:shadow-indigo-100/50">
 
-              <div className="flex-1 flex flex-col">
-                <div className="text-slate-800 font-extrabold text-lg tracking-tight">
-                  {isListening ? 'Assistant is listening...' : isSpeaking ? 'Assistant is speaking...' : isProcessing ? 'Assistant is thinking...' : 'Voice Command Center'}
-                </div>
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-lg">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
-                      {language === 'fil' ? 'Tagalog' : 'English'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setLanguage(l => l === 'fil' ? 'eng' : 'fil')}
-                    className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-colors"
-                  >
-                    Switch Language
-                  </button>
-                </div>
-              </div>
+              <div className="flex items-center justify-center gap-6 w-full">
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isProcessing || isSpeaking}
+                  className={`p-7 rounded-[28px] transition-all duration-500 transform active:scale-95 shadow-xl ${isListening
+                    ? 'bg-rose-500 shadow-rose-200 animate-pulse'
+                    : 'bg-gradient-to-r from-[#6366f1] to-[#a855f7] shadow-indigo-200 hover:shadow-indigo-300'
+                    } disabled:opacity-50 disabled:grayscale text-white`}
+                  title={isListening ? 'Stop Listening' : 'Start Listening'}
+                >
+                  {isListening ? <Mic size={32} /> : <MicOff size={32} />}
+                </button>
 
-              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onEnd) onEnd();
+                    setAvatarType(null);
+                    setMessages([]);
+                    setSessionId(null);
+                  }}
+                  className="p-7 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-[28px] transition-all border border-rose-100 shadow-sm hover:shadow-md active:scale-95"
+                  title="End Conversation"
+                >
+                  <PhoneOff size={32} />
+                </button>
+
                 <button
                   onClick={() => setShowOutfitPicker(true)}
-                  className="p-4 bg-slate-50 hover:bg-white hover:shadow-md text-slate-600 rounded-2xl transition-all border border-slate-100"
+                  className="absolute right-8 p-4 bg-slate-50 hover:bg-white hover:shadow-md text-slate-600 rounded-2xl transition-all border border-slate-100 hidden md:flex"
                   title="Customize Appearance"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                   </svg>
                 </button>
+              </div>
+
+              <div className="text-center">
+                <div className="text-slate-800 font-extrabold text-base tracking-tight mb-1">
+                  {isListening ? 'Assistant is listening...' : isSpeaking ? 'Assistant is speaking...' : isProcessing ? 'Assistant is thinking...' : 'Voice Command Center'}
+                </div>
+                {!isListening && !isSpeaking && !isProcessing && (
+                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest opacity-60">Center Mic to start chatting</p>
+                )}
               </div>
             </div>
 
