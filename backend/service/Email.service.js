@@ -1,22 +1,14 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
 
 dotenv.config({ override: true });
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async (email, link) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       to: email,
       subject: "Verify Your Email Address - Vera",
       html: `
@@ -32,8 +24,14 @@ export const sendVerificationEmail = async (email, link) => {
         </div>
       `,
     });
-    console.log("Verification email sent: %s", info.messageId);
-    return info;
+
+    if (error) {
+      console.error("Resend API error:", error);
+      throw error;
+    }
+
+    console.log("Verification email sent:", data?.id);
+    return data;
   } catch (error) {
     console.error("Error sending verification email:", error);
     // Don't throw error to prevent crashing the registration flow, 
@@ -46,8 +44,8 @@ export const sendVerificationEmail = async (email, link) => {
 
 export const sendPasswordResetEmail = async (email, link) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
       to: email,
       subject: "Reset Your Password - Vera",
       html: `
@@ -63,8 +61,14 @@ export const sendPasswordResetEmail = async (email, link) => {
         </div>
       `,
     });
-    console.log("Password reset email sent: %s", info.messageId);
-    return info;
+
+    if (error) {
+      console.error("Resend API error:", error);
+      throw error;
+    }
+
+    console.log("Password reset email sent:", data?.id);
+    return data;
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw error;

@@ -15,17 +15,38 @@ export async function createUsers(user) {
     // Generate a unique token
     const token = uuidv4();
 
-    // Store in pending_users table
-    const { error } = await supabaseAdmin
+    // Check if the user already exists in pending_users
+    const { data: pendingUsers } = await supabaseAdmin
       .from('pending_users')
-      .insert({
-        email: user.email,
-        password: user.password, // Ideally hashed, but for this flow specifically requested
-        user_metadata: { name: user.username },
-        token: token
-      });
+      .select('id')
+      .eq('email', user.email);
 
-    if (error) throw error;
+    if (pendingUsers && pendingUsers.length > 0) {
+      // If user exists, update their record with new token and password
+      const { error: updateError } = await supabaseAdmin
+        .from('pending_users')
+        .update({
+          password: user.password,
+          user_metadata: { name: user.username },
+          token: token,
+          created_at: new Date()
+        })
+        .eq('email', user.email);
+
+      if (updateError) throw updateError;
+    } else {
+      // Store in pending_users table
+      const { error: insertError } = await supabaseAdmin
+        .from('pending_users')
+        .insert({
+          email: user.email,
+          password: user.password,
+          user_metadata: { name: user.username },
+          token: token
+        });
+
+      if (insertError) throw insertError;
+    }
 
     // Send custom verification link
     // Link format: FRONTEND_URL/email-verified?token=xyz
