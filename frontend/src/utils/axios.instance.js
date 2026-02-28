@@ -4,7 +4,7 @@ import { clearUser } from "../store/slices/authSlice";
 
 const axiosInstance = axios.create({
   //baseURL: "http://localhost:5000/api",
-  baseURL: import.meta.env.VITE_API_URL || "https://vera-7nnk.vercel.app/ap",
+  baseURL: import.meta.env.VITE_API_URL || "https://vera-7nnk.vercel.app/api",
    //: "https://vera-7nnk.vercel.app/api",
   timeout: 30000,
   withCredentials: true,
