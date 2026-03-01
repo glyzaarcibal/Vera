@@ -54,8 +54,33 @@ const Register = () => {
       const res = await axiosInstance.post('/auth/register', formData)
       const { profile, access_token, refresh_token } = res.data
 
-      // Navigate to home screen
-      navigation.navigate('Login')
+      // Store tokens in AsyncStorage
+      await AsyncStorage.setItem('access_token', access_token)
+      await AsyncStorage.setItem('refresh_token', refresh_token)
+
+      // Store user profile in Redux
+      dispatch(setUser(profile))
+
+      // Navigate based on role
+      if (profile.role === 'admin') {
+        Alert.alert(
+          'Choose View',
+          'Where would you like to go?',
+          [
+            {
+              text: 'Client View',
+              onPress: () => navigation.navigate('ClientStack'),
+            },
+            {
+              text: 'Admin View',
+              onPress: () => navigation.navigate('AdminDrawer'),
+            },
+          ],
+          { cancelable: false },
+        )
+      } else {
+        navigation.navigate('ClientStack')
+      }
     } catch (e) {
       Alert.alert(
         'Registration Failed',
