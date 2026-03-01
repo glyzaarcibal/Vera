@@ -6,38 +6,14 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../Email.service.
 import { v4 as uuidv4 } from "uuid";
 
 export async function createUsers(user) {
-  const token = uuidv4();
-
-  // 1. Save to pending_users table
-  const { error: insertError } = await supabaseAdmin
-    .from('pending_users')
-    .upsert({
-      email: user.email,
-      password: user.password,
-      user_metadata: { name: user.username },
-      token: token,
-      created_at: new Date()
-    });
-
-  if (insertError) {
-    console.error("Error saving pending user:", insertError);
-    throw insertError;
-  }
-
-  // 2. Generate verification link
-  console.log("Generating link with FRONTEND_URL:", FRONTEND_URL);
-  const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
-  console.log("Verification Link:", verificationLink);
-
-  // 3. Send verification email via Nodemailer
-  try {
-    console.log("Attempting to send email to:", user.email);
-    await sendVerificationEmail(user.email, verificationLink);
-    return { message: "Verification email sent" };
-  } catch (emailError) {
-    console.error("EMAIL_SENDING_FAILED:", emailError);
-    throw new Error(`Failed to send verification email: ${emailError.message}`);
-  }
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email: user.email,
+    password: user.password,
+    user_metadata: { name: user.username },
+    email_confirm: true,
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function verifyUserRegistration(token) {
