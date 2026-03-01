@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { IoArrowBack, IoPerson, IoMail, IoCalendar, IoLockClosed, IoCall } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import axiosInstance from "../utils/axios.instance";
+import { setUser } from "../store/slices/authSlice";
 import "./Auth.css";
 
 const Register = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -102,8 +105,9 @@ const Register = () => {
     setIsLoading(true);
     try {
       const res = await axiosInstance.post("/auth/register", formData);
-      console.log(res);
-      navigate("/check-email");
+      const { profile } = res.data;
+      dispatch(setUser(profile));
+      navigate(profile?.role === "admin" ? "/admin" : "/");
     } catch (e) {
       alert(e.response?.data?.message || "Internal Server Error");
     } finally {

@@ -1,8 +1,18 @@
-import { createUsers, resendVerificationLink, verifyUserRegistration } from "../../service/Auth/Auth.service.js";
+import {
+  createUsers,
+  getProfile,
+  resendVerificationLink,
+  verifyUserRegistration,
+} from "../../service/Auth/Auth.service.js";
 import {
   isValidPassword,
   userExists,
 } from "../../service/Auth/Validators.service.js";
+import {
+  cookieConfig,
+  refreshCookieConfig,
+} from "../../config/cookie.config.js";
+import { supabaseAnon } from "../../utils/supabase.utils.js";
 
 export const verifyAccount = async (req, res) => {
   const { token } = req.body;
@@ -21,23 +31,63 @@ export const verifyAccount = async (req, res) => {
 
 export const registerUser = async (req, res) => {
   const { email, password, username } = req.body;
-  const isUserExisting = await userExists(email);
-  const isPasswordValid = isValidPassword(password);
 
   if (!email || !password || !username) {
     return res
       .status(400)
       .json({ message: "Please fill all the required fields." });
   }
-  if (isUserExisting)
+  const isUserExisting = await userExists(email);
+  const isPasswordValid = isValidPassword(password);
+
+  if (isUserExisting) {
+    const { data, error } = await supabaseAnon.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (!error && data?.session && data?.user) {
+      const profile = await getProfile(data.user.id);
+
+      res.cookie("access_token", data.session.access_token, cookieConfig);
+      res.cookie("refresh_token", data.session.refresh_token, refreshCookieConfig);
+
+      return res.status(200).json({
+        message: "Success",
+        profile,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+    }
+
     return res.status(409).json({ message: "User already exists." });
+  }
   if (!isPasswordValid)
     return res.status(422).json({ message: "Password is invalid." });
 
   const formData = { email, password, username };
   try {
-    const userData = await createUsers(formData);
-    return res.status(200).json({ message: "Success" });
+    await createUsers(formData);
+
+    const { data, error } = await supabaseAnon.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    const { session, user } = data;
+    const profile = await getProfile(user.id);
+
+    res.cookie("access_token", session.access_token, cookieConfig);
+    res.cookie("refresh_token", session.refresh_token, refreshCookieConfig);
+
+    return res.status(200).json({
+      message: "Success",
+      profile,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
   } catch (e) {
     console.log(e);
     if (e.code === "unexpected_failure")
