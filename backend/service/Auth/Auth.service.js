@@ -6,19 +6,35 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../Email.service.
 import { v4 as uuidv4 } from "uuid";
 
 export async function createUsers(user) {
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email: user.email,
-    password: user.password,
-    user_metadata: { name: user.username },
-    email_confirm: false,
-  });
+  const token = uuidv4();
 
-  if (error) {
-    console.error("Error creating user:", error);
-    throw error;
+  // 1. Save to pending_users table
+  const { error: insertError } = await supabaseAdmin
+    .from('pending_users')
+    .upsert({
+      email: user.email,
+      password: user.password,
+      user_metadata: { name: user.username },
+      token: token,
+      created_at: new Date()
+    });
+
+  if (insertError) {
+    console.error("Error saving pending user:", insertError);
+    throw insertError;
   }
 
-  return { message: "Confirmation email sent" };
+  // 2. Generate verification link
+  const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
+
+  // 3. Send verification email via Nodemailer
+  try {
+    await sendVerificationEmail(user.email, verificationLink);
+    return { message: "Verification email sent" };
+  } catch (emailError) {
+    console.error("Failed to send verification email:", emailError);
+    throw new Error("Failed to send verification email. Please try again later.");
+  }
 }
 
 export async function verifyUserRegistration(token) {
@@ -41,7 +57,15 @@ export async function verifyUserRegistration(token) {
     email_confirm: true,
   });
 
-  if (createError) throw createError;
+  if (createError) {
+    // If user already exists in Auth (e.g. from a previous partial run), 
+    // we might want to handle it, but for now we'll throw.
+    if (createError.code === "email_exists" || createError.message?.includes("already registered")) {
+      // Proceed to delete from pending if they are already in Auth
+    } else {
+      throw createError;
+    }
+  }
 
   // 3. Delete from pending_users
   await supabaseAdmin
@@ -49,7 +73,12 @@ export async function verifyUserRegistration(token) {
     .delete()
     .eq('id', pendingUser.id);
 
-  return data;
+  // 4. Return user info so we can sign them in
+  return {
+    email: pendingUser.email,
+    password: pendingUser.password,
+    user: data.user
+  };
 }
 
 export async function resendVerificationLink(email) {

@@ -1,8 +1,18 @@
-import { createUsers, resendVerificationLink, verifyUserRegistration } from "../../service/Auth/Auth.service.js";
+import {
+  createUsers,
+  resendVerificationLink,
+  verifyUserRegistration,
+  getProfile,
+} from "../../service/Auth/Auth.service.js";
 import {
   isValidPassword,
   userExists,
 } from "../../service/Auth/Validators.service.js";
+import { supabaseAnon } from "../../utils/supabase.utils.js";
+import {
+  cookieConfig,
+  refreshCookieConfig,
+} from "../../config/cookie.config.js";
 
 export const verifyAccount = async (req, res) => {
   const { token } = req.body;
@@ -11,8 +21,36 @@ export const verifyAccount = async (req, res) => {
   }
 
   try {
-    const data = await verifyUserRegistration(token);
-    return res.status(200).json({ message: "Account verified successfully", data });
+    // 1. Verify and create auth user
+    const { email, password } = await verifyUserRegistration(token);
+
+    // 2. Automatic login (Automatic pasok)
+    const { data, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error("Auto-login error after verification:", signInError);
+      return res.status(200).json({
+        message: "Account verified, but auto-login failed. Please sign in manually.",
+        verified: true
+      });
+    }
+
+    const { session, user } = data;
+    const profile = await getProfile(user.id);
+
+    // 3. Set cookies
+    res.cookie("access_token", session.access_token, cookieConfig);
+    res.cookie("refresh_token", session.refresh_token, refreshCookieConfig);
+
+    return res.status(200).json({
+      message: "Account verified and logged in successfully",
+      profile,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: e.message || "Verification failed" });
