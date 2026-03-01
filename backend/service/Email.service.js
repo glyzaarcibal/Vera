@@ -21,7 +21,8 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false // Helps with some cloud providers
-  }
+  },
+  family: 4 // Force IPv4 to avoid ENETUNREACH on IPv6
 });
 
 export const sendVerificationEmail = async (email, link) => {
