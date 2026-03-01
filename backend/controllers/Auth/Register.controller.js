@@ -77,12 +77,8 @@ export const registerUser = async (req, res) => {
     const userData = await createUsers(formData);
     return res.status(200).json({ message: "Success" });
   } catch (e) {
-    console.log(e);
-    if (e.code === "unexpected_failure")
-      return res
-        .status(400)
-        .json({ message: "Invalid Email. Please try again" });
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("Registration error:", e);
+    return res.status(500).json({ message: e.message || "Internal Server Error" });
   }
 };
 
