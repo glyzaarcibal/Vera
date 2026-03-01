@@ -25,15 +25,18 @@ export async function createUsers(user) {
   }
 
   // 2. Generate verification link
+  console.log("Generating link with FRONTEND_URL:", FRONTEND_URL);
   const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
+  console.log("Verification Link:", verificationLink);
 
   // 3. Send verification email via Nodemailer
   try {
+    console.log("Attempting to send email to:", user.email);
     await sendVerificationEmail(user.email, verificationLink);
     return { message: "Verification email sent" };
   } catch (emailError) {
-    console.error("Failed to send verification email:", emailError);
-    throw new Error("Failed to send verification email. Please try again later.");
+    console.error("EMAIL_SENDING_FAILED:", emailError);
+    throw new Error(`Failed to send verification email: ${emailError.message}`);
   }
 }
 

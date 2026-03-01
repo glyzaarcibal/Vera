@@ -3,6 +3,14 @@ import dotenv from "dotenv";
 
 dotenv.config({ override: true });
 
+console.log("Email Config:", {
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  user: process.env.EMAIL_USER,
+  hasPass: !!process.env.EMAIL_PASS,
+  from: process.env.EMAIL_FROM
+});
+
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT || "587"),
