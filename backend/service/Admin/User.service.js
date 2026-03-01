@@ -94,6 +94,71 @@ export async function getUserInfo(userId) {
   return data;
 }
 
+export async function createUser(userData) {
+  const { email, password, username, role } = userData;
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    user_metadata: { name: username },
+    email_confirm: true,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const userId = data.user.id;
+
+  // Update the profile with the role (assuming trigger creates initial profile)
+  const { error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .update({ role, username })
+    .eq("id", userId);
+
+  if (profileError) {
+    console.error("Error updating profile role:", profileError);
+  }
+
+  return data;
+}
+
+export async function updateUser(userId, userData) {
+  const { email, password, username, role } = userData;
+
+  let authUpdates = { email, user_metadata: { name: username } };
+  if (password && password.trim() !== "") {
+    authUpdates.password = password;
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, authUpdates);
+
+  if (error) {
+    throw error;
+  }
+
+  const { error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .update({ role, username })
+    .eq("id", userId);
+
+  if (profileError) {
+    console.error("Error updating profile:", profileError);
+  }
+
+  return data;
+}
+
+export async function deleteUser(userId) {
+  // Optionally delete profile first if no DB cascade is set
+  await supabaseAdmin.from("profiles").delete().eq("id", userId);
+
+  const { data, error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
 /**
  * Detect emotion-hinting words from user messages
  * Returns words grouped by emotion category
@@ -144,7 +209,7 @@ export async function detectEmotionWords(userId) {
 
   messages.forEach(message => {
     if (!message.content) return;
-    
+
     const text = message.content.toLowerCase();
     const words = text.split(/\s+/);
     totalWords += words.length;

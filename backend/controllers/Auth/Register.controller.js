@@ -21,8 +21,36 @@ export const verifyAccount = async (req, res) => {
   }
 
   try {
-    const data = await verifyUserRegistration(token);
-    return res.status(200).json({ message: "Account verified successfully", data });
+    // 1. Verify and create auth user
+    const { email, password } = await verifyUserRegistration(token);
+
+    // 2. Automatic login (Automatic pasok)
+    const { data, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error("Auto-login error after verification:", signInError);
+      return res.status(200).json({
+        message: "Account verified, but auto-login failed. Please sign in manually.",
+        verified: true
+      });
+    }
+
+    const { session, user } = data;
+    const profile = await getProfile(user.id);
+
+    // 3. Set cookies
+    res.cookie("access_token", session.access_token, cookieConfig);
+    res.cookie("refresh_token", session.refresh_token, refreshCookieConfig);
+
+    return res.status(200).json({
+      message: "Account verified and logged in successfully",
+      profile,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: e.message || "Verification failed" });
@@ -89,12 +117,8 @@ export const registerUser = async (req, res) => {
       refresh_token: session.refresh_token,
     });
   } catch (e) {
-    console.log(e);
-    if (e.code === "unexpected_failure")
-      return res
-        .status(400)
-        .json({ message: "Invalid Email. Please try again" });
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("Registration error:", e);
+    return res.status(500).json({ message: e.message || "Internal Server Error" });
   }
 };
 

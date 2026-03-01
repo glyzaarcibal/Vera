@@ -36,7 +36,15 @@ export async function verifyUserRegistration(token) {
     email_confirm: true,
   });
 
-  if (createError) throw createError;
+  if (createError) {
+    // If user already exists in Auth (e.g. from a previous partial run), 
+    // we might want to handle it, but for now we'll throw.
+    if (createError.code === "email_exists" || createError.message?.includes("already registered")) {
+      // Proceed to delete from pending if they are already in Auth
+    } else {
+      throw createError;
+    }
+  }
 
   // 3. Delete from pending_users
   await supabaseAdmin
@@ -44,7 +52,12 @@ export async function verifyUserRegistration(token) {
     .delete()
     .eq('id', pendingUser.id);
 
-  return data;
+  // 4. Return user info so we can sign them in
+  return {
+    email: pendingUser.email,
+    password: pendingUser.password,
+    user: data.user
+  };
 }
 
 export async function resendVerificationLink(email) {

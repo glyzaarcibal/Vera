@@ -3,20 +3,31 @@ import dotenv from "dotenv";
 
 dotenv.config({ override: true });
 
-const transporter = nodemailer.createTransport({
+console.log("Email Config:", {
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
-  secure: false, // true for 465, false for other ports
+  user: process.env.EMAIL_USER,
+  hasPass: !!process.env.EMAIL_PASS,
+  from: process.env.EMAIL_FROM
+});
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: 465, // Use 465 for SSL/TLS
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  tls: {
+    rejectUnauthorized: false // Helps with some cloud providers
+  }
 });
 
 export const sendVerificationEmail = async (email, link) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || "no-reply@vera.app",
       to: email,
       subject: "Verify Your Email Address - Vera",
       html: `
@@ -31,23 +42,21 @@ export const sendVerificationEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't create an account, you can safely ignore this email.</p>
         </div>
       `,
-    });
-    console.log("Verification email sent: %s", info.messageId);
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Verification email sent:", info.messageId);
     return info;
   } catch (error) {
     console.error("Error sending verification email:", error);
-    // Don't throw error to prevent crashing the registration flow, 
-    // but log it clearly so it can be debugged.
-    // Ideally we should throw so the controller can handle it (e.g. return 500), 
-    // but for now let's just log it.
     throw error;
   }
 };
 
 export const sendPasswordResetEmail = async (email, link) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || "no-reply@vera.app",
       to: email,
       subject: "Reset Your Password - Vera",
       html: `
@@ -62,8 +71,10 @@ export const sendPasswordResetEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `,
-    });
-    console.log("Password reset email sent: %s", info.messageId);
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent:", info.messageId);
     return info;
   } catch (error) {
     console.error("Error sending password reset email:", error);
