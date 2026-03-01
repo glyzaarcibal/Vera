@@ -95,26 +95,9 @@ export const registerUser = async (req, res) => {
 
   const formData = { email, password, username };
   try {
-    await createUsers(formData);
-
-    const { data, error } = await supabaseAnon.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-
-    const { session, user } = data;
-    const profile = await getProfile(user.id);
-
-    res.cookie("access_token", session.access_token, cookieConfig);
-    res.cookie("refresh_token", session.refresh_token, refreshCookieConfig);
-
+    const result = await createUsers(formData);
     return res.status(200).json({
-      message: "Success",
-      profile,
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
+      message: result.message || "Please check your email for verification."
     });
   } catch (e) {
     console.error("Registration error:", e);
