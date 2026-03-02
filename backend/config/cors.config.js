@@ -16,36 +16,42 @@ const corsConfig = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) {
-      console.log(`[CORS] No origin provided. Allowing.`);
       return callback(null, true);
     }
 
-    const normalizedOrigin = origin.replace(/\/$/, "");
-    const normalizedAllowed = allowedOrigins.map(o => typeof o === 'string' ? o.replace(/\/$/, "") : o);
+    const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
+    const normalizedAllowed = allowedOrigins.map(o =>
+      typeof o === 'string' ? o.replace(/\/$/, "").toLowerCase() : o
+    );
 
     console.log(`[CORS] Request Origin: ${origin}`);
 
-    // Check if it's an allowed direct URL
+    // Check direct list
     if (normalizedAllowed.includes(normalizedOrigin)) {
       console.log(`[CORS] Origin allowed by direct list.`);
       return callback(null, true);
     }
 
-    // Check if it's a Vercel preview/production URL
+    // Vercel Pattern - more robust matching
     const isVercel = normalizedOrigin.endsWith(".vercel.app") ||
-      /https:\/\/vera-.*\.vercel\.app$/.test(normalizedOrigin);
+      normalizedOrigin.includes("vercel.app");
 
     if (isVercel) {
       console.log(`[CORS] Origin allowed by Vercel pattern.`);
       return callback(null, true);
     }
 
-    // Default: Not allowed
+    // If development environment, allow localhost
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+
     console.warn(`[CORS] Origin NOT allowed: ${origin}`);
-    callback(new Error(`Not allowed by CORS: ${origin}`));
+    callback(null, false); // Return false instead of throwing Error to prevent 500s
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin"],
+  optionsSuccessStatus: 200, // Important for legacy browsers
 };
 
 
