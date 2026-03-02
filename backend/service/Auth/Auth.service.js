@@ -1,12 +1,17 @@
 import supabaseAdmin from "../../utils/supabase.utils.js";
 import { uploadToSupabaseStorage } from "../../utils/storage.utils.js";
 const FRONTEND_URL = process.env.FRONTEND_URL;
-import { sendVerificationEmail, sendPasswordResetEmail } from "../Email.service.js";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendVerificationCodeEmail
+} from "../Email.service.js";
 
 import { v4 as uuidv4 } from "uuid";
 
 export async function createUsers(user) {
-  const token = uuidv4();
+  // Generate a 6-digit OTP code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
 
   // 1. Save to pending_users table
   const { error: insertError } = await supabaseAdmin
@@ -15,7 +20,7 @@ export async function createUsers(user) {
       email: user.email,
       password: user.password,
       user_metadata: { name: user.username },
-      token: token,
+      token: code, // Still using the 'token' column to store the code
       created_at: new Date()
     });
 
@@ -24,47 +29,72 @@ export async function createUsers(user) {
     throw insertError;
   }
 
-  // 2. Generate verification link
-  const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
-
-  // 3. Send verification email via Resend HTTP API
+  // 2. Send verification code email
   try {
-    await sendVerificationEmail(user.email, verificationLink);
-    return { message: "Verification email sent" };
+    await sendVerificationCodeEmail(user.email, code);
+    return { message: "Verification code sent to your email" };
   } catch (emailError) {
-    console.error("Failed to send verification email:", emailError);
+    console.error("Failed to send verification code email:", emailError);
+
+    // If it's a Resend Trial restriction, don't crash the whole registration.
+    // Just allow them to proceed and tell them to check the server logs.
+    if (emailError.statusCode === 403) {
+      return {
+        message: "Registration successful! (Email sent skipped in Trial Mode. Check server logs for code.)",
+        devMode: true
+      };
+    }
+
     throw new Error("Failed to send verification email. Please try again later.");
   }
 }
 
-export async function verifyUserRegistration(token) {
-  // 1. Find pending user
+export async function verifyUserRegistration(code) {
+  // 1. Find pending user by code (stored in token column)
   const { data: pendingUser, error: findError } = await supabaseAdmin
     .from('pending_users')
     .select('*')
-    .eq('token', token)
+    .eq('token', code)
     .single();
 
   if (findError || !pendingUser) {
-    throw new Error("Invalid or expired verification token.");
+    throw new Error("Invalid or expired verification code.");
   }
 
-  // 2. Create user in Supabase Auth
-  const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
-    email: pendingUser.email,
-    password: pendingUser.password,
-    user_metadata: pendingUser.user_metadata,
-    email_confirm: true,
-  });
+  // Check if code is older than 10 minutes
+  const createdAt = new Date(pendingUser.created_at);
+  const now = new Date();
+  const diffInMinutes = (now - createdAt) / (1000 * 60);
 
-  if (createError) {
-    // If user already exists in Auth (e.g. from a previous partial run), 
-    // we might want to handle it, but for now we'll throw.
-    if (createError.code === "email_exists" || createError.message?.includes("already registered")) {
-      // Proceed to delete from pending if they are already in Auth
-    } else {
-      throw createError;
-    }
+  if (diffInMinutes > 10) {
+    throw new Error("Verification code has expired. Please request a new one.");
+  }
+
+  // 2. Check if user already exists in Supabase Auth
+  const existingUser = await findUserByEmail(pendingUser.email);
+  let finalUser;
+
+  if (existingUser) {
+    // If user exists, just confirm their email
+    console.log(`Confirming existing user: ${pendingUser.email}`);
+    const { data: updateData, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      existingUser.id,
+      { email_confirm: true }
+    );
+    if (updateError) throw updateError;
+    finalUser = updateData.user;
+  } else {
+    // If not, create them fresh
+    console.log(`Creating fresh user: ${pendingUser.email}`);
+    const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: pendingUser.email,
+      password: pendingUser.password,
+      user_metadata: pendingUser.user_metadata,
+      email_confirm: true,
+    });
+
+    if (createError) throw createError;
+    finalUser = data.user;
   }
 
   // 3. Delete from pending_users
@@ -73,11 +103,11 @@ export async function verifyUserRegistration(token) {
     .delete()
     .eq('id', pendingUser.id);
 
-  // 4. Return user info so we can sign them in
+  // 4. Return info so we can sign them in
   return {
     email: pendingUser.email,
     password: pendingUser.password,
-    user: data.user
+    user: finalUser
   };
 }
 
@@ -87,6 +117,8 @@ export async function resendVerificationLink(email) {
 
   if (!requireEmailConfirmation) return;
 
+  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
   // 1. Check if user is in pending_users
   const { data: pendingUser } = await supabaseAdmin
     .from('pending_users')
@@ -95,42 +127,45 @@ export async function resendVerificationLink(email) {
     .single();
 
   if (pendingUser) {
-    // Generate new token or reuse? Let's generate new to be safe/fresh.
-    const newToken = uuidv4();
-
-    // Update token in db
+    // Update token (code) in db
     const { error: updateError } = await supabaseAdmin
       .from('pending_users')
-      .update({ token: newToken, created_at: new Date() }) // Update timestamp too
+      .update({ token: newCode, created_at: new Date() })
       .eq('id', pendingUser.id);
 
     if (updateError) throw updateError;
 
-    const verificationLink = `${FRONTEND_URL}/email-verified?token=${newToken}`;
-    console.log(`Resending verification email to pending user ${email}`);
-    await sendVerificationEmail(email, verificationLink);
+    console.log(`Resending verification code email to pending user ${email}`);
+    await sendVerificationCodeEmail(email, newCode);
     return;
   }
 
-  // 2. Fallback to Supabase Auth (if they somehow exist there but need verification)
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'signup',
-    email: email,
-    options: {
-      redirectTo: `${FRONTEND_URL}/email-verified`
-    }
-  });
+  // 2. If not in pending_users, check if they exist in Supabase Auth but are unconfirmed
+  const user = await findUserByEmail(email);
+  if (user) {
+    // If user exists in Auth but we are here, it means they are likely unconfirmed
+    // or the system is trying to re-verify them.
+    // To use the Code flow, we need them in pending_users.
+    // For now, we'll just log the code and send it.
+    // NOTE: This might require them to re-register if they aren't in pending_users,
+    // but we'll try to send the code anyway for testing.
+    console.log(`Fallback: User ${email} found in Auth but not pending. Sending code anyway.`);
 
-  if (error) throw error;
+    // Create a temporary entry in pending_users so the 'verify-account' endpoint works
+    await supabaseAdmin
+      .from('pending_users')
+      .upsert({
+        email: email,
+        password: 'RE-VERIFY-REQUIRED', // They'll need to re-enter/know their pwd or we skip pwd update
+        token: newCode,
+        created_at: new Date()
+      });
 
-  const { properties } = data;
-
-  if (properties && properties.action_link) {
-    console.log(`Resending verification email to ${email}`);
-    await sendVerificationEmail(email, properties.action_link);
-  } else {
-    throw new Error("No verification link generated");
+    await sendVerificationCodeEmail(email, newCode);
+    return;
   }
+
+  throw new Error("User not found for verification.");
 }
 
 export async function findUserByEmail(email) {

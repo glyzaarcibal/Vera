@@ -49,7 +49,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
@@ -64,7 +64,14 @@ const Login = () => {
       dispatch(setUser(profile));
       navigate("/");
     } catch (e) {
-      alert(e.response?.data?.message || "Internal Server Error");
+      const message = e.response?.data?.message || "Internal Server Error";
+
+      // If user needs to verify email, redirect them to the OTP page
+      if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
+        navigate("/email-verified", { state: { email: formData.email } });
+      } else {
+        alert(message);
+      }
       console.log(e);
     } finally {
       setIsLoading(false);
@@ -81,8 +88,8 @@ const Login = () => {
       </div>
 
       <div className="auth-card">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="auth-back-btn"
           aria-label="Go back"
         >
@@ -153,7 +160,7 @@ const Login = () => {
 
           <div className="auth-options">
             <label className="auth-checkbox">
-              <input type="checkbox" /> 
+              <input type="checkbox" />
               <span>Remember me</span>
             </label>
             <Link to="/forgot-password" className="auth-link">
@@ -161,8 +168,8 @@ const Login = () => {
             </Link>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`auth-btn ${isLoading ? "auth-btn-loading" : ""}`}
             disabled={isLoading}
           >
