@@ -15,14 +15,14 @@ import {
 import { supabaseAnon } from "../../utils/supabase.utils.js";
 
 export const verifyAccount = async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ message: "Token is required" });
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).json({ message: "Verification code is required" });
   }
 
   try {
-    // 1. Verify and create auth user
-    const { email, password } = await verifyUserRegistration(token);
+    // 1. Verify and create auth user using the 6-digit code
+    const { email, password } = await verifyUserRegistration(code);
 
     // 2. Automatic login (Automatic pasok)
     const { data, error: signInError } = await supabaseAnon.auth.signInWithPassword({
@@ -97,7 +97,7 @@ export const registerUser = async (req, res) => {
   try {
     const result = await createUsers(formData);
     return res.status(200).json({
-      message: result.message || "Please check your email for verification."
+      message: result.message || "Please check your email for the verification code."
     });
   } catch (e) {
     console.error("Registration error:", e);
@@ -113,9 +113,9 @@ export const resendVerification = async (req, res) => {
 
   try {
     await resendVerificationLink(email);
-    return res.status(200).json({ message: "Verification email sent." });
+    return res.status(200).json({ message: "Verification code sent to your email." });
   } catch (e) {
     console.error("Resend verification error:", e);
-    return res.status(500).json({ message: "Failed to send verification email." });
+    return res.status(500).json({ message: "Failed to send verification code." });
   }
 };

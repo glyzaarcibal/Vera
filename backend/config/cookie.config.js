@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 const isProd =
   process.env.IS_PROD === "true" || process.env.NODE_ENV === "production";
 const forceCrossSiteCookies =

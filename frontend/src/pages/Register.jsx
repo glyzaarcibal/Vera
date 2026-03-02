@@ -39,7 +39,7 @@ const Register = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Username validation
     if (!formData.username) {
       newErrors.username = "Name is required";
@@ -105,9 +105,15 @@ const Register = () => {
     setIsLoading(true);
     try {
       const res = await axiosInstance.post("/auth/register", formData);
-      const { profile } = res.data;
-      dispatch(setUser(profile));
-      navigate(profile?.role === "admin" ? "/admin" : "/");
+
+      // If profile is returned, it means auto-login or already verified
+      if (res.data.profile) {
+        dispatch(setUser(res.data.profile));
+        navigate(res.data.profile?.role === "admin" ? "/admin" : "/");
+      } else {
+        // Redirect to verification page for code entry
+        navigate("/email-verified", { state: { email: formData.email } });
+      }
     } catch (e) {
       alert(e.response?.data?.message || "Internal Server Error");
     } finally {
@@ -125,8 +131,8 @@ const Register = () => {
       </div>
 
       <div className="auth-card auth-card-landscape">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="auth-back-btn"
           aria-label="Go back"
         >
@@ -143,7 +149,7 @@ const Register = () => {
               </div>
               <h1 className="auth-landscape-title">Join Us Today!</h1>
               <p className="auth-landscape-subtitle">
-                Create your account and start your journey with us. 
+                Create your account and start your journey with us.
                 Fill in your details to get started.
               </p>
               <div className="auth-landscape-features">
@@ -334,7 +340,7 @@ const Register = () => {
 
               <div className="auth-terms">
                 <label className="auth-checkbox">
-                  <input type="checkbox" required /> 
+                  <input type="checkbox" required />
                   <span>
                     I agree to the{" "}
                     <Link to="/terms" className="auth-link">Terms of Service</Link>{" "}
@@ -344,8 +350,8 @@ const Register = () => {
                 </label>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className={`auth-btn ${isLoading ? "auth-btn-loading" : ""}`}
                 disabled={isLoading}
               >
