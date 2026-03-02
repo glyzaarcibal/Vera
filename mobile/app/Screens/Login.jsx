@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useDispatch } from 'react-redux'
@@ -42,14 +43,11 @@ const Login = () => {
       const res = await axiosInstance.post('/auth/login', formData)
       const { profile, access_token, refresh_token } = res.data
 
-      // Store tokens in AsyncStorage
       await AsyncStorage.setItem('access_token', access_token)
       await AsyncStorage.setItem('refresh_token', refresh_token)
 
-      // Store user profile in Redux
       dispatch(setUser(profile))
 
-      // Navigate based on role
       if (profile.role === 'admin') {
         Alert.alert(
           'Choose View',
@@ -82,40 +80,52 @@ const Login = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
+      className="flex-1 bg-indigo-50"
     >
+      <StatusBar barStyle="dark-content" />
+
       <ScrollView
-        contentContainerClassName="flex-grow"
+        contentContainerClassName="flex-grow justify-center"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 px-6 pt-16 pb-8">
-          {/* Back Button */}
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            className="flex-row items-center mb-8"
-          >
-            <Text className="text-blue-600 text-base font-medium">← Back</Text>
-          </TouchableOpacity>
+        <View className="px-6 py-10">
 
-          {/* Header */}
-          <View className="mb-10">
-            <Text className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back
+          {/* V.E.R.A Branding Section */}
+          <View className="items-center mb-10">
+            <View className="bg-indigo-600 px-6 py-3 rounded-2xl shadow-lg mb-4">
+              <Text className="text-white text-xl font-bold tracking-widest">
+                V.E.R.A
+              </Text>
+            </View>
+
+            <Text className="text-2xl font-bold text-gray-900 text-center">
+              Voice Emotion Recognition Application
             </Text>
-            <Text className="text-base text-gray-600">
-              Sign in to your account
+
+            <Text className="text-gray-600 mt-3 text-center leading-5 px-2">
+              An AI-powered system that analyzes vocal patterns to detect 
+              emotional states in real-time. Designed to support mental 
+              wellness insights, behavioral analysis, and intelligent response systems.
             </Text>
           </View>
 
-          {/* Form */}
-          <View className="space-y-5">
+          {/* Card Container */}
+          <View className="bg-white rounded-3xl p-6 shadow-xl">
+
+            <Text className="text-xl font-bold text-gray-900 mb-1">
+              Welcome Back 👋
+            </Text>
+            <Text className="text-gray-500 mb-6">
+              Sign in to access emotion analytics and voice insights.
+            </Text>
+
             {/* Email Field */}
-            <View>
-              <Text className="text-sm font-medium text-gray-700 mb-2">
-                Email
+            <View className="mb-5">
+              <Text className="text-sm font-semibold text-gray-700 mb-2">
+                Email Address
               </Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-base text-gray-900"
                 placeholder="Enter your email"
                 placeholderTextColor="#9CA3AF"
                 value={formData.email}
@@ -127,12 +137,12 @@ const Login = () => {
             </View>
 
             {/* Password Field */}
-            <View className="mt-5">
-              <Text className="text-sm font-medium text-gray-700 mb-2">
+            <View className="mb-2">
+              <Text className="text-sm font-semibold text-gray-700 mb-2">
                 Password
               </Text>
               <TextInput
-                className="bg-gray-50 border border-gray-300 rounded-xl px-4 py-3.5 text-base text-gray-900"
+                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-base text-gray-900"
                 placeholder="Enter your password"
                 placeholderTextColor="#9CA3AF"
                 value={formData.password}
@@ -143,11 +153,11 @@ const Login = () => {
             </View>
 
             {/* Forgot Password */}
-            <View className="flex-row justify-end mt-2">
+            <View className="flex-row justify-end mb-6">
               <TouchableOpacity
                 onPress={() => navigation.navigate('ForgotPassword')}
               >
-                <Text className="text-sm text-blue-600 font-medium">
+                <Text className="text-sm text-indigo-600 font-semibold">
                   Forgot password?
                 </Text>
               </TouchableOpacity>
@@ -157,26 +167,48 @@ const Login = () => {
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={loading}
-              className={`mt-6 rounded-xl py-4 ${loading ? 'bg-blue-400' : 'bg-blue-600'
-                }`}
+              className={`rounded-xl py-4 ${
+                loading ? 'bg-indigo-400' : 'bg-indigo-600'
+              }`}
             >
-              <Text className="text-white text-center text-base font-semibold">
-                {loading ? 'Signing in...' : 'Sign in'}
+              <Text className="text-white text-center text-base font-bold">
+                {loading ? 'Authenticating...' : 'Sign In'}
               </Text>
             </TouchableOpacity>
 
-            {/* Sign Up Link */}
-            <View className="flex-row justify-center items-center mt-6">
+            {/* Divider */}
+            <View className="flex-row items-center my-6">
+              <View className="flex-1 h-px bg-gray-200" />
+              <Text className="mx-3 text-gray-400 text-sm">OR</Text>
+              <View className="flex-1 h-px bg-gray-200" />
+            </View>
+
+            {/* Sign Up Section */}
+            <View className="flex-row justify-center items-center">
               <Text className="text-gray-600 text-sm">
-                Don't have an account?{' '}
+                New to V.E.R.A?{' '}
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text className="text-blue-600 text-sm font-semibold">
-                  Sign up
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+              >
+                <Text className="text-indigo-600 text-sm font-bold">
+                  Create Account
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Extra Info Section */}
+          <View className="mt-8 px-2">
+            <Text className="text-center text-gray-500 text-xs leading-5">
+              🔐 Secure authentication • 📊 Real-time emotion analysis
+            </Text>
+
+            <Text className="text-center text-gray-400 text-xs mt-4">
+              Powered by AI-driven emotion classification models.
+            </Text>
+          </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

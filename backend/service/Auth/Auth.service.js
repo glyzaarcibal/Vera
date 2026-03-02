@@ -6,14 +6,46 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "../Email.service.
 import { v4 as uuidv4 } from "uuid";
 
 export async function createUsers(user) {
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email: user.email,
-    password: user.password,
-    user_metadata: { name: user.username },
-    email_confirm: true,
-  });
-  if (error) throw error;
-  return data;
+  const requireEmailConfirmation =
+    process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
+
+  if (requireEmailConfirmation) {
+    console.log(`Creating pending user for: ${user.email}`);
+
+    // Generate a unique token
+    const token = uuidv4();
+
+    // Store in pending_users table
+    const { error } = await supabaseAdmin
+      .from('pending_users')
+      .insert({
+        email: user.email,
+        password: user.password, // Ideally hashed, but for this flow specifically requested
+        user_metadata: { name: user.username, birthday: user.birthday || null },
+        token: token
+      });
+
+    if (error) throw error;
+
+    // Send custom verification link
+    // Link format: FRONTEND_URL/email-verified?token=xyz
+    const verificationLink = `${FRONTEND_URL}/email-verified?token=${token}`;
+
+    console.log(`Sending verification email to ${user.email}`);
+    await sendVerificationEmail(user.email, verificationLink);
+
+    return { message: "Confirmation email sent" };
+  } else {
+    // Legacy flow (direct creation)
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: user.email,
+      password: user.password,
+      user_metadata: { name: user.username, birthday: user.birthday || null },
+      email_confirm: true,
+    });
+    if (error) throw error;
+    return data;
+  }
 }
 
 export async function verifyUserRegistration(token) {
