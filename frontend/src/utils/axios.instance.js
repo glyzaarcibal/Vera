@@ -3,9 +3,10 @@ import { store } from "../store/store";
 import { clearUser } from "../store/slices/authSlice";
 
 const axiosInstance = axios.create({
-
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-
+  
+// baseURL: "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL ,
+  
   timeout: 30000,
   withCredentials: true,
   headers: {
