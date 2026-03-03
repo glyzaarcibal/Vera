@@ -1,9 +1,27 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 
 dotenv.config({ override: true });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Configure nodemailer transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.EMAIL_PORT || "587"),
+  secure: process.env.EMAIL_SECURE === "true", // true for 465, false for other ports
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Verify connection configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error("Nodemailer transporter error:", error);
+  } else {
+    console.log("Nodemailer: Server is ready to take our messages");
+  }
+});
 
 export const sendVerificationCodeEmail = async (email, code) => {
   // Always log the code for development debugging
@@ -12,8 +30,8 @@ export const sendVerificationCodeEmail = async (email, code) => {
   console.log("-----------------------------------------");
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your Verification Code - Vera",
       html: `
@@ -32,21 +50,11 @@ export const sendVerificationCodeEmail = async (email, code) => {
           </p>
         </div>
       `,
-    });
+    };
 
-    if (error) {
-      console.error("Resend API error:", error);
-      // Specifically handle the "testing mode" restriction
-      if (error.statusCode === 403 && error.name === "validation_error") {
-        const customError = new Error("Resend is in trial mode. Check server console for the code.");
-        customError.statusCode = 403;
-        throw customError;
-      }
-      throw error;
-    }
-
-    console.log("Verification code email sent:", data?.id);
-    return data;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Verification code email sent:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending verification code email:", error);
     throw error;
@@ -55,8 +63,8 @@ export const sendVerificationCodeEmail = async (email, code) => {
 
 export const sendVerificationEmail = async (email, link) => {
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Verify Your Email Address - Vera",
       html: `
@@ -71,15 +79,11 @@ export const sendVerificationEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't create an account, you can safely ignore this email.</p>
         </div>
       `,
-    });
+    };
 
-    if (error) {
-      console.error("Resend API error:", error);
-      throw error;
-    }
-
-    console.log("Verification email sent:", data?.id);
-    return data;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Verification email sent:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending verification email:", error);
     throw error;
@@ -88,8 +92,8 @@ export const sendVerificationEmail = async (email, link) => {
 
 export const sendPasswordResetEmail = async (email, link) => {
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Reset Your Password - Vera",
       html: `
@@ -104,17 +108,14 @@ export const sendPasswordResetEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `,
-    });
+    };
 
-    if (error) {
-      console.error("Resend API error:", error);
-      throw error;
-    }
-
-    console.log("Password reset email sent:", data?.id);
-    return data;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw error;
   }
 };
+
