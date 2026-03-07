@@ -3,6 +3,7 @@ import { registerUser, resendVerification, verifyAccount } from "../../controlle
 import { signIn } from "../../controllers/Auth/Login.controller.js";
 import {
   requestPasswordReset,
+  confirmPasswordReset,
   retrieveProfileInformation,
   updatePermissions,
   updateProfileInformation,
@@ -17,6 +18,7 @@ router.post("/verify-account", verifyAccount);
 router.post("/resend-verification", resendVerification);
 router.post("/login", signIn);
 router.post("/forgot-password", requestPasswordReset);
+router.post("/reset-password", confirmPasswordReset);
 router.get("/fetch-profile", setSupabaseSession, retrieveProfileInformation);
 router.put("/update-profile", setSupabaseSession, updateProfileInformation);
 router.put(

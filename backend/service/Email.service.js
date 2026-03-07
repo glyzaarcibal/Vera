@@ -1,27 +1,39 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
-dotenv.config({ override: true });
+import path from "path";
+import { fileURLToPath } from "url";
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: process.env.EMAIL_SECURE === "true", // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("Nodemailer transporter error:", error);
-  } else {
-    console.log("Nodemailer: Server is ready to take our messages");
+dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
+
+// Configure SendGrid API Key
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("SendGrid: API Key configured.");
+} else {
+  console.warn("SendGrid: SENDGRID_API_KEY is missing in .env");
+}
+
+// Helper to get synced email config
+const getEmailConfig = () => {
+  const fromEmail = (process.env.EMAIL_FROM || process.env.SENDGRID_FROM_EMAIL || "").trim();
+  const fromName = (process.env.EMAIL_FROM_NAME || "Vera").trim();
+  return { fromEmail, fromName };
+};
+
+/**
+ * Common SendGrid error handler
+ */
+const handleSendGridError = (emailType, error) => {
+  console.error(`Error sending ${emailType} email:`, error);
+  if (error.response) {
+    console.error(error.response.body);
   }
-});
+  throw error;
+};
 
 export const sendVerificationCodeEmail = async (email, code) => {
   // Always log the code for development debugging
@@ -29,10 +41,16 @@ export const sendVerificationCodeEmail = async (email, code) => {
   console.log(`[AUTH] Verification Code for ${email}: ${code}`);
   console.log("-----------------------------------------");
 
+  const { fromEmail, fromName } = getEmailConfig();
+  console.log(`[SendGrid] Attempting to send using: ${fromEmail}`);
+
   try {
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
       subject: "Your Verification Code - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px; border: 1px solid #ddd;">
@@ -52,20 +70,24 @@ export const sendVerificationCodeEmail = async (email, code) => {
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Verification code email sent:", info.messageId);
-    return info;
+    const response = await sgMail.send(msg);
+    console.log("Verification code email sent via SendGrid");
+    return response;
   } catch (error) {
-    console.error("Error sending verification code email:", error);
-    throw error;
+    handleSendGridError("verification code", error);
   }
 };
 
 export const sendVerificationEmail = async (email, link) => {
+  const { fromEmail, fromName } = getEmailConfig();
+
   try {
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
       subject: "Verify Your Email Address - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -81,20 +103,24 @@ export const sendVerificationEmail = async (email, link) => {
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent:", info.messageId);
-    return info;
+    const response = await sgMail.send(msg);
+    console.log("Verification email sent via SendGrid");
+    return response;
   } catch (error) {
-    console.error("Error sending verification email:", error);
-    throw error;
+    handleSendGridError("verification", error);
   }
 };
 
 export const sendPasswordResetEmail = async (email, link) => {
+  const { fromEmail, fromName } = getEmailConfig();
+
   try {
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || "Vera"}" <${process.env.EMAIL_USER}>`,
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
       subject: "Reset Your Password - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -110,12 +136,10 @@ export const sendPasswordResetEmail = async (email, link) => {
       `,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent:", info.messageId);
-    return info;
+    const response = await sgMail.send(msg);
+    console.log("Password reset email sent via SendGrid");
+    return response;
   } catch (error) {
-    console.error("Error sending password reset email:", error);
-    throw error;
+    handleSendGridError("password reset", error);
   }
 };
-

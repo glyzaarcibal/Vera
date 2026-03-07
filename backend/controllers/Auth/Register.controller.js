@@ -58,7 +58,7 @@ export const verifyAccount = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { email, password, username } = req.body;
+  const { email, password, username, contactNumber, birthDate } = req.body;
 
   if (!email || !password || !username) {
     return res
@@ -93,15 +93,18 @@ export const registerUser = async (req, res) => {
   if (!isPasswordValid)
     return res.status(422).json({ message: "Password is invalid." });
 
-  const formData = { email, password, username };
+  const formData = { email, password, username, contactNumber, birthDate };
   try {
     const result = await createUsers(formData);
     return res.status(200).json({
       message: result.message || "Please check your email for the verification code."
     });
   } catch (e) {
-    console.error("Registration error:", e);
-    return res.status(500).json({ message: e.message || "Internal Server Error" });
+    console.error("Detailed Registration Error:", e);
+    return res.status(500).json({
+      message: "Internal Server Error during registration",
+      details: e.message
+    });
   }
 };
 
