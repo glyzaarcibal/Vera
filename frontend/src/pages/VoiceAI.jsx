@@ -89,6 +89,8 @@ const VoiceAI = () => {
       recognitionInstance.continuous = true;
       recognitionInstance.interimResults = true;
       recognitionInstance.lang = "en-US";
+      // Disable filtering of critical words for raw emotion detection
+      recognitionInstance.profanityFilter = false;
 
       recognitionInstance.onresult = (event) => {
         let finalTranscript = "";
@@ -131,7 +133,7 @@ const VoiceAI = () => {
         recognitionStartedRef.current = false;
         try {
           recognitionInstance.stop();
-        } catch (_) {}
+        } catch (_) { }
       };
     }
   }, []);
@@ -149,7 +151,10 @@ const VoiceAI = () => {
       const message =
         e.response?.data?.message || e.message || "Internal Server Error";
       const status = e.response?.status;
-      if (status === 503) {
+      if (status === 401) {
+        alert("Your session has expired or you are not logged in. Please log in to continue.");
+        window.location.href = "/login";
+      } else if (status === 503) {
         alert("Service temporarily unavailable. " + message);
       } else {
         alert(message);
@@ -210,7 +215,12 @@ const VoiceAI = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to generate speech");
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("ElevenLabs API key is invalid or unauthorized.");
+        }
+        throw new Error("Failed to generate speech");
+      }
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
@@ -225,7 +235,7 @@ const VoiceAI = () => {
 
       audio.play();
     } catch (error) {
-      alert("Failed to generate speech");
+      alert(error.message || "Failed to generate speech");
       setConversationMode("listening");
     }
   };
@@ -396,7 +406,7 @@ const VoiceAI = () => {
           if (messageId && hasValidAudio && audioBase64) {
             axiosInstance
               .post("/emotion-from-voice", { audioBase64, messageId })
-              .catch(() => {});
+              .catch(() => { });
           }
 
           setConversationMode("speaking");
@@ -479,11 +489,10 @@ const VoiceAI = () => {
                 <button
                   onClick={() => handleCarouselScroll("left")}
                   disabled={selectedVoiceIndex === 0}
-                  className={`absolute left-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${
-                    selectedVoiceIndex === 0
-                      ? "opacity-30 cursor-not-allowed"
-                      : "hover:scale-110 hover:shadow-lg text-purple-600"
-                  }`}
+                  className={`absolute left-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${selectedVoiceIndex === 0
+                    ? "opacity-30 cursor-not-allowed"
+                    : "hover:scale-110 hover:shadow-lg text-purple-600"
+                    }`}
                 >
                   <svg
                     width="20"
@@ -503,9 +512,8 @@ const VoiceAI = () => {
                     ref={carouselRef}
                     className="absolute flex items-center gap-10 transition-transform duration-500 ease-out"
                     style={{
-                      transform: `translateX(calc(50% - ${
-                        selectedVoiceIndex * 232 + 96
-                      }px))`,
+                      transform: `translateX(calc(50% - ${selectedVoiceIndex * 232 + 96
+                        }px))`,
                     }}
                   >
                     {VOICES.map((voice, index) => {
@@ -514,33 +522,29 @@ const VoiceAI = () => {
                         <div
                           key={voice.id}
                           onClick={() => handleVoiceSelect(index)}
-                          className={`relative flex-shrink-0 w-44 h-60 rounded-3xl cursor-pointer flex flex-col items-center justify-center gap-4 transition-all duration-500 ${
-                            isActive
-                              ? "voice-card-active scale-110"
-                              : "voice-card-inactive scale-90 opacity-40 blur-[1px] hover:opacity-60"
-                          }`}
+                          className={`relative flex-shrink-0 w-44 h-60 rounded-3xl cursor-pointer flex flex-col items-center justify-center gap-4 transition-all duration-500 ${isActive
+                            ? "voice-card-active scale-110"
+                            : "voice-card-inactive scale-90 opacity-40 blur-[1px] hover:opacity-60"
+                            }`}
                         >
                           <div
-                            className={`w-18 h-18 w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-3xl shadow-md ${
-                              isActive
-                                ? "bg-white/20"
-                                : "bg-gray-50 border border-gray-100"
-                            }`}
+                            className={`w-18 h-18 w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-3xl shadow-md ${isActive
+                              ? "bg-white/20"
+                              : "bg-gray-50 border border-gray-100"
+                              }`}
                           >
                             {voice.avatar}
                           </div>
                           <div className="text-center">
                             <p
-                              className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${
-                                isActive ? "text-white/60" : "text-gray-400"
-                              }`}
+                              className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isActive ? "text-white/60" : "text-gray-400"
+                                }`}
                             >
                               {voice.gender}
                             </p>
                             <p
-                              className={`text-base font-bold ${
-                                isActive ? "text-white" : "text-gray-700"
-                              }`}
+                              className={`text-base font-bold ${isActive ? "text-white" : "text-gray-700"
+                                }`}
                             >
                               {voice.name}
                             </p>
@@ -560,11 +564,10 @@ const VoiceAI = () => {
                 <button
                   onClick={() => handleCarouselScroll("right")}
                   disabled={selectedVoiceIndex === VOICES.length - 1}
-                  className={`absolute right-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${
-                    selectedVoiceIndex === VOICES.length - 1
-                      ? "opacity-30 cursor-not-allowed"
-                      : "hover:scale-110 hover:shadow-lg text-purple-600"
-                  }`}
+                  className={`absolute right-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${selectedVoiceIndex === VOICES.length - 1
+                    ? "opacity-30 cursor-not-allowed"
+                    : "hover:scale-110 hover:shadow-lg text-purple-600"
+                    }`}
                 >
                   <svg
                     width="20"
@@ -592,11 +595,10 @@ const VoiceAI = () => {
                     <button
                       key={i}
                       onClick={() => handleVoiceSelect(i)}
-                      className={`rounded-full transition-all duration-300 ${
-                        i === selectedVoiceIndex
-                          ? "w-5 h-2 bg-purple-500"
-                          : "w-2 h-2 bg-gray-200 hover:bg-gray-300"
-                      }`}
+                      className={`rounded-full transition-all duration-300 ${i === selectedVoiceIndex
+                        ? "w-5 h-2 bg-purple-500"
+                        : "w-2 h-2 bg-gray-200 hover:bg-gray-300"
+                        }`}
                     />
                   ))}
                 </div>
@@ -612,9 +614,8 @@ const VoiceAI = () => {
 
               {/* Avatar */}
               <div
-                className={`voice-avatar-orb w-36 h-36 rounded-full flex items-center justify-center text-5xl relative ${
-                  conversationMode === "speaking" ? "speaking" : ""
-                }`}
+                className={`voice-avatar-orb w-36 h-36 rounded-full flex items-center justify-center text-5xl relative ${conversationMode === "speaking" ? "speaking" : ""
+                  }`}
               >
                 {VOICES[selectedVoiceIndex].avatar}
                 {conversationMode === "speaking" && (
@@ -654,9 +655,8 @@ const VoiceAI = () => {
               {/* Transcript */}
               <div className="transcript-box w-full p-6 min-h-[96px] flex flex-col items-center justify-center text-center">
                 <p
-                  className={`text-base leading-relaxed ${
-                    transcript ? "text-gray-800 font-medium" : "text-gray-400 italic"
-                  }`}
+                  className={`text-base leading-relaxed ${transcript ? "text-gray-800 font-medium" : "text-gray-400 italic"
+                    }`}
                 >
                   {transcript ||
                     (conversationMode === "thinking"

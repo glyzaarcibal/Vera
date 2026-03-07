@@ -16,13 +16,17 @@ export async function createUsers(user) {
   // 1. Save to pending_users table
   const { error: insertError } = await supabaseAdmin
     .from('pending_users')
-    .upsert({
+    .insert([{
       email: user.email,
       password: user.password,
-      user_metadata: { name: user.username },
+      user_metadata: {
+        name: user.username,
+        contact_number: user.contactNumber,
+        birthday: user.birthDate
+      },
       token: code, // Still using the 'token' column to store the code
       created_at: new Date()
-    });
+    }]);
 
   if (insertError) {
     console.error("Error saving pending user:", insertError);
@@ -97,13 +101,50 @@ export async function verifyUserRegistration(code) {
     finalUser = data.user;
   }
 
-  // 3. Delete from pending_users
+  // 4. Update the profiles table with the initial metadata using upsert
+  if (finalUser) {
+    const fullName = pendingUser.user_metadata?.name || "";
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    const { error: upsertError } = await supabaseAdmin
+      .from("profiles")
+      .upsert({
+        id: finalUser.id,
+        username: pendingUser.user_metadata?.name || finalUser.email.split('@')[0],
+        first_name: firstName,
+        last_name: lastName,
+        birthday: pendingUser.user_metadata?.birthday,
+        contact_number: pendingUser.user_metadata?.contact_number
+      });
+
+    if (upsertError) {
+      console.error("Error updating profile during verification:", upsertError);
+
+      // Fallback: If upsert failed, still try to update the basic fields
+      const fallbackData = {
+        first_name: firstName,
+        last_name: lastName,
+        birthday: pendingUser.user_metadata?.birthday,
+      };
+
+      // Try adding contact_number if we think it might work
+      if (pendingUser.user_metadata?.contact_number) {
+        fallbackData.contact_number = pendingUser.user_metadata?.contact_number;
+      }
+
+      await supabaseAdmin.from("profiles").update(fallbackData).eq("id", finalUser.id);
+    }
+  }
+
+  // 5. Delete from pending_users
   await supabaseAdmin
     .from('pending_users')
     .delete()
     .eq('id', pendingUser.id);
 
-  // 4. Return info so we can sign them in
+  // 6. Return info so we can sign them in
   return {
     email: pendingUser.email,
     password: pendingUser.password,
@@ -212,13 +253,40 @@ export async function resetPasswordByEmail(email) {
   if (error) throw error;
 
   const { properties } = data;
+  const token = properties?.verification_token || properties?.hashed_token;
 
-  if (properties && properties.action_link) {
+  if (token) {
     console.log(`Sending password reset email to ${email}`);
-    await sendPasswordResetEmail(email, properties.action_link);
+    const resetLink = `${process.env.FRONTEND_URL}/update-password?token=${token}`;
+    try {
+      await sendPasswordResetEmail(email, resetLink);
+    } catch (emailError) {
+      console.error("Failed to send password reset email:", emailError);
+      throw new Error(`Failed to send password reset email: ${emailError.message}`);
+    }
   } else {
-    throw new Error("No password reset link generated");
+    console.error("Supabase link generation properties:", properties);
+    throw new Error("No password reset token generated");
   }
+}
+
+export async function updatePasswordWithToken(token, newPassword) {
+  // Use verifyOtp to get the user and session from the recovery token_hash
+  const { data: verifyData, error: verifyError } = await supabaseAdmin.auth.verifyOtp({
+    token_hash: token,
+    type: 'recovery'
+  });
+
+  if (verifyError) throw verifyError;
+
+  const { user } = verifyData;
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    user.id,
+    { password: newPassword }
+  );
+
+  if (updateError) throw updateError;
+  return { message: "Password updated successfully" };
 }
 
 export async function uploadAvatar(fileBuffer, fileName, mimeType) {

@@ -80,8 +80,8 @@ const Activities = () => {
         console.error("Failed to fetch user records:", error);
         setRecordsError(
           error.response?.data?.message ||
-            error.message ||
-            "Failed to load user records"
+          error.message ||
+          "Failed to load user records"
         );
       } finally {
         setRecordsLoading(false);
@@ -173,6 +173,13 @@ const Activities = () => {
       description: "Guided breathing exercise for quick relaxation",
       icon: "🌬️",
       path: "/activities/take-a-breath",
+    },
+    {
+      id: 8,
+      name: "Medication History",
+      description: "Log and track your medication records",
+      icon: "💊",
+      path: "/activities/medication-history",
     },
   ];
 

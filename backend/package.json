@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.3",
+    "@sendgrid/mail": "^8.1.6",
     "@supabase/supabase-js": "^2.84.0",
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",

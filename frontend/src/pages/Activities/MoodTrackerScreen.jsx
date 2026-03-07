@@ -2,6 +2,17 @@ import React, { useState, useEffect } from "react";
 import Lottie from "lottie-web";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from "recharts";
 
 const animationCache = new Map();
 
@@ -38,57 +49,219 @@ const sanitizePdfText = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const moods = [
+// MOOD LEVELS CONFIGURATION
+// You can adjust the number of mood levels here
+const MOOD_LEVELS = [
+  // POSITIVE - LOW ENERGY
   {
-    animation: "/animations/happy.json",
-    mood: "Happy",
-    color: "#FFD700",
-    bgColor: "#FFF9C4",
-    emoji: "😊",
+    category: "Positive",
+    subcategory: "Low Energy",
+    animation: "/animations/relax.json",
+    mood: "Calm",
+    color: "#4CAF50",
+    bgColor: "#E8F5E9",
+    emoji: "😌",
+    score: 4,
   },
   {
-    animation: "/animations/sad.json",
-    mood: "Sad",
-    color: "#5C6BC0",
-    bgColor: "#E8EAF6",
-    emoji: "😢",
-  },
-  {
-    animation: "/animations/angry.json",
-    mood: "Angry",
-    color: "#EF5350",
-    bgColor: "#FFEBEE",
-    emoji: "😠",
-  },
-  {
-    animation: "/animations/anxious.json",
-    mood: "Anxious",
-    color: "#FFA726",
-    bgColor: "#FFF3E0",
-    emoji: "😰",
-  },
-  {
-    animation: "/animations/tired.json",
-    mood: "Tired",
-    color: "#8D6E63",
-    bgColor: "#EFEBE9",
-    emoji: "😴",
-  },
-  {
+    category: "Positive",
+    subcategory: "Low Energy",
     animation: "/animations/relax.json",
     mood: "Relaxed",
     color: "#66BB6A",
     bgColor: "#E8F5E9",
     emoji: "😌",
+    score: 4,
   },
   {
+    category: "Positive",
+    subcategory: "Low Energy",
     animation: "/animations/content.json",
-    mood: "Calm",
+    mood: "Content",
     color: "#26A69A",
     bgColor: "#E0F2F1",
     emoji: "😊",
+    score: 4.2,
+  },
+  {
+    category: "Positive",
+    subcategory: "Low Energy",
+    animation: "/animations/relax.json",
+    mood: "Peaceful",
+    color: "#00ACC1",
+    bgColor: "#E0F7FA",
+    emoji: "😇",
+    score: 4.5,
+  },
+  {
+    category: "Positive",
+    subcategory: "Low Energy",
+    animation: "/animations/happy.json",
+    mood: "Grateful",
+    color: "#673AB7",
+    bgColor: "#EDE7F6",
+    emoji: "🙏",
+    score: 5,
+  },
+
+  // POSITIVE - HIGH ENERGY
+  {
+    category: "Positive",
+    subcategory: "High Energy",
+    animation: "/animations/happy.json",
+    mood: "Excited",
+    color: "#FFD700",
+    bgColor: "#FFF9C4",
+    emoji: "🤩",
+    score: 5,
+  },
+  {
+    category: "Positive",
+    subcategory: "High Energy",
+    animation: "/animations/happy.json",
+    mood: "Joyful",
+    color: "#FFB300",
+    bgColor: "#FFF8E1",
+    emoji: "😄",
+    score: 5,
+  },
+  {
+    category: "Positive",
+    subcategory: "High Energy",
+    animation: "/animations/happy.json",
+    mood: "Thrilled",
+    color: "#FF8F00",
+    bgColor: "#FFF3E0",
+    emoji: "🥳",
+    score: 5,
+  },
+  {
+    category: "Positive",
+    subcategory: "High Energy",
+    animation: "/animations/happy.json",
+    mood: "Inspired",
+    color: "#9C27B0",
+    bgColor: "#F3E5F5",
+    emoji: "✨",
+    score: 4.7,
+  },
+  {
+    category: "Positive",
+    subcategory: "High Energy",
+    animation: "/animations/happy.json",
+    mood: "Playful",
+    color: "#E91E63",
+    bgColor: "#FCE4EC",
+    emoji: "😜",
+    score: 4.5,
+  },
+
+  // NEGATIVE - LOW ENERGY
+  {
+    category: "Negative",
+    subcategory: "Low Energy",
+    animation: "/animations/sad.json",
+    mood: "Depressed",
+    color: "#5C6BC0",
+    bgColor: "#E8EAF6",
+    emoji: "😔",
+    score: 1.0,
+  },
+  {
+    category: "Negative",
+    subcategory: "Low Energy",
+    animation: "/animations/tired.json",
+    mood: "Tired",
+    color: "#8D6E63",
+    bgColor: "#EFEBE9",
+    emoji: "😴",
+    score: 2.0,
+  },
+  {
+    category: "Negative",
+    subcategory: "Low Energy",
+    animation: "/animations/sad.json",
+    mood: "Disappointed",
+    color: "#7E57C2",
+    bgColor: "#F3E5F5",
+    emoji: "😞",
+    score: 1.5,
+  },
+  {
+    category: "Negative",
+    subcategory: "Low Energy",
+    animation: "/animations/angry.json",
+    mood: "Annoyed",
+    color: "#FB8C00",
+    bgColor: "#FFF3E0",
+    emoji: "😒",
+    score: 2.5,
+  },
+  {
+    category: "Negative",
+    subcategory: "Low Energy",
+    animation: "/animations/sad.json",
+    mood: "Bored",
+    color: "#B0BEC5",
+    bgColor: "#F5F5F5",
+    emoji: "😑",
+    score: 2.2,
+  },
+
+  // NEGATIVE - HIGH ENERGY
+  {
+    category: "Negative",
+    subcategory: "High Energy",
+    animation: "/animations/anxious.json",
+    mood: "Anxious",
+    color: "#FFA726",
+    bgColor: "#FFF3E0",
+    emoji: "😰",
+    score: 1.5,
+  },
+  {
+    category: "Negative",
+    subcategory: "High Energy",
+    animation: "/animations/anxious.json",
+    mood: "Overwhelmed",
+    color: "#F44336",
+    bgColor: "#FFEBEE",
+    emoji: "🤯",
+    score: 1.0,
+  },
+  {
+    category: "Negative",
+    subcategory: "High Energy",
+    animation: "/animations/anxious.json",
+    mood: "Panicked",
+    color: "#D32F2F",
+    bgColor: "#FFEBEE",
+    emoji: "😱",
+    score: 0.5,
+  },
+  {
+    category: "Negative",
+    subcategory: "High Energy",
+    animation: "/animations/angry.json",
+    mood: "Irritated",
+    color: "#E64A19",
+    bgColor: "#FBE9E7",
+    emoji: "😤",
+    score: 2.0,
+  },
+  {
+    category: "Negative",
+    subcategory: "High Energy",
+    animation: "/animations/angry.json",
+    mood: "Frustrated",
+    color: "#D84315",
+    bgColor: "#FBE9E7",
+    emoji: "😖",
+    score: 1.2,
   },
 ];
+
+const moods = MOOD_LEVELS;
 
 import axiosInstance from "../../utils/axios.instance";
 import { useSelector } from "react-redux";
@@ -105,6 +278,14 @@ const MoodTrackerScreen = ({ navigation }) => {
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [filter, setFilter] = useState("all"); // 'all', 'week', 'month'
   const [isLoading, setIsLoading] = useState(false);
+
+  // Group moods for organized display
+  const groupedMoods = moods.reduce((acc, mood) => {
+    if (!acc[mood.category]) acc[mood.category] = {};
+    if (!acc[mood.category][mood.subcategory]) acc[mood.category][mood.subcategory] = [];
+    acc[mood.category][mood.subcategory].push(mood);
+    return acc;
+  }, {});
 
   useEffect(() => {
     if (userId) {
@@ -296,10 +477,24 @@ const MoodTrackerScreen = ({ navigation }) => {
   };
 
   const getMoodStats = () => {
-    const stats = {};
+    const stats = {
+      moods: {},
+      categories: {},
+      subcategories: {}
+    };
+
     filteredHistory.forEach(entry => {
-      stats[entry.mood] = (stats[entry.mood] || 0) + 1;
+      // Mood count
+      stats.moods[entry.mood] = (stats.moods[entry.mood] || 0) + 1;
+
+      // Category/Subcategory count
+      const moodObj = moods.find(m => m.mood === entry.mood);
+      if (moodObj) {
+        stats.categories[moodObj.category] = (stats.categories[moodObj.category] || 0) + 1;
+        stats.subcategories[moodObj.subcategory] = (stats.subcategories[moodObj.subcategory] || 0) + 1;
+      }
     });
+
     return stats;
   };
 
@@ -338,7 +533,7 @@ const MoodTrackerScreen = ({ navigation }) => {
     doc.text(`Total Entries: ${filteredHistory.length}`, 14, 60);
 
     // Mood distribution table
-    const statsData = Object.entries(moodStats).map(([mood, count]) => {
+    const statsData = Object.entries(moodStats.moods).map(([mood, count]) => {
       const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
       return [
         sanitizePdfText(mood),
@@ -549,58 +744,97 @@ const MoodTrackerScreen = ({ navigation }) => {
                 How are you feeling today?
               </h2>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-                  gap: "15px",
-                  padding: "10px",
-                }}
-              >
-                {moods.map((mood, index) => (
-                  <button
-                    key={mood.mood}
-                    onClick={() => {
-                      setSelectedMood(mood);
-                      setShowReasonInput(true);
-                    }}
-                    style={{
+              <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+                {Object.entries(groupedMoods).map(([category, subcategories]) => (
+                  <div key={category} style={{
+                    background: category === "Positive" ? "rgba(232, 245, 233, 0.5)" : "rgba(255, 235, 238, 0.5)",
+                    padding: "20px",
+                    borderRadius: "25px",
+                    boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+                  }}>
+                    <h3 style={{
+                      fontSize: "20px",
+                      color: category === "Positive" ? "#2E7D32" : "#C62828",
+                      marginBottom: "15px",
                       display: "flex",
-                      flexDirection: "column",
                       alignItems: "center",
-                      padding: "20px 10px",
-                      background: `linear-gradient(135deg, ${mood.bgColor} 0%, white 100%)`,
-                      border: `2px solid ${mood.color}`,
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                      boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-                      backdropFilter: "blur(5px)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-5px)";
-                      e.currentTarget.style.boxShadow = `0 15px 30px ${mood.color}40`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow = "0 5px 15px rgba(0,0,0,0.1)";
-                    }}
-                  >
-                    <div
-                      id={`lottie-${mood.mood}-${index}`}
-                      style={{ width: "60px", height: "60px" }}
-                    />
-                    <span
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        marginTop: "10px",
-                        color: mood.color,
-                      }}
-                    >
-                      {mood.emoji} {mood.mood}
-                    </span>
-                  </button>
+                      gap: "10px"
+                    }}>
+                      {category === "Positive" ? "✨ Positive Moods" : "⛈️ Negative Moods"}
+                    </h3>
+
+                    {Object.entries(subcategories).map(([subcategory, subMoods]) => (
+                      <div key={subcategory} style={{ marginBottom: "20px" }}>
+                        <h4 style={{
+                          fontSize: "14px",
+                          color: "#666",
+                          textTransform: "uppercase",
+                          letterSpacing: "1px",
+                          marginBottom: "10px",
+                          paddingLeft: "10px"
+                        }}>
+                          {subcategory}
+                        </h4>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+                            gap: "12px",
+                          }}
+                        >
+                          {subMoods.map((mood, idx) => {
+                            const originalIndex = moods.findIndex(m => m.mood === mood.mood);
+                            return (
+                              <button
+                                key={mood.mood}
+                                onClick={() => {
+                                  setSelectedMood(mood);
+                                  setShowReasonInput(true);
+                                }}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  padding: "15px 10px",
+                                  background: `linear-gradient(135deg, ${mood.bgColor} 0%, white 100%)`,
+                                  border: `2px solid ${mood.color}`,
+                                  borderRadius: "18px",
+                                  cursor: "pointer",
+                                  transition: "all 0.3s ease",
+                                  boxShadow: "0 3px 8px rgba(0,0,0,0.08)",
+                                  backdropFilter: "blur(5px)",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-3px)";
+                                  e.currentTarget.style.boxShadow = `0 10px 20px ${mood.color}30`;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0)";
+                                  e.currentTarget.style.boxShadow = "0 3px 8px rgba(0,0,0,0.08)";
+                                }}
+                              >
+                                <div
+                                  id={`lottie-${mood.mood}-${originalIndex}`}
+                                  style={{ width: "50px", height: "50px" }}
+                                />
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: "600",
+                                    marginTop: "8px",
+                                    color: mood.color,
+                                    textAlign: "center"
+                                  }}
+                                >
+                                  {mood.emoji} {mood.mood}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
@@ -731,6 +965,89 @@ const MoodTrackerScreen = ({ navigation }) => {
           </div>
         )}
 
+        {/* Mood over Time Chart */}
+        {filteredHistory.length > 0 && (
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.85)",
+              borderRadius: "20px",
+              padding: "20px",
+              marginBottom: "30px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+              backdropFilter: "blur(10px)",
+              height: "400px"
+            }}
+          >
+            <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "20px" }}>
+              📈 Mood Over Time
+            </h3>
+            <ResponsiveContainer width="100%" height="85%">
+              <AreaChart
+                data={[...filteredHistory].reverse().map(entry => {
+                  const moodObj = moods.find(m => m.mood === entry.mood);
+                  return {
+                    date: entry.date,
+                    score: moodObj ? moodObj.score : 3,
+                    mood: entry.mood,
+                    emoji: entry.moodEmoji
+                  };
+                })}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#764ba2" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                <XAxis
+                  dataKey="date"
+                  fontSize={10}
+                  tick={{ fill: '#666' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  hide
+                  domain={[0, 6]}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div style={{
+                          background: 'white',
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '10px',
+                          boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
+                        }}>
+                          <p style={{ margin: 0, fontWeight: 'bold' }}>{data.date}</p>
+                          <p style={{ margin: 0, color: '#667eea' }}>
+                            {data.emoji} {data.mood}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#667eea"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorScore)"
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
         {/* Mood Statistics */}
         {filteredHistory.length > 0 && (
           <div
@@ -751,6 +1068,32 @@ const MoodTrackerScreen = ({ navigation }) => {
                 Total: {filteredHistory.length} entries
               </span>
             </div>
+            {/* Category Summary */}
+            <div style={{
+              display: "flex",
+              gap: "15px",
+              marginBottom: "20px",
+              padding: "15px",
+              background: "rgba(102, 126, 234, 0.1)",
+              borderRadius: "15px",
+              overflowX: "auto"
+            }}>
+              {Object.entries(moodStats.categories).map(([cat, count]) => (
+                <div key={cat} style={{ flex: 1, minWidth: "120px", textAlign: "center" }}>
+                  <div style={{ fontSize: "12px", color: "#666", textTransform: "uppercase" }}>{cat}</div>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: cat === "Positive" ? "#2E7D32" : "#C62828" }}>
+                    {count} <span style={{ fontSize: "14px", fontWeight: "normal" }}>({((count / filteredHistory.length) * 100).toFixed(0)}%)</span>
+                  </div>
+                </div>
+              ))}
+              {Object.entries(moodStats.subcategories).map(([sub, count]) => (
+                <div key={sub} style={{ flex: 1, minWidth: "120px", textAlign: "center", borderLeft: "1px solid #ddd", paddingLeft: "15px" }}>
+                  <div style={{ fontSize: "10px", color: "#888", textTransform: "uppercase" }}>{sub}</div>
+                  <div style={{ fontSize: "16px", fontWeight: "bold", color: "#444" }}>{count}</div>
+                </div>
+              ))}
+            </div>
+
             <div
               style={{
                 display: "grid",
@@ -758,7 +1101,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                 gap: "10px",
               }}
             >
-              {Object.entries(moodStats).map(([mood, count]) => {
+              {Object.entries(moodStats.moods).map(([mood, count]) => {
                 const moodData = moods.find(m => m.mood === mood);
                 const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
                 return (
@@ -769,14 +1112,15 @@ const MoodTrackerScreen = ({ navigation }) => {
                       padding: "10px",
                       borderRadius: "10px",
                       textAlign: "center",
+                      border: `1px solid ${moodData?.color}20`
                     }}
                   >
                     <span style={{ fontSize: "24px" }}>{moodData?.emoji}</span>
-                    <div style={{ fontSize: "14px", color: "#666" }}>{mood}</div>
+                    <div style={{ fontSize: "13px", color: "#666", fontWeight: "500" }}>{mood}</div>
                     <div style={{ fontSize: "18px", fontWeight: "bold", color: moodData?.color }}>
                       {count}
                     </div>
-                    <div style={{ fontSize: "12px", color: "#999" }}>
+                    <div style={{ fontSize: "11px", color: "#999" }}>
                       {percentage}%
                     </div>
                   </div>
