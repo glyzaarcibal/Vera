@@ -1,8 +1,7 @@
-
 .admin-layout {
   min-height: 100vh;
   display: flex;
-  background: var(--vera-bg);
+  background: #f8fafc;
 }
 
 .admin-content {
@@ -10,10 +9,76 @@
   padding: 32px 28px;
   overflow-y: auto;
   min-height: 100vh;
+  position: relative;
+}
+
+.admin-mobile-header {
+  display: none;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: -32px -28px 24px;
+}
+
+.admin-sidebar-toggle {
+  background: #f5f5ff;
+  border: none;
+  color: #667eea;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-mobile-logo .logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.admin-mobile-logo .logo-text {
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admin-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  z-index: 998;
 }
 
 @media (max-width: 768px) {
   .admin-content {
     padding: 20px 16px;
+  }
+
+  .admin-mobile-header {
+    display: flex;
+    margin: -20px -16px 20px;
   }
 }

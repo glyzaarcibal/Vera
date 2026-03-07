@@ -1,103 +1,128 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
+import { Menu, X, Bell, LogOut, User, LayoutDashboard, Info, MessageSquare, Mic, UserCircle, Activity } from "lucide-react";
 import "./Header.css";
 
 const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
   const handleLogout = () => {
     dispatch(clearUser());
+    setIsMenuOpen(false);
     navigate("/");
   };
 
   const isActive = (path) => location.pathname === path;
 
+  // Close menu when location changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when menu is open on mobile
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  }, [isMenuOpen]);
+
   return (
-    <header className="header">
+    <header className={`header ${isMenuOpen ? 'header--menu-open' : ''}`}>
       <nav className="header-nav">
         <Link to="/" className="header-logo">
           <span className="logo-icon">V</span>
           <span className="logo-text">V.E.R.A.</span>
         </Link>
-        <div className="header-links">
+
+        {/* Hamburger Menu Button */}
+        <button
+          className="header-toggle"
+          onClick={toggleMenu}
+          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
           <Link
             to="/"
             className={`header-link ${isActive("/") ? "active" : ""}`}
           >
-            Home
+            <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
+            <span>Home</span>
           </Link>
           <Link
             to="/about"
             className={`header-link ${isActive("/about") ? "active" : ""}`}
           >
-            About
+            <span className="header-link-icon mobile-only"><Info size={18} /></span>
+            <span>About</span>
           </Link>
           <Link
             to="/chat"
             className={`header-link ${isActive("/chat") ? "active" : ""}`}
           >
-            Chat AI
+            <span className="header-link-icon mobile-only"><MessageSquare size={18} /></span>
+            <span>Chat AI</span>
           </Link>
           <Link
             to="/voice"
             className={`header-link ${isActive("/voice") ? "active" : ""}`}
           >
-            Voice AI
+            <span className="header-link-icon mobile-only"><Mic size={18} /></span>
+            <span>Voice AI</span>
           </Link>
           <Link
             to="/avatar"
             className={`header-link ${isActive("/avatar") ? "active" : ""}`}
           >
-            Avatar AI
+            <span className="header-link-icon mobile-only"><UserCircle size={18} /></span>
+            <span>Avatar AI</span>
           </Link>
-          {/* Activities Button - Added here */}
           <Link
             to="/activities"
             className={`header-link ${isActive("/activities") ? "active" : ""}`}
           >
-            Activities
+            <span className="header-link-icon mobile-only"><Activity size={18} /></span>
+            <span>Activities</span>
           </Link>
           {user?.role === "admin" && (
             <Link
               to="/admin"
               className={`header-link ${isActive("/admin") ? "active" : ""}`}
             >
-              Admin
+              <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
+              <span>Admin</span>
             </Link>
           )}
+
+          <div className="header-divider mobile-only"></div>
+
           {isAuthenticated ? (
             <>
               <Link
                 to="/notifications"
-                className={`header-link notification-bell ${isActive("/notifications") ? "active" : ""
-                  }`}
+                className={`header-link notification-bell ${isActive("/notifications") ? "active" : ""}`}
               >
                 <div className="notification-icon-wrapper">
-                  <svg
-                    className="notification-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
+                  <Bell size={20} className="notification-icon" />
                   <span className="notification-badge"></span>
                 </div>
+                <span className="mobile-only">Notifications</span>
               </Link>
               <Link
                 to="/profile"
-                className={`header-link profile-link ${isActive("/profile") ? "active" : ""
-                  }`}
+                className={`header-link profile-link ${isActive("/profile") ? "active" : ""}`}
               >
                 <div className="profile-avatar">
                   {user?.username?.[0]?.toUpperCase() ||
@@ -106,8 +131,9 @@ const Header = () => {
                 </div>
                 <span>{user?.username || user?.email}</span>
               </Link>
-              <button onClick={handleLogout} className="header-button">
-                Logout
+              <button onClick={handleLogout} className="header-button header-logout-mobile">
+                <LogOut size={18} className="mobile-only" />
+                <span>Logout</span>
               </button>
             </>
           ) : (
@@ -117,6 +143,9 @@ const Header = () => {
           )}
         </div>
       </nav>
+
+      {/* Mobile Menu Backdrop */}
+      {isMenuOpen && <div className="header-backdrop" onClick={toggleMenu}></div>}
     </header>
   );
 };

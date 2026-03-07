@@ -175,36 +175,62 @@
   font-size: 18px;
 }
 
+/* Mobile close button */
+.sidebar-close-mobile {
+  display: none;
+  background: #f5f5ff;
+  border: none;
+  color: #667eea;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .sidebar {
-    width: 80px;
+    position: fixed;
+    top: 0;
+    left: -320px;
+    /* Specific width + buffer instead of -100% */
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+    visibility: hidden;
+    /* Hide completely when closed */
+    pointer-events: none;
   }
 
-  .sidebar.collapsed {
-    width: 60px;
+  .sidebar.open {
+    left: 0;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .sidebar-header {
-    padding: 16px 12px;
+    padding: 20px 16px;
   }
 
   .sidebar-logo-text {
-    display: none;
+    display: block;
   }
 
   .sidebar-toggle {
     display: none;
   }
 
+  .sidebar-close-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .sidebar-user {
-    display: none;
+    display: flex;
   }
 
-  .sidebar-logout {
-    padding: 10px;
-  }
-
-  .sidebar-logout span:not(.sidebar-logout-icon) {
-    display: none;
+  .sidebar-logout span {
+    display: block !important;
   }
 }
