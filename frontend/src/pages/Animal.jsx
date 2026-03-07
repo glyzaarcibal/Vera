@@ -387,7 +387,7 @@ export default function AnimalAI({ onTranscript, onEnd }) {
                         <p className="page-subtitle">Select a friendly animal avatar</p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 w-full max-w-lg pb-12">
+                    <div className="flex overflow-x-auto gap-6 w-full max-w-lg pb-12 snap-x snap-mandatory scrollbar-hide-custom px-4 lg:grid lg:grid-cols-1 lg:max-w-lg">
                         {[
                             { id: 'cat', name: 'Cat AI', icon: '🐱', desc: 'Sassy feline friend' },
                             { id: 'dog', name: 'Dog AI', icon: '🐶', desc: 'Loyal canine companion' }
@@ -395,7 +395,7 @@ export default function AnimalAI({ onTranscript, onEnd }) {
                             <button
                                 key={animal.id}
                                 onClick={() => handleAnimalSelect(animal.id)}
-                                className="design-section glass-card text-left p-6 group flex flex-col items-center text-center transition-all duration-500"
+                                className="design-section glass-card text-left p-6 group flex flex-col items-center text-center transition-all duration-500 flex-shrink-0 w-[260px] lg:w-full snap-center"
                             >
                                 <div className="text-5xl mb-4 transform group-hover:scale-110 transition-transform duration-500">
                                     {animal.icon}

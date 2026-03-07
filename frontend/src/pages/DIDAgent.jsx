@@ -742,12 +742,12 @@ export default function DIDAgent({ onTranscript, onEnd }) {
             <p className="page-subtitle">{getOutfitPickerSubtitle()}</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full max-w-4xl mx-auto">
+          <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-6 w-full max-w-4xl mx-auto pb-6 snap-x snap-mandatory scrollbar-hide-custom px-4 lg:px-0">
             {Object.entries(getOutfitsForPicker()).map(([key, { img, label }]) => (
               <button
                 key={key}
                 onClick={() => handleOutfitSelect(key)}
-                className="design-section glass-card group p-6 flex flex-col items-center text-center hover:scale-[1.05] transition-all duration-500"
+                className="design-section glass-card group p-6 flex flex-col items-center text-center hover:scale-[1.05] transition-all duration-500 flex-shrink-0 w-[200px] lg:w-full snap-center"
               >
                 <div className="w-28 h-28 rounded-2xl overflow-hidden mb-4 shadow-lg ring-2 ring-white/50 group-hover:ring-indigo-400/50 transition-all duration-500">
                   <img src={img} alt={label} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -778,12 +778,12 @@ export default function DIDAgent({ onTranscript, onEnd }) {
             <p className="page-subtitle">Select a professional AI agent to assist you today</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full pb-12">
+          <div className="flex overflow-x-auto lg:grid lg:grid-cols-4 gap-8 w-full pb-12 snap-x snap-mandatory scrollbar-hide-custom px-4 lg:px-0">
             {Object.entries(AVATAR_IMAGES).map(([type, img]) => (
               <button
                 key={type}
                 onClick={() => handleAvatarSelect(type)}
-                className="design-section glass-card group p-8 flex flex-col items-center text-center transition-all duration-500"
+                className="design-section glass-card group p-8 flex flex-col items-center text-center transition-all duration-500 flex-shrink-0 w-[280px] lg:w-full snap-center"
               >
                 <div className="w-40 h-40 rounded-[32px] overflow-hidden mb-6 shadow-2xl ring-4 ring-white/50 group-hover:ring-indigo-400/50 transition-all duration-500">
                   <img src={img} alt={type} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />

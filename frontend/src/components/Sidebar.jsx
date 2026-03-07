@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
 import {
@@ -12,27 +12,44 @@ import {
   MdFolder,
   MdBarChart,
 } from "react-icons/md";
+import { X } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import "./Sidebar.css";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const { user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
     dispatch(clearUser());
+    if (onClose) onClose();
     navigate("/login");
   };
 
+  // Close sidebar when clicking links on mobile
+  useEffect(() => {
+    if (onClose) onClose();
+  }, [location.pathname]);
+
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""} ${isOpen ? "open" : ""}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <span className="sidebar-logo-icon">V</span>
           {!collapsed && <span className="sidebar-logo-text">ADMIN</span>}
         </div>
+
+        {/* Toggle for desktop / Close for mobile */}
+        <button
+          className="sidebar-close-mobile"
+          onClick={onClose}
+        >
+          <X size={24} />
+        </button>
+
         <button
           className="sidebar-toggle"
           onClick={() => setCollapsed(!collapsed)}
