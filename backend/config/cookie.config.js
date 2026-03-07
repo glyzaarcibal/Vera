@@ -1,4 +1,9 @@
-const isProd = process.env.IS_PROD === "true";
+const isProd =
+  process.env.IS_PROD === "true" || process.env.NODE_ENV === "production";
+const forceCrossSiteCookies =
+  process.env.COOKIE_SAMESITE?.toLowerCase() === "none";
+const sameSite = forceCrossSiteCookies || isProd ? "None" : "Lax";
+const secure = sameSite === "None" ? true : isProd;
 
 // For cross-domain cookies (frontend on Vercel, backend on Vercel)
 // sameSite: "None" is required along with secure: true

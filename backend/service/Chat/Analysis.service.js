@@ -46,6 +46,7 @@ export async function analyzeConversation(conversation, sessionId) {
       summary: analysis.summary,
       risk_level: analysis.risk_level,
       risk_score: analysis.risk_score,
+      categories: analysis.categories,
     };
   } catch (error) {
     console.error("Conversation analysis error:", error);

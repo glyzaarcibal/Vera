@@ -1,23 +1,93 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
-dotenv.config({ override: true });
+import path from "path";
+import { fileURLToPath } from "url";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
+
+// Configure SendGrid API Key
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("SendGrid: API Key configured.");
+} else {
+  console.warn("SendGrid: SENDGRID_API_KEY is missing in .env");
+}
+
+// Helper to get synced email config
+const getEmailConfig = () => {
+  const fromEmail = (process.env.EMAIL_FROM || process.env.SENDGRID_FROM_EMAIL || "").trim();
+  const fromName = (process.env.EMAIL_FROM_NAME || "Vera").trim();
+  return { fromEmail, fromName };
+};
+
+/**
+ * Common SendGrid error handler
+ */
+const handleSendGridError = (emailType, error) => {
+  console.error(`Error sending ${emailType} email:`, error);
+  if (error.response) {
+    console.error(error.response.body);
+  }
+  throw error;
+};
+
+export const sendVerificationCodeEmail = async (email, code) => {
+  // Always log the code for development debugging
+  console.log("-----------------------------------------");
+  console.log(`[AUTH] Verification Code for ${email}: ${code}`);
+  console.log("-----------------------------------------");
+
+  const { fromEmail, fromName } = getEmailConfig();
+  console.log(`[SendGrid] Attempting to send using: ${fromEmail}`);
+
+  try {
+    const msg = {
+      to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
+      subject: "Your Verification Code - Vera",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px; border: 1px solid #ddd;">
+          <h2 style="color: #333; text-align: center;">Verify Your Email</h2>
+          <p style="color: #555; font-size: 16px;">Hello,</p>
+          <p style="color: #555; font-size: 16px;">Thank you for signing up for Vera. Please use the following verification code to complete your registration:</p>
+          <div style="text-align: center; margin: 40px 0;">
+            <div style="display: inline-block; background-color: #fff; border: 2px solid #4CAF50; color: #4CAF50; padding: 15px 30px; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+              ${code}
+            </div>
+          </div>
+          <p style="color: #555; font-size: 14px; text-align: center;">This code will expire in 10 minutes.</p>
+          <p style="margin-top: 30px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px;">
+            If you didn't create an account, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    };
+
+    const response = await sgMail.send(msg);
+    console.log("Verification code email sent via SendGrid");
+    return response;
+  } catch (error) {
+    handleSendGridError("verification code", error);
+  }
+};
 
 export const sendVerificationEmail = async (email, link) => {
+  const { fromEmail, fromName } = getEmailConfig();
+
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
       subject: "Verify Your Email Address - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -31,24 +101,26 @@ export const sendVerificationEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't create an account, you can safely ignore this email.</p>
         </div>
       `,
-    });
-    console.log("Verification email sent: %s", info.messageId);
-    return info;
+    };
+
+    const response = await sgMail.send(msg);
+    console.log("Verification email sent via SendGrid");
+    return response;
   } catch (error) {
-    console.error("Error sending verification email:", error);
-    // Don't throw error to prevent crashing the registration flow, 
-    // but log it clearly so it can be debugged.
-    // Ideally we should throw so the controller can handle it (e.g. return 500), 
-    // but for now let's just log it.
-    throw error;
+    handleSendGridError("verification", error);
   }
 };
 
 export const sendPasswordResetEmail = async (email, link) => {
+  const { fromEmail, fromName } = getEmailConfig();
+
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+    const msg = {
       to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
       subject: "Reset Your Password - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -62,11 +134,12 @@ export const sendPasswordResetEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `,
-    });
-    console.log("Password reset email sent: %s", info.messageId);
-    return info;
+    };
+
+    const response = await sgMail.send(msg);
+    console.log("Password reset email sent via SendGrid");
+    return response;
   } catch (error) {
-    console.error("Error sending password reset email:", error);
-    throw error;
+    handleSendGridError("password reset", error);
   }
 };

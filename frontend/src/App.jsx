@@ -35,6 +35,7 @@ import MoodTrackerScreen from "./pages/Activities/MoodTrackerScreen";
 import SleepTracker from "./pages/Activities/SleepTracker";
 import WeeklyWellnessReport from "./pages/Activities/WeeklyWellnessReport";
 import TakeABreath from "./pages/Activities/TakeABreath";
+import MedicationTracker from "./pages/Activities/MedicationTracker";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -64,6 +65,7 @@ const App = () => {
           element={<WeeklyWellnessReport />}
         />
         <Route path="/activities/take-a-breath" element={<TakeABreath />} />
+        <Route path="/activities/medication-history" element={<MedicationTracker />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />

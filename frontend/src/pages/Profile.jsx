@@ -17,6 +17,7 @@ const Profile = () => {
     last_name: "",
     birthday: "",
     gender: "",
+    contact_number: "",
     avatar_url: "",
     permit_store: false,
     permit_analyze: false,
@@ -46,8 +47,9 @@ const Profile = () => {
         username: p.username || "",
         first_name: p.first_name || "",
         last_name: p.last_name || "",
-        birthday: p.birthday || "",
+        birthday: p.birthday ? p.birthday.split('T')[0] : "",
         gender: p.gender || "",
+        contact_number: p.contact_number || "",
         avatar_url: p.avatar_url || "",
         permit_store: p.permit_store || false,
         permit_analyze: p.permit_analyze || false,
@@ -119,6 +121,7 @@ const Profile = () => {
         last_name: profile.last_name,
         birthday: profile.birthday,
         gender: profile.gender,
+        contact_number: profile.contact_number,
       });
       setOriginalProfile(profile);
       setIsEditMode(false);
@@ -394,6 +397,23 @@ const Profile = () => {
             </select>
           ) : (
             <div className="vera-value">{profile.gender || "Not set"}</div>
+          )}
+        </div>
+
+        {/* Contact Number */}
+        <div className="profile-field">
+          <label className="profile-label">Contact Number</label>
+          {isEditMode ? (
+            <input
+              type="tel"
+              name="contact_number"
+              value={profile.contact_number}
+              onChange={handleInputChange}
+              placeholder="Contact Number"
+              className="vera-input"
+            />
+          ) : (
+            <div className="vera-value">{profile.contact_number || "Not set"}</div>
           )}
         </div>
 
@@ -723,9 +743,9 @@ const Profile = () => {
         />
 
         <div className="profile-page-content">
-          {activeTab === "profile"      && renderProfileTab()}
-          {activeTab === "privacy"      && renderPrivacyTab()}
-          {activeTab === "sessions"     && renderSessionsTab()}
+          {activeTab === "profile" && renderProfileTab()}
+          {activeTab === "privacy" && renderPrivacyTab()}
+          {activeTab === "sessions" && renderSessionsTab()}
           {activeTab === "appointments" && renderAppointmentsTab()}
         </div>
       </div>

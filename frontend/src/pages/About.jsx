@@ -22,14 +22,13 @@ const About = () => {
         </div>
         <h2 className="section-title">Introduction</h2>
         <p className="section-text">
-          V.E.R.A. (Voice Emotion Recognition Application) is a mobile application designed
-          to support the mental well-being of young individuals using AI-driven tools. The
-          app integrates voice emotion recognition, predictive analytics, an AI avatar chatbot,
-          and emotional tracking to help users become more aware of their mental state and
-          access immediate support. As youth mental health problems continue to rise, many
-          individuals lack access to timely and stigma-free assistance. V.E.R.A. aims to
-          bridge this gap by providing an engaging, user-friendly, and technology-driven
-          platform that encourages early intervention, continuous support, and emotional awareness.
+          <strong>V.E.R.A. (Voice Emotion Recognition Application)</strong> is an innovative
+          AI-driven platform designed to provide a safe, private, and stigma-free environment
+          for mental health support. Built specifically for individuals aged <strong>13 and above</strong>,
+          V.E.R.A. goes beyond traditional text-based tools by integrating advanced
+          <strong> Voice Emotion Recognition</strong>. Our system listens to the nuances in your voice
+          to understand your emotional state, providing a more empathetic and accurate
+          interaction with our AI Avatar companion.
         </p>
       </div>
 
@@ -41,13 +40,13 @@ const About = () => {
         </div>
         <h2 className="section-title">Problem Statement</h2>
         <p className="section-text">
-          Youth mental health challenges, including emotional distress and self-destructive
-          behavior, remain a serious issue in the Philippines. Many young people struggle to
-          access mental health services due to stigma, limited resources, and lack of professional
-          support. Traditional mental health programs often fail to offer early detection and
-          continuous engagement, making at-risk youth more vulnerable to crises. There is a need
-          for an accessible mobile solution that integrates predictive analytics, AI chatbot
-          support, and emotional monitoring to help identify risks early and provide timely assistance.
+          In the Philippines, the population (ages 13 and above) is increasingly facing mental
+          health challenges such as anxiety and depression, yet many remain unheard due to
+          expensive therapy, social stigma, and the lack of immediate support systems.
+          Existing solutions often fail to detect early emotional distress before they
+          escalate into crises. V.E.R.A. addresses this by bridging the gap between
+          self-awareness and professional intervention, providing an accessible tool that
+          identifies risks through voice and behavioral patterns.
         </p>
       </div>
 
@@ -60,9 +59,10 @@ const About = () => {
         </div>
         <h2 className="section-title">Our Mission</h2>
         <p className="section-text">
-          To evaluate the effectiveness of V.E.R.A., a mobile app that uses predictive analytics,
-          voice emotion recognition, and AI chatbot support, in providing mental health first aid
-          and improving emotional well-being among young individuals at risk.
+          Our mission is to empower individuals by providing an AI-driven "Mental Health First Aid"
+          companion. We aim to foster emotional resilience and awareness among users aged 13 and above
+          through technology that listens, understands, and provides immediate support while
+          ensuring a path to professional clinical care when necessary.
         </p>
       </div>
 
@@ -77,37 +77,90 @@ const About = () => {
           <div className="objective-item">
             <div className="objective-number">1</div>
             <p className="objective-text">
-              Analyze how the app's predictive analytics and emotion recognition system help
-              identify early signs of emotional distress and self-destructive ideation.
+              Utilize <strong>Voice Emotion Recognition</strong> to identify subtle indicators of
+              emotional distress and mood shifts in real-time.
             </p>
           </div>
           <div className="objective-item">
             <div className="objective-number">2</div>
             <p className="objective-text">
-              Evaluate the ability of the AI chatbot to provide immediate emotional support
-              and mental health first aid.
+              Provide 24/7 accessible emotional support through an interactive <strong>AI Avatar</strong>
+              capable of empathetic conversation and guidance.
             </p>
           </div>
           <div className="objective-item">
             <div className="objective-number">3</div>
             <p className="objective-text">
-              Determine whether the app's features (mood tracking, voice input, avatar interaction)
-              improve user engagement with mental health resources.
+              Encourage healthy coping mechanisms through personalized <strong>Mental Health Activities</strong>
+              tailored to the user's current emotional state.
             </p>
           </div>
           <div className="objective-item">
             <div className="objective-number">4</div>
             <p className="objective-text">
-              Assess users' overall experience in terms of accessibility, usability, and perceived
-              usefulness in supporting mental wellness.
+              Facilitate early detection of high-risk cases and provide a seamless connection
+              to licensed mental health professionals via doctor notes and schedules.
             </p>
           </div>
           <div className="objective-item">
             <div className="objective-number">5</div>
             <p className="objective-text">
-              Examine how the app contributes to reducing mental health risks over time through
-              continuous monitoring and personalized recommendations.
+              Ensure a completely <strong>stigma-free and private</strong> platform where users
+              aged 13 and above feel safe to express their true emotions.
             </p>
+          </div>
+        </div>
+      </div>
+      <div className="about-section team-section">
+        <div className="section-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h2 className="section-title">The Development Team</h2>
+        <div className="team-container">
+          <div className="team-group">
+            <h3>Developers</h3>
+            <div className="team-grid">
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <img src="/src/assets/team/glyza.png" alt="Glyza Marie Parcibal" className="member-image" />
+                </div>
+                <p className="member-name">Glyza Marie Parcibal</p>
+                <p className="member-role">Full Stack Developer</p>
+              </div>
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <img src="/src/assets/team/glyza.png" alt="Glyza Marie Parcibal" className="member-image" />
+                </div>
+                <p className="member-name">Bhea Marie Cervantes</p>
+                <p className="member-role">Full Stack Developer</p>
+              </div>
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <img src="/src/assets/team/dev2.png" alt="Glyza Marie Parcibal" className="member-image" />
+
+                </div>
+                <p className="member-name">Shane Norwin Mendoza</p>
+                <p className="member-role">QA Tester</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="team-group centered">
+            <h3>Teaching Assistant (TA)</h3>
+            <div className="team-grid">
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <div className="member-placeholder">👨‍🏫</div>
+                </div>
+                <p className="member-name">Prof Maria Christina Baloloy</p>
+                <p className="member-role">Technical Advisor</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

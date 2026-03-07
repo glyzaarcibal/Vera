@@ -40,6 +40,7 @@ Analysis Guidelines:
 - Assess for indicators of self-harm, suicidal ideation, or crisis situations
 - Consider emotional distress levels, coping ability, and support systems
 - Identify protective factors and risk factors
+- Identify specific mental health categories (e.g., Anxiety, Depression, Stress, PTSD, Substance Use, Eating Disorder, etc.)
 
 Risk Assessment Criteria:
 - **Low (0-25)**: General stress, mild anxiety/sadness, good coping skills, no crisis indicators
@@ -51,7 +52,8 @@ IMPORTANT: You must respond ONLY with valid JSON in this exact format:
 {
   "summary": "Brief 2-3 sentence overview of the conversation and main concerns discussed",
   "risk_level": "low" | "moderate" | "high" | "critical",
-  "risk_score": <number between 0-100>
+  "risk_score": <number between 0-100>,
+  "categories": ["Category 1", "Category 2"]
 }
 
 Do not include any text before or after the JSON. The response must be valid JSON only.`;
