@@ -1,0 +1,14 @@
+{
+  "appId": "com.vera.app",
+  "appName": "VERA",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "virtualos-solace-production-ac1d.up.railway.app",
+      "localhost"
+    ]
+  }
+}

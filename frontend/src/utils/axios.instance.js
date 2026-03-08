@@ -4,8 +4,7 @@ import { clearUser } from "../store/slices/authSlice";
 
 const axiosInstance = axios.create({
   
-//baseURL: "http://localhost:5000/api",
- baseURL: import.meta.env.VITE_API_URL ,
+baseURL: "https://virtualos-solace-production-ac1d.up.railway.app/api",
   
   timeout: 30000,
   withCredentials: true,

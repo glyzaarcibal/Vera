@@ -9,6 +9,12 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
+  
+  // ✅ ADDED FOR ANDROID
+  "http://localhost",
+  "https://localhost", 
+  "capacitor://localhost",
+  "file://",
 ].filter(Boolean);
 
 const corsConfig = {
@@ -32,12 +38,16 @@ const corsConfig = {
       return callback(null, true);
     }
 
-    // Vercel Pattern - more robust matching
+    // Pattern matching
     const isVercel = normalizedOrigin.endsWith(".vercel.app") ||
       normalizedOrigin.includes("vercel.app");
+    
+    const isAndroid = normalizedOrigin.includes("localhost") || 
+                      normalizedOrigin.startsWith("file://") ||
+                      normalizedOrigin === "capacitor://localhost";
 
-    if (isVercel) {
-      console.log(`[CORS] Origin allowed by Vercel pattern.`);
+    if (isVercel || isAndroid) {
+      console.log(`[CORS] Origin allowed by pattern (${isVercel ? 'Vercel' : 'Android'}).`);
       return callback(null, true);
     }
 
@@ -47,12 +57,11 @@ const corsConfig = {
     }
 
     console.warn(`[CORS] Origin NOT allowed: ${origin}`);
-    callback(null, false); // Return false instead of throwing Error to prevent 500s
+    callback(null, false);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin"],
-  optionsSuccessStatus: 200, // Important for legacy browsers
+  optionsSuccessStatus: 200,
 };
-
 
 export default corsConfig;
