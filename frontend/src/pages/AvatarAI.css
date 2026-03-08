@@ -497,9 +497,8 @@
     scroll-snap-type: x mandatory;
     gap: 16px;
     padding: 10px 4px;
-    margin: 0 -16px 24px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding: 10px 16px;
+    margin: 0 0 24px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
