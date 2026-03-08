@@ -302,9 +302,10 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 8rem 1.5rem 6rem;
+  padding: 8rem 1rem 6rem;
   overflow: hidden;
   background: linear-gradient(155deg, #fdfcff 0%, #ede9ff 45%, #e2f9f7 100%);
+  width: 100%;
 }
 
 /* Subtle dot-grid overlay */
@@ -625,9 +626,10 @@ body {
    SECTION LAYOUT + TYPOGRAPHY
    ═══════════════════════════════════════════════════════════════════ */
 .v-section {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 6rem 1.5rem;
+  padding: 6rem 1rem;
 }
 
 .v-section-head {
@@ -1200,7 +1202,12 @@ body {
   }
 
   .v-section {
-    padding: 4rem 1.2rem;
+    padding: 4rem 1rem;
+    width: 100%;
+  }
+
+  .v-hero-mono {
+    font-size: 0.65rem;
   }
 }
 

@@ -44,6 +44,8 @@ const UserChat = () => {
   const [nextAppointment, setNextAppointment] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [medicationHistory, setMedicationHistory] = useState([]);
+  const [medHistoryLoading, setMedHistoryLoading] = useState(false);
 
   const emotionColors = {
     sad: "#3B82F6",
@@ -164,10 +166,34 @@ const UserChat = () => {
       console.log(sessionInfo);
       setChat(chat);
       setSessionInfo(sessionInfo);
+      if (sessionInfo?.user_id) {
+        getMedicationHistory(sessionInfo.user_id);
+      }
     } catch (e) {
       alert(e.response?.data?.message || "Internal Server Error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getMedicationHistory = async (userId) => {
+    try {
+      setMedHistoryLoading(true);
+      const res = await axiosInstance.get(`/admin/users/get-user-activities/${userId}`);
+      const activities = res.data?.activities || [];
+      const medHistory = activities
+        .filter((act) => act.activity_type === "medication")
+        .map((act) => ({
+          id: act.id,
+          ...act.data,
+          timestamp: act.created_at || act.data.timestamp
+        }))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setMedicationHistory(medHistory);
+    } catch (e) {
+      console.error("Error fetching medication history:", e);
+    } finally {
+      setMedHistoryLoading(false);
     }
   };
 
@@ -289,8 +315,8 @@ const UserChat = () => {
                     >
                       <div
                         className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${message.sent_by === "user"
-                            ? "bg-indigo-100 text-indigo-600"
-                            : "bg-gray-100 text-gray-600"
+                          ? "bg-indigo-100 text-indigo-600"
+                          : "bg-gray-100 text-gray-600"
                           }`}
                       >
                         {message.sent_by === "user" ? (
@@ -305,14 +331,14 @@ const UserChat = () => {
                       >
                         <div
                           className={`flex items-center gap-2 mb-1 ${message.sent_by === "user"
-                              ? "justify-end"
-                              : "justify-start"
+                            ? "justify-end"
+                            : "justify-start"
                             }`}
                         >
                           <span
                             className={`text-xs font-semibold uppercase ${message.sent_by === "user"
-                                ? "text-indigo-600"
-                                : "text-gray-600"
+                              ? "text-indigo-600"
+                              : "text-gray-600"
                               }`}
                           >
                             {message.sent_by === "user" ? "User" : "Sentinel"}
@@ -345,8 +371,8 @@ const UserChat = () => {
                         </div>
                         <div
                           className={`px-4 py-3 rounded-lg ${message.sent_by === "user"
-                              ? "bg-indigo-500 text-white"
-                              : "bg-gray-100 text-gray-800"
+                            ? "bg-indigo-500 text-white"
+                            : "bg-gray-100 text-gray-800"
                             }`}
                         >
                           <p className="text-sm leading-relaxed">
@@ -499,8 +525,8 @@ const UserChat = () => {
               <button
                 onClick={() => setActiveTab("info")}
                 className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${activeTab === "info"
-                    ? "text-indigo-600 border-b-2 border-indigo-600"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 Session Info
@@ -508,8 +534,8 @@ const UserChat = () => {
               <button
                 onClick={() => setActiveTab("notes")}
                 className={`flex-1 py-4 px-5 text-sm font-semibold transition-all ${activeTab === "notes"
-                    ? "text-indigo-600 border-b-2 border-indigo-600"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 Doctor's Notes
@@ -815,224 +841,266 @@ const UserChat = () => {
                   </div>
                 </div>
               ) : activeTab === "notes" ? (
-                showCreateForm ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-                        New Doctor's Note
+                <div className="space-y-6">
+                  {/* Medication History Section */}
+                  <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-6">
+                    <div className="bg-indigo-50 px-4 py-3 border-b border-indigo-100 flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-2">
+                        <span>💊 Patient Medication History</span>
                       </h3>
-                      <button
-                        onClick={() => setShowCreateForm(false)}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-all"
-                      >
-                        <MdClose className="text-xl text-gray-600" />
-                      </button>
+                      <span className="text-[10px] font-bold bg-indigo-200 text-indigo-700 px-2 py-0.5 rounded-full">
+                        {medicationHistory.length} ENTRIES
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                        Problem Categorization
-                      </label>
-                      <select
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        value={problemCategory}
-                        onChange={(e) => setProblemCategory(e.target.value)}
-                      >
-                        <option value="" disabled>
-                          Select category...
-                        </option>
-                        <option value="anxiety">Anxiety Disorder</option>
-                        <option value="depression">Depression</option>
-                        <option value="trauma">Trauma/PTSD</option>
-                        <option value="substance">Substance Use</option>
-                        <option value="relationship">Relationship Issues</option>
-                        <option value="adjustment">Adjustment Disorder</option>
-                        <option value="other">Other</option>
-                      </select>
+                    <div className="p-4">
+                      {medHistoryLoading ? (
+                        <div className="flex justify-center py-4">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500"></div>
+                        </div>
+                      ) : medicationHistory.length === 0 ? (
+                        <p className="text-xs text-gray-400 text-center py-2">No medication history recorded.</p>
+                      ) : (
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {medicationHistory.map((item) => (
+                            <div key={item.id} className="p-3 bg-gray-50 rounded-lg border-l-4 border-indigo-400">
+                              <div className="flex justify-between items-start mb-1">
+                                <h4 className="text-sm font-bold text-gray-800">{item.name}</h4>
+                                <span className="text-[10px] text-gray-500 font-medium">
+                                  {formatDate(item.timestamp)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600">
+                                {item.dosage} {item.time && `• Taken at ${item.time}`}
+                              </p>
+                              {item.date && item.date !== formatDate(item.timestamp) && (
+                                <p className="text-[10px] text-gray-400 mt-1">Logged for: {item.date}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                        Severity Rating
-                      </label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <button
-                            key={rating}
-                            type="button"
-                            onClick={() => setSeverityRating(rating)}
-                            className={`flex-1 py-2 px-3 border-2 rounded-lg text-sm font-semibold transition-all ${severityRating === rating
-                                ? "border-indigo-500 bg-indigo-500 text-white"
-                                : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50"
-                              }`}
-                          >
-                            {rating}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        1 = Minimal, 5 = Severe
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                        Clinical Observations
-                      </label>
-                      <textarea
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                        rows="6"
-                        placeholder="Document your observations, behavioral patterns, and clinical impressions..."
-                        value={doctorNotes}
-                        onChange={(e) => setDoctorNotes(e.target.value)}
-                      ></textarea>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                        Treatment Plan
-                      </label>
-                      <textarea
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                        rows="4"
-                        placeholder="Outline recommended interventions, therapy approach, and follow-up actions..."
-                        value={treatmentPlan}
-                        onChange={(e) => setTreatmentPlan(e.target.value)}
-                      ></textarea>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
-                        Next Appointment
-                      </label>
-                      <input
-                        type="datetime-local"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        value={nextAppointment}
-                        onChange={(e) => setNextAppointment(e.target.value)}
-                      />
-                    </div>
-
-                    <button
-                      onClick={saveDoctorNotes}
-                      disabled={savingNotes}
-                      className="w-full py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-all shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      {savingNotes ? "Saving..." : "Save Notes"}
-                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-                        Doctor's Notes
-                      </h3>
-                      <button
-                        onClick={() => setShowCreateForm(true)}
-                        className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
-                      >
-                        <MdAdd className="text-xl" />
-                      </button>
-                    </div>
 
-                    {sessionInfo?.doctor_notes?.length === 0 ? (
-                      <div className="text-center py-12">
-                        <p className="text-gray-400 mb-4">No doctor's notes yet</p>
+                  {showCreateForm ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                          New Doctor's Note
+                        </h3>
                         <button
-                          onClick={() => setShowCreateForm(true)}
-                          className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all text-sm font-semibold"
+                          onClick={() => setShowCreateForm(false)}
+                          className="p-1.5 hover:bg-gray-100 rounded-lg transition-all"
                         >
-                          Add First Note
+                          <MdClose className="text-xl text-gray-600" />
                         </button>
                       </div>
-                    ) : (
-                      <>
-                        {sessionInfo?.doctor_notes?.map((note) => (
-                          <div
-                            key={note.id}
-                            className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="text-sm font-semibold text-gray-800">
-                                  Dr. {note.profiles?.first_name || ""}{" "}
-                                  {note.profiles?.last_name || "Unknown"}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {formatDate(note.created_at)}
-                                </p>
-                              </div>
-                              <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full uppercase">
-                                {note.problem_category}
-                              </span>
-                            </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                          Problem Categorization
+                        </label>
+                        <select
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          value={problemCategory}
+                          onChange={(e) => setProblemCategory(e.target.value)}
+                        >
+                          <option value="" disabled>
+                            Select category...
+                          </option>
+                          <option value="anxiety">Anxiety Disorder</option>
+                          <option value="depression">Depression</option>
+                          <option value="trauma">Trauma/PTSD</option>
+                          <option value="substance">Substance Use</option>
+                          <option value="relationship">Relationship Issues</option>
+                          <option value="adjustment">Adjustment Disorder</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
 
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-600 font-medium">
-                                Severity:
-                              </span>
-                              <div className="flex gap-1">
-                                {[1, 2, 3, 4, 5].map((level) => (
-                                  <div
-                                    key={level}
-                                    className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${level <= note.severity_rating
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                          Severity Rating
+                        </label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((rating) => (
+                            <button
+                              key={rating}
+                              type="button"
+                              onClick={() => setSeverityRating(rating)}
+                              className={`flex-1 py-2 px-3 border-2 rounded-lg text-sm font-semibold transition-all ${severityRating === rating
+                                ? "border-indigo-500 bg-indigo-500 text-white"
+                                : "border-gray-300 hover:border-indigo-500 hover:bg-indigo-50"
+                                }`}
+                            >
+                              {rating}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          1 = Minimal, 5 = Severe
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                          Clinical Observations
+                        </label>
+                        <textarea
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                          rows="6"
+                          placeholder="Document your observations, behavioral patterns, and clinical impressions..."
+                          value={doctorNotes}
+                          onChange={(e) => setDoctorNotes(e.target.value)}
+                        ></textarea>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                          Treatment Plan
+                        </label>
+                        <textarea
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                          rows="4"
+                          placeholder="Outline recommended interventions, therapy approach, and follow-up actions..."
+                          value={treatmentPlan}
+                          onChange={(e) => setTreatmentPlan(e.target.value)}
+                        ></textarea>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                          Next Appointment
+                        </label>
+                        <input
+                          type="datetime-local"
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          value={nextAppointment}
+                          onChange={(e) => setNextAppointment(e.target.value)}
+                        />
+                      </div>
+
+                      <button
+                        onClick={saveDoctorNotes}
+                        disabled={savingNotes}
+                        className="w-full py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-all shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        {savingNotes ? "Saving..." : "Save Notes"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                          Doctor's Notes
+                        </h3>
+                        <button
+                          onClick={() => setShowCreateForm(true)}
+                          className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
+                        >
+                          <MdAdd className="text-xl" />
+                        </button>
+                      </div>
+
+                      {sessionInfo?.doctor_notes?.length === 0 ? (
+                        <div className="text-center py-12">
+                          <p className="text-gray-400 mb-4">No doctor's notes yet</p>
+                          <button
+                            onClick={() => setShowCreateForm(true)}
+                            className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all text-sm font-semibold"
+                          >
+                            Add First Note
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          {sessionInfo?.doctor_notes?.map((note) => (
+                            <div
+                              key={note.id}
+                              className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-800">
+                                    Dr. {note.profiles?.first_name || ""}{" "}
+                                    {note.profiles?.last_name || "Unknown"}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {formatDate(note.created_at)}
+                                  </p>
+                                </div>
+                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full uppercase">
+                                  {note.problem_category}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-600 font-medium">
+                                  Severity:
+                                </span>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5].map((level) => (
+                                    <div
+                                      key={level}
+                                      className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${level <= note.severity_rating
                                         ? level <= 2
                                           ? "bg-green-500 text-white"
                                           : level <= 3
                                             ? "bg-yellow-500 text-white"
                                             : "bg-red-500 text-white"
                                         : "bg-gray-200 text-gray-400"
-                                      }`}
-                                  >
-                                    {level}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                                Clinical Observations
-                              </h4>
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                {note.clinical_observations}
-                              </p>
-                            </div>
-
-                            <div>
-                              <h4 className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
-                                Treatment Plan
-                              </h4>
-                              <p className="text-sm text-gray-600 leading-relaxed">
-                                {note.treatment_plan}
-                              </p>
-                            </div>
-
-                            {note.next_appointment && (
-                              <div className="pt-3 border-t border-gray-200">
-                                <div className="flex items-center gap-2 text-xs text-gray-600">
-                                  <MdCalendarToday className="text-indigo-500" />
-                                  <span className="font-medium">
-                                    Next Appointment:
-                                  </span>
-                                  <span className="font-semibold text-gray-800">
-                                    {formatDate(note.next_appointment)}
-                                  </span>
+                                        }`}
+                                    >
+                                      {level}
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
-                            )}
-                          </div>
-                        ))}
 
-                        <button
-                          onClick={() => setShowCreateForm(true)}
-                          className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300"
-                        >
-                          + Add New Note
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                  Clinical Observations
+                                </h4>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  {note.clinical_observations}
+                                </p>
+                              </div>
+
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">
+                                  Treatment Plan
+                                </h4>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  {note.treatment_plan}
+                                </p>
+                              </div>
+
+                              {note.next_appointment && (
+                                <div className="pt-3 border-t border-gray-200">
+                                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                                    <MdCalendarToday className="text-indigo-500" />
+                                    <span className="font-medium">
+                                      Next Appointment:
+                                    </span>
+                                    <span className="font-semibold text-gray-800">
+                                      {formatDate(note.next_appointment)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          <button
+                            onClick={() => setShowCreateForm(true)}
+                            className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300"
+                          >
+                            + Add New Note
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : null}
             </div>
           </div>
