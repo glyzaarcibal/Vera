@@ -7,6 +7,14 @@ import Switch from "../components/Switch";
 import TabGroup from "../components/TabGroup";
 import "./Profile.css";
 
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+const normalizeSession = (session) => ({
+  ...session,
+  chat_messages: asArray(session?.chat_messages),
+  doctor_notes: asArray(session?.doctor_notes),
+});
+
 const Profile = () => {
   const user = useSelector(selectUser);
   const [activeTab, setActiveTab] = useState("profile");
@@ -67,11 +75,13 @@ const Profile = () => {
     try {
       setLoadingSessions(true);
       const res = await axiosInstance.get("/profile/fetch-sessions");
-      const { chat_sessions } = res.data;
-      setChatSessions(chat_sessions);
-      if (chat_sessions.length > 0) setSelectedSession(chat_sessions[0]);
+      const sessions = asArray(res.data?.chat_sessions).map(normalizeSession);
+      setChatSessions(sessions);
+      setSelectedSession(sessions[0] || null);
     } catch (e) {
       console.error("Failed to load chat sessions:", e);
+      setChatSessions([]);
+      setSelectedSession(null);
     } finally {
       setLoadingSessions(false);
     }
@@ -571,7 +581,7 @@ const Profile = () => {
                 </div>
 
                 {/* Appointment banner */}
-                {selectedSession?.doctor_notes?.find((n) => n.next_appointment) && (
+                {selectedSession.doctor_notes.find((n) => n.next_appointment) && (
                   <div className="appt-banner">
                     <div className="appt-banner-icon">
                       <svg className="w-5 h-5" style={{ color: "#7c3aed" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
