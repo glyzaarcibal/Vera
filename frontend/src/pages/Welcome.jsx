@@ -15,43 +15,8 @@ const LinkIcon = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="non
 const StarIcon = () => <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
 const Arrow = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
 
-const normalizeLinks = (links) => {
-  if (Array.isArray(links)) return links.filter(Boolean);
-
-  if (typeof links === "string") {
-    const raw = links.trim();
-    if (!raw) return [];
-
-    // Support DB/API values stored either as JSON text or comma/newline-delimited URLs.
-    if (raw.startsWith("[") || raw.startsWith("{")) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed.filter(Boolean);
-      } catch {
-        // Fall through to delimiter parsing.
-      }
-    }
-
-    return raw.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
-  }
-
-  return [];
-};
-
-const normalizeResource = (resource) => ({
-  ...resource,
-  links: normalizeLinks(resource?.links),
-});
-
-const normalizeResources = (payload) => {
-  if (Array.isArray(payload?.resources)) return payload.resources.map(normalizeResource);
-  if (Array.isArray(payload)) return payload.map(normalizeResource);
-  return [];
-};
-
 /* ─── ResourceCard ───────────────────────────────────────────────── */
 const ResourceCard = ({ resource, className = "" }) => {
-  const links = normalizeLinks(resource?.links);
   const domain = (url) => { try { return new URL(url).hostname.replace("www.", ""); } catch { return url; } };
   return (
     <div className={`v-res-card ${className}`}>
@@ -63,14 +28,14 @@ const ResourceCard = ({ resource, className = "" }) => {
         {resource.category && <span className="v-tag">{resource.category}</span>}
         <h4 className="v-res-title">{resource.title}</h4>
         <p className="v-res-desc">{resource.description}</p>
-        {links.length > 0 && (
+        {resource.links?.length > 0 && (
           <div className="v-links-row">
-            {links.slice(0, 2).map((link, i) => (
+            {resource.links.slice(0, 2).map((link, i) => (
               <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="v-link-chip" title={link}>
                 <LinkIcon />{domain(link)}
               </a>
             ))}
-            {links.length > 2 && <span style={{ fontSize: ".7rem", color: "var(--muted)", fontFamily: "'DM Mono',monospace" }}>+{links.length - 2}</span>}
+            {resource.links.length > 2 && <span style={{ fontSize: ".7rem", color: "var(--muted)", fontFamily: "'DM Mono',monospace" }}>+{resource.links.length - 2}</span>}
           </div>
         )}
       </div>
@@ -210,6 +175,14 @@ const Welcome = () => {
     }
   };
 
+  const normalizeResources = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.resources)) return payload.resources;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
   const fetchData = async () => { setLoading(true); await fetchResources(); if (user?.id) await fetchAssignedResources(); setLoading(false); };
   const fetchResources = async () => {
     try {
@@ -217,20 +190,22 @@ const Welcome = () => {
       setResources(normalizeResources(r.data));
     } catch (e) {
       console.error(e);
+      setResources([]);
     }
   };
   const fetchAssignedResources = async () => {
     try {
       const r = await axiosInstance.get(`/resources/get-assignments/${user.id}`);
-      const assignments = Array.isArray(r.data?.assignments) ? r.data.assignments : [];
+      const assignments = r.data.assignments || [];
       const all = normalizeResources((await axiosInstance.get("/resources")).data);
       setAssignedResourceDetails(assignments.map(a => all.find(x => x.id === a.resource_id)).filter(Boolean));
     } catch (e) { console.error(e); }
   };
   const domain = url => { try { return new URL(url).hostname.replace("www.", ""); } catch { return url; } };
 
-  const featuredResource = resources[0];
-  const otherResources = resources.slice(1, 7);
+  const resourcesList = Array.isArray(resources) ? resources : [];
+  const featuredResource = resourcesList[0];
+  const otherResources = resourcesList.slice(1, 7);
 
   if (loading) return (
     <div className="v-loading">
@@ -335,7 +310,7 @@ const Welcome = () => {
       )}
 
       {/* ══ ALL RESOURCES ══════════════════════════════════ */}
-      {resources.length > 0 && (
+      {resourcesList.length > 0 && (
         <div className="v-section">
           <div className="v-section-head">
             <span className="sa sa-up sa-d0 v-label">Library</span>
@@ -356,9 +331,9 @@ const Welcome = () => {
                 {featuredResource.category && <span className="v-tag">{featuredResource.category}</span>}
                 <h3 className="v-feat-big-title">{featuredResource.title}</h3>
                 <p className="v-feat-big-desc">{featuredResource.description}</p>
-                {normalizeLinks(featuredResource.links).length > 0 && (
+                {featuredResource.links?.length > 0 && (
                   <div className="v-links-row">
-                    {normalizeLinks(featuredResource.links).map((link, i) => (
+                    {featuredResource.links.map((link, i) => (
                       <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="v-link-chip" title={link}>
                         <LinkIcon />{domain(link)}
                       </a>
