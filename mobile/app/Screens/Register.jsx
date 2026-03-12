@@ -21,128 +21,89 @@ import { setUser } from '../store/slices/authSlice'
 const Register = () => {
   const navigation = useNavigation()
   const dispatch = useDispatch()
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    contactNumber: '',
-    birthDate: '',
     password: '',
     confirmPassword: '',
   })
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [errors, setErrors] = useState({})
 
   const handleChange = (name, value) => {
     setFormData({
       ...formData,
       [name]: value,
     })
-
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: '',
-      })
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.username) {
-      newErrors.username = 'Name is required'
-    } else if (formData.username.length < 2) {
-      newErrors.username = 'Name must be at least 2 characters'
-    }
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email'
-    }
-
-    if (!formData.contactNumber) {
-      newErrors.contactNumber = 'Contact number is required'
-    } else if (!/^\+?[\d\s-]{10,}$/.test(formData.contactNumber)) {
-      newErrors.contactNumber = 'Please enter a valid contact number'
-    }
-
-    if (!formData.birthDate) {
-      newErrors.birthDate = 'Birth date is required'
-    } else {
-      const birthDate = new Date(formData.birthDate)
-      const today = new Date()
-      const age = today.getFullYear() - birthDate.getFullYear()
-
-      if (Number.isNaN(birthDate.getTime())) {
-        newErrors.birthDate = 'Please use YYYY-MM-DD format'
-      } else if (age < 13) {
-        newErrors.birthDate = 'You must be at least 13 years old'
-      }
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password =
-        'Password must include uppercase, lowercase, and number'
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password'
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords don't match"
-    }
-
-    return newErrors
   }
 
   const handleSubmit = async () => {
-    const newErrors = validateForm()
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirmPassword
+    ) {
+      Alert.alert('Error', 'Please fill in all fields')
+      return
+    }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      Alert.alert('Error', Object.values(newErrors)[0])
+    if (formData.password !== formData.confirmPassword) {
+      Alert.alert('Error', "Passwords don't match!")
       return
     }
 
     setLoading(true)
-
     try {
       const res = await axiosInstance.post('/auth/register', formData)
+      const { profile, access_token, refresh_token, message } = res.data
 
-      if (res.data.profile) {
-        const { profile, access_token, refresh_token } = res.data
-
-        if (access_token && refresh_token) {
-          await AsyncStorage.setItem('access_token', access_token)
-          await AsyncStorage.setItem('refresh_token', refresh_token)
-        }
+      if (profile && access_token && refresh_token) {
+        await AsyncStorage.setItem('access_token', access_token)
+        await AsyncStorage.setItem('refresh_token', refresh_token)
 
         dispatch(setUser(profile))
-        navigation.navigate(
-          profile?.role === 'admin' ? 'AdminDrawer' : 'ClientStack',
-        )
-      } else {
-        Alert.alert(
-          'Verify your email',
-          'Please check your email for the verification code before signing in.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login'),
-            },
-          ],
-        )
+
+        if (profile.role === 'admin') {
+          Alert.alert(
+            'Choose View',
+            'Where would you like to go?',
+            [
+              {
+                text: 'Client View',
+                onPress: () => navigation.navigate('ClientStack'),
+              },
+              {
+                text: 'Admin View',
+                onPress: () => navigation.navigate('AdminDrawer'),
+              },
+            ],
+            { cancelable: false },
+          )
+          return
+        }
+
+        navigation.navigate('ClientStack')
+        return
       }
+
+      navigation.navigate('EmailVerified', {
+        email: formData.email,
+        message: message || 'Enter the verification code sent to your email.',
+      })
     } catch (e) {
+      const isNetworkError = !e.response || e.message === 'Network Error'
+      const message = isNetworkError
+        ? 'Cannot reach server. Make sure the backend is running and your phone uses the same Wi-Fi as your laptop.'
+        : e.response?.data?.details ||
+          e.response?.data?.message ||
+          'Internal Server Error'
+
       Alert.alert(
         'Registration Failed',
-        e.response?.data?.message || 'Internal Server Error',
+        message,
       )
     } finally {
       setLoading(false)
@@ -167,38 +128,34 @@ const Register = () => {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
           >
-            <Ionicons name="arrow-back" size={18} color="#8B5CF6" />
+            <Ionicons name="arrow-back" size={18} color="#2D1B4E" />
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
 
           <View style={styles.heroCard}>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>BEGIN YOUR JOURNEY</Text>
+              <Text style={styles.badgeText}>CREATE YOUR ACCOUNT</Text>
             </View>
-
-            <Text style={styles.heroTitle}>{'Create your\nVERA space'}</Text>
-
+            <Text style={styles.heroTitle}>Join VERA</Text>
             <Text style={styles.heroSubtitle}>
-              Build a calm, private place for daily check-ins, gentle routines,
-              and support that moves at your pace.
+              Build healthy routines with guided mood support and practical
+              tools for your day.
             </Text>
 
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>Daily</Text>
-                <Text style={styles.statLabel}>Mood Tracking</Text>
+            <View style={styles.benefitsRow}>
+              <View style={styles.benefitCard}>
+                <Ionicons name="heart-outline" size={16} color="#E11D48" />
+                <Text style={styles.benefitText}>Daily check-ins</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>Safe</Text>
-                <Text style={styles.statLabel}>Personal Space</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>Guided</Text>
-                <Text style={styles.statLabel}>Small Steps</Text>
+              <View style={styles.benefitCard}>
+                <Ionicons
+                  name="shield-checkmark-outline"
+                  size={16}
+                  color="#7C3AED"
+                />
+                <Text style={styles.benefitText}>Private data</Text>
               </View>
             </View>
           </View>
@@ -206,35 +163,32 @@ const Register = () => {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>Create account</Text>
             <Text style={styles.formSubtitle}>
-              Set up your profile in a few details
+              Start your journey in under a minute
             </Text>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Name</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="person-outline" size={18} color="#A78BFA" />
+                <Ionicons name="person-outline" size={18} color="#8B5CF6" />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your name"
-                  placeholderTextColor="#C4B5C8"
+                  placeholderTextColor="#B6A9BE"
                   value={formData.username}
                   onChangeText={value => handleChange('username', value)}
                   autoCapitalize="words"
                 />
               </View>
-              {errors.username ? (
-                <Text style={styles.errorText}>{errors.username}</Text>
-              ) : null}
             </View>
 
-            <View style={[styles.fieldGroup, styles.fieldSpacing]}>
+            <View style={[styles.fieldGroup, { marginTop: 16 }]}>
               <Text style={styles.label}>Email</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="mail-outline" size={18} color="#A78BFA" />
+                <Ionicons name="mail-outline" size={18} color="#8B5CF6" />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your email"
-                  placeholderTextColor="#C4B5C8"
+                  placeholderTextColor="#B6A9BE"
                   value={formData.email}
                   onChangeText={value => handleChange('email', value)}
                   keyboardType="email-address"
@@ -242,56 +196,20 @@ const Register = () => {
                   autoComplete="email"
                 />
               </View>
-              {errors.email ? (
-                <Text style={styles.errorText}>{errors.email}</Text>
-              ) : null}
             </View>
 
-            <View style={[styles.fieldGroup, styles.fieldSpacing]}>
-              <Text style={styles.label}>Contact Number</Text>
-              <View style={styles.inputRow}>
-                <Ionicons name="call-outline" size={18} color="#A78BFA" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your contact number"
-                  placeholderTextColor="#C4B5C8"
-                  value={formData.contactNumber}
-                  onChangeText={value => handleChange('contactNumber', value)}
-                  keyboardType="phone-pad"
-                />
-              </View>
-              {errors.contactNumber ? (
-                <Text style={styles.errorText}>{errors.contactNumber}</Text>
-              ) : null}
-              <Text style={styles.helperText}>Format: +1234567890</Text>
-            </View>
-
-            <View style={[styles.fieldGroup, styles.fieldSpacing]}>
-              <Text style={styles.label}>Birth Date</Text>
-              <View style={styles.inputRow}>
-                <Ionicons name="calendar-outline" size={18} color="#A78BFA" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#C4B5C8"
-                  value={formData.birthDate}
-                  onChangeText={value => handleChange('birthDate', value)}
-                  autoCapitalize="none"
-                />
-              </View>
-              {errors.birthDate ? (
-                <Text style={styles.errorText}>{errors.birthDate}</Text>
-              ) : null}
-            </View>
-
-            <View style={[styles.fieldGroup, styles.fieldSpacing]}>
+            <View style={[styles.fieldGroup, { marginTop: 16 }]}>
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputRow}>
-                <Ionicons name="lock-closed-outline" size={18} color="#A78BFA" />
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={18}
+                  color="#8B5CF6"
+                />
                 <TextInput
                   style={styles.input}
                   placeholder="Create a password"
-                  placeholderTextColor="#C4B5C8"
+                  placeholderTextColor="#B6A9BE"
                   value={formData.password}
                   onChangeText={value => handleChange('password', value)}
                   secureTextEntry={!showPassword}
@@ -304,27 +222,24 @@ const Register = () => {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color="#A78BFA"
+                    color="#8B5CF6"
                   />
                 </TouchableOpacity>
               </View>
-              {errors.password ? (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              ) : null}
             </View>
 
-            <View style={[styles.fieldGroup, styles.fieldSpacing]}>
+            <View style={[styles.fieldGroup, { marginTop: 16 }]}>
               <Text style={styles.label}>Confirm Password</Text>
               <View style={styles.inputRow}>
                 <Ionicons
-                  name="shield-checkmark-outline"
+                  name="checkmark-circle-outline"
                   size={18}
-                  color="#A78BFA"
+                  color="#8B5CF6"
                 />
                 <TextInput
                   style={styles.input}
                   placeholder="Confirm your password"
-                  placeholderTextColor="#C4B5C8"
+                  placeholderTextColor="#B6A9BE"
                   value={formData.confirmPassword}
                   onChangeText={value => handleChange('confirmPassword', value)}
                   secureTextEntry={!showConfirmPassword}
@@ -337,55 +252,40 @@ const Register = () => {
                   <Ionicons
                     name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
-                    color="#A78BFA"
+                    color="#8B5CF6"
                   />
                 </TouchableOpacity>
               </View>
-              {errors.confirmPassword ? (
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              ) : null}
             </View>
-
-            <Text style={styles.helperText}>
-              Password must be at least 8 characters with uppercase,
-              lowercase, and number
-            </Text>
 
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={loading}
               style={[styles.submitBtn, loading && styles.submitBtnLoading]}
-              activeOpacity={0.85}
+              activeOpacity={0.88}
             >
-              {loading ? (
+              {loading && (
                 <ActivityIndicator
                   size="small"
                   color="#fff"
-                  style={styles.submitLoader}
+                  style={{ marginRight: 8 }}
                 />
-              ) : null}
+              )}
               <Text style={styles.submitText}>
-                {loading ? 'Creating account...' : 'Create account  ->'}
+                {loading ? 'Creating account...' : 'Create account'}
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>already with vera?</Text>
-              <View style={styles.dividerLine} />
+            <View style={styles.signInRow}>
+              <Text style={styles.signInLabel}>Already have an account?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.signInLink}>Sign in</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.secondaryBtnText}>Sign in instead</Text>
-            </TouchableOpacity>
           </View>
 
-          <Text style={styles.affirmation}>
-            You are setting up a softer routine for yourself.
+          <Text style={styles.footerText}>
+            Your progress starts with one small step.
           </Text>
         </View>
       </ScrollView>
@@ -398,7 +298,6 @@ export default Register
 const PEACH = '#FF9E7D'
 const LAVENDER = '#A78BFA'
 const WARM_BG = '#FFF8F3'
-const CARD_BG = '#FFFFFF'
 
 const styles = StyleSheet.create({
   keyboardView: {
@@ -412,252 +311,207 @@ const styles = StyleSheet.create({
   blob: {
     position: 'absolute',
     borderRadius: 999,
-    opacity: 0.35,
+    opacity: 0.34,
   },
   blobTopRight: {
-    width: 280,
-    height: 280,
-    top: -80,
-    right: -80,
+    width: 260,
+    height: 260,
+    top: -70,
+    right: -70,
     backgroundColor: '#FBBF9A',
   },
   blobMidLeft: {
-    width: 220,
-    height: 220,
-    top: 340,
+    width: 210,
+    height: 210,
+    top: 290,
     left: -80,
     backgroundColor: '#C4B5FD',
   },
   blobBottomRight: {
     width: 240,
     height: 240,
-    bottom: -60,
-    right: -40,
+    bottom: -70,
+    right: -60,
     backgroundColor: '#6EE7B7',
   },
   container: {
     flex: 1,
     paddingHorizontal: 22,
     paddingTop: 56,
-    paddingBottom: 36,
+    paddingBottom: 34,
   },
   backButton: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
+    gap: 6,
     backgroundColor: '#FFFFFFCC',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#EDE9FE',
+    borderColor: '#F2DFD2',
+    marginBottom: 14,
   },
   backButtonText: {
-    marginLeft: 8,
     fontSize: 14,
-    fontWeight: '700',
-    color: '#7C3AED',
+    fontWeight: '600',
+    color: '#2D1B4E',
   },
   heroCard: {
-    borderRadius: 28,
-    backgroundColor: CARD_BG,
+    borderRadius: 26,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 22,
-    paddingVertical: 26,
-    marginBottom: 18,
-    shadowColor: '#E8A87C',
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+    paddingVertical: 24,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#FFE4D6',
+    shadowColor: '#E8A87C',
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
   },
   badge: {
     alignSelf: 'flex-start',
     backgroundColor: '#FFF0E8',
-    borderRadius: 20,
-    paddingHorizontal: 12,
+    borderRadius: 999,
+    paddingHorizontal: 11,
     paddingVertical: 5,
     borderWidth: 1,
     borderColor: '#FBBF9A',
     marginBottom: 14,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 10,
+    color: '#C56A18',
     fontWeight: '700',
-    color: '#D97706',
     letterSpacing: 1,
   },
   heroTitle: {
     fontSize: 34,
     fontWeight: '800',
     color: '#2D1B4E',
-    lineHeight: 40,
-    marginBottom: 10,
+    marginBottom: 8,
     letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 15,
-    color: '#7C6B8A',
+    fontSize: 14,
     lineHeight: 22,
-    marginBottom: 20,
+    color: '#6A5C7C',
   },
-  statsRow: {
+  benefitsRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  benefitCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF8F3',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    gap: 6,
+    backgroundColor: '#F9F4FF',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#FFE4D6',
+    borderColor: '#EADFFF',
   },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#D97706',
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#9D8BAA',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#FFD6C0',
+  benefitText: {
+    color: '#5B4C70',
+    fontSize: 12,
+    fontWeight: '600',
   },
   formCard: {
-    borderRadius: 28,
-    backgroundColor: CARD_BG,
-    paddingHorizontal: 22,
-    paddingVertical: 26,
-    shadowColor: '#C4B5FD',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 22,
     borderWidth: 1,
-    borderColor: '#EDE9FE',
+    borderColor: '#EFE4F5',
+    shadowColor: '#B794F4',
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   formTitle: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '700',
     color: '#2D1B4E',
-    letterSpacing: -0.3,
   },
   formSubtitle: {
-    fontSize: 14,
-    color: '#9D8BAA',
     marginTop: 4,
-    marginBottom: 22,
+    marginBottom: 18,
+    fontSize: 13,
+    color: '#7A6B8E',
   },
   fieldGroup: {},
-  fieldSpacing: {
-    marginTop: 16,
-  },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#5B4C72',
+    color: '#4C3F63',
     marginBottom: 8,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FAF5FF',
+    borderWidth: 1,
+    borderColor: '#E8DFF0',
     borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#DDD6FE',
-    paddingHorizontal: 14,
-    paddingVertical: 2,
+    paddingHorizontal: 12,
+    backgroundColor: '#FCFAFF',
+    minHeight: 50,
   },
   input: {
     flex: 1,
-    paddingVertical: 13,
-    paddingLeft: 10,
-    fontSize: 15,
+    marginLeft: 10,
     color: '#2D1B4E',
-  },
-  errorText: {
-    marginTop: 6,
-    fontSize: 12,
-    color: '#DC2626',
-    fontWeight: '500',
-  },
-  helperText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#9D8BAA',
-    lineHeight: 18,
+    fontSize: 15,
   },
   submitBtn: {
-    marginTop: 20,
-    borderRadius: 16,
-    paddingVertical: 15,
-    flexDirection: 'row',
+    marginTop: 22,
+    backgroundColor: LAVENDER,
+    borderRadius: 14,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PEACH,
-    shadowColor: PEACH,
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
+    flexDirection: 'row',
+    shadowColor: LAVENDER,
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 6,
   },
   submitBtnLoading: {
-    backgroundColor: '#FFC4A8',
-  },
-  submitLoader: {
-    marginRight: 8,
+    opacity: 0.82,
   },
   submitText: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  dividerRow: {
+  signInRow: {
+    marginTop: 16,
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#EDE9FE',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    fontSize: 12,
-    color: '#B8A9C9',
-    fontWeight: '500',
-  },
-  secondaryBtn: {
-    borderRadius: 16,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: LAVENDER,
-    backgroundColor: '#F5F3FF',
-  },
-  secondaryBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: LAVENDER,
-  },
-  affirmation: {
-    textAlign: 'center',
-    marginTop: 24,
+  signInLabel: {
     fontSize: 13,
-    color: '#B8A9C9',
-    fontWeight: '500',
+    color: '#6E6180',
+    marginRight: 6,
+  },
+  signInLink: {
+    fontSize: 13,
+    color: PEACH,
+    fontWeight: '700',
+  },
+  footerText: {
+    marginTop: 14,
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#7F7290',
   },
 })
