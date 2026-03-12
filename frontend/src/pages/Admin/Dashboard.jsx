@@ -212,10 +212,6 @@ const Dashboard = () => {
               <span className="quick-action-icon"><MdAdd /></span>
               <span>Add User</span>
             </button>
-            <button className="quick-action-btn" onClick={() => navigate("/admin/reports")}>
-              <span className="quick-action-icon"><MdBarChart /></span>
-              <span>View Reports</span>
-            </button>
             <button className="quick-action-btn">
               <span className="quick-action-icon"><MdSettings /></span>
               <span>Settings</span>
