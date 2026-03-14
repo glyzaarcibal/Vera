@@ -371,9 +371,35 @@ export default function MoodTrackerScreen({ navigation }) {
 	}
 
 	const deleteEntryFromView = id => {
-		Alert.alert('Remove entry', 'Remove this mood entry from the current view?', [
+		Alert.alert('Delete entry', 'Delete this mood entry?', [
 			{ text: 'Cancel', style: 'cancel' },
-			{ text: 'Remove', style: 'destructive', onPress: () => setMoodHistory(currentHistory => currentHistory.filter(entry => entry.id !== id)) },
+			{
+				text: 'Delete',
+				style: 'destructive',
+				onPress: async () => {
+					if (!id) {
+						Alert.alert('Delete failed', 'Unable to delete this mood entry.')
+						return
+					}
+
+					try {
+						setIsLoading(true)
+						await axiosInstance.delete(`/activities/${id}`)
+						setMoodHistory(currentHistory =>
+							currentHistory.filter(entry => entry.id !== id),
+						)
+					} catch (error) {
+						console.error('Error deleting mood entry:', error?.response?.data || error.message)
+						Alert.alert(
+							'Delete failed',
+							error?.response?.data?.message ||
+								'Failed to delete mood entry. Please try again.',
+						)
+					} finally {
+						setIsLoading(false)
+					}
+				},
+			},
 		])
 	}
 

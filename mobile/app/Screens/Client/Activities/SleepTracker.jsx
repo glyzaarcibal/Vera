@@ -353,16 +353,34 @@ export default function SleepTracker({ navigation, onUpdateReport = () => {} }) 
   const deleteEntry = id => {
     Alert.alert(
       'Delete entry',
-      'Delete this entry from the current view? Backend deletion is not supported yet.',
+      'Delete this sleep entry?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            const updatedHistory = sleepData.filter(entry => entry.id !== id)
-            setSleepData(updatedHistory)
-            onUpdateReport(updatedHistory)
+          onPress: async () => {
+            if (!id) {
+              Alert.alert('Delete failed', 'Unable to delete this entry.')
+              return
+            }
+
+            try {
+              setLoading(true)
+              await axiosInstance.delete(`/activities/${id}`)
+
+              const updatedHistory = sleepData.filter(entry => entry.id !== id)
+              setSleepData(updatedHistory)
+              onUpdateReport(updatedHistory)
+            } catch (error) {
+              console.error('Error deleting sleep data:', error.response?.data || error.message)
+              Alert.alert(
+                'Delete failed',
+                error.response?.data?.message || 'Failed to delete sleep entry.',
+              )
+            } finally {
+              setLoading(false)
+            }
           },
         },
       ],
