@@ -8,6 +8,8 @@ import Login from './app/Screens/Login'
 import UserChat from './app/Screens/UserChat'
 import UserSessions from './app/Screens/UserSessions'
 import Register from './app/Screens/Register'
+import EmailVerified from './app/Screens/EmailVerified'
+import ForgotPassword from './app/Screens/ForgotPassword'
 import { useFonts } from 'expo-font'
 import * as SplashScreen from 'expo-splash-screen'
 
@@ -51,7 +53,9 @@ export default function App() {
           <Stack.Screen name="AdminDrawer" component={AdminDrawer} />
           <Stack.Screen name="Welcome" component={Welcome} />
           <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
           <Stack.Screen name="Register" component={Register} />
+          <Stack.Screen name="EmailVerified" component={EmailVerified} />
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>

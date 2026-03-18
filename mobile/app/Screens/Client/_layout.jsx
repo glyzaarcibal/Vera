@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 const Tabs = createBottomTabNavigator()
 import HomeScreen from './Home'
+import ActivitiesScreen from './Activities'
 import ChatAIScreen from './ChatAI'
 import VoiceAIScreen from './VoiceAI'
 import ProfileScreen from './Profile'
@@ -18,6 +19,16 @@ export default function Layout() {
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
             <Feather name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Activities"
+        component={ActivitiesScreen}
+        options={{
+          title: 'Activities',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid-outline" size={size} color={color} />
           ),
         }}
       />
