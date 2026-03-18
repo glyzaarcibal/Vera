@@ -2,21 +2,21 @@ import React, { useState } from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Menu } from "lucide-react";
-import Sidebar from "../components/Sidebar";
+import PsychologySidebar from "../components/PsychologySidebar";
 import "./AdminLayout.css";
 
-const AdminLayout = () => {
+const PsychologyLayout = () => {
   const { user } = useSelector((state) => state.auth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Protected route check
-  if (!user || user.role?.toLowerCase() !== "admin") {
+  if (!user || user.role?.toLowerCase() !== "psychology") {
     return <Navigate to="/" replace />;
   }
 
   return (
     <div className="admin-layout">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <PsychologySidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <main className="admin-content">
         <header className="admin-mobile-header">
@@ -28,7 +28,7 @@ const AdminLayout = () => {
           </button>
           <div className="admin-mobile-logo">
             <span className="logo-icon">V</span>
-            <span className="logo-text">ADMIN</span>
+            <span className="logo-text">PSYCHOLOGY</span>
           </div>
         </header>
 
@@ -46,4 +46,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default PsychologyLayout;

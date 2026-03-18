@@ -96,13 +96,22 @@ const Header = () => {
             <span className="header-link-icon mobile-only"><Activity size={18} /></span>
             <span>Activities</span>
           </Link>
-          {user?.role === "admin" && (
+          {user?.role?.toLowerCase() === "admin" && (
             <Link
               to="/admin"
-              className={`header-link ${isActive("/admin") ? "active" : ""}`}
+              className={`header-link ${location.pathname.startsWith("/admin") ? "active" : ""}`}
             >
               <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
               <span>Admin</span>
+            </Link>
+          )}
+          {user?.role?.toLowerCase() === "psychology" && (
+            <Link
+              to="/psychology"
+              className={`header-link ${location.pathname.startsWith("/psychology") ? "active" : ""}`}
+            >
+              <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
+              <span>Psychology</span>
             </Link>
           )}
 

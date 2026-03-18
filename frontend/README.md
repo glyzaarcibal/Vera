@@ -1,16 +1,48 @@
-# React + Vite
+# V.E.R.A. Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the web-based frontend for **V.E.R.A. (Voice Emotion Recognition Application)**, a Capstone Thesis project.
 
-Currently, two official plugins are available:
+For a full overview of the project, please see the [main README](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **Interactive AI Avatar**: Real-time interaction with an AI companion.
+- **Voice Emotion Analysis**: Record and analyze audio for emotional states.
+- **Mood Tracking**: Visualize emotional trends over time.
+- **Activities & Coping**: Personalized mental health exercises.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Technology Stack
 
-## Expanding the ESLint configuration
+- **Framework**: [React](https://reactjs.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: Vanilla CSS and [Tailwind CSS](https://tailwindcss.com/)
+- **State Management**: React Hooks and Context API
+- **API Communication**: [Axios](https://axios-http.com/)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Getting Started
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Set up Environment Variables**:
+   Create a `.env` file in this directory with the necessary API keys and endpoints.
+
+3. **Run in development mode**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
+
+## 📂 Structure
+
+- `src/pages`: Main application screens (Welcome, ChatAI, VoiceAI, Activities, etc.)
+- `src/layouts`: Layout components for consistent UI structure.
+- `src/components`: Reusable UI components.
+- `src/utils`: Helper functions and API instances.
+- `src/assets`: Images, icons, and fonts.

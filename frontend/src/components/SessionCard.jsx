@@ -1,10 +1,11 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { MdChat, MdCalendarToday, MdMessage } from "react-icons/md";
 import RiskBadge from "./RiskBadge";
 
 const SessionCard = ({ session }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -18,7 +19,8 @@ const SessionCard = ({ session }) => {
   };
 
   const handleClick = () => {
-    navigate(`/admin/chat/${session.id}`);
+    const basePath = location.pathname.startsWith('/psychology') ? '/psychology' : '/admin';
+    navigate(`${basePath}/chat/${session.id}`);
   };
 
   return (

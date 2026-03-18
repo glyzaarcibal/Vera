@@ -16,7 +16,7 @@ import { X } from "lucide-react";
 import SidebarLink from "./SidebarLink";
 import "./Sidebar.css";
 
-const Sidebar = ({ isOpen, onClose }) => {
+const PsychologySidebar = ({ isOpen, onClose }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -39,7 +39,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <span className="sidebar-logo-icon">V</span>
-          {!collapsed && <span className="sidebar-logo-text">ADMIN</span>}
+          {!collapsed && <span className="sidebar-logo-text">PSYCHOLOGY</span>}
         </div>
 
         {/* Toggle for desktop / Close for mobile */}
@@ -67,27 +67,21 @@ const Sidebar = ({ isOpen, onClose }) => {
           collapsed={collapsed}
         />
         <SidebarLink
-          to="/admin"
+          to="/psychology"
           icon={<MdDashboard />}
           label="Dashboard"
           collapsed={collapsed}
         />
         <SidebarLink
-          to="/admin/users"
+          to="/psychology/users"
           icon={<MdPeople />}
           label="User Management"
           collapsed={collapsed}
         />
         <SidebarLink
-          to="/admin/resources"
+          to="/psychology/resources"
           icon={<MdFolder />}
           label="Resources"
-          collapsed={collapsed}
-        />
-        <SidebarLink
-          to="/admin/reports"
-          icon={<MdBarChart />}
-          label="Reports"
           collapsed={collapsed}
         />
       </nav>
@@ -98,11 +92,11 @@ const Sidebar = ({ isOpen, onClose }) => {
             <div className="sidebar-user-avatar">
               {user?.username?.[0]?.toUpperCase() ||
                 user?.email?.[0]?.toUpperCase() ||
-                "A"}
+                "P"}
             </div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">
-                {user?.username || user?.email || "Admin"}
+                {user?.username || user?.email || "Psychology"}
               </div>
               <div className="sidebar-user-role" style={{ textTransform: 'capitalize' }}>
                 {user?.role || "Staff"}
@@ -125,4 +119,4 @@ const Sidebar = ({ isOpen, onClose }) => {
   );
 };
 
-export default Sidebar;
+export default PsychologySidebar;
