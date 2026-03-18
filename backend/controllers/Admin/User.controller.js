@@ -14,8 +14,8 @@ export const fetchAvatarRiskStats = async (req, res) => {
 
 export const fetchUsers = async (req, res) => {
   try {
-    const { page, limit, search, role, status } = req.query;
-    const result = await getAllUsers({ page, limit, search, role, status });
+    const { page, limit, search, role, status, exclude_roles } = req.query;
+    const result = await getAllUsers({ page, limit, search, role, status, exclude_roles });
     return res.status(200).json(result);
   } catch (e) {
     console.error("Error fetching users:", e);

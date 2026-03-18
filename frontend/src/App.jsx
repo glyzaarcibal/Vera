@@ -26,6 +26,9 @@ import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
 import Resources from "./pages/Admin/Resources";
 import AvatarAI from "./pages/Avatar";
+import PsychologyLayout from "./layouts/PsychologyLayout";
+import PsychologyDashboard from "./pages/Psychology/Dashboard";
+import PsychologyUserManagement from "./pages/Psychology/UserManagement";
 import CheckEmail from "./pages/CheckEmail";
 import EmailVerified from "./pages/EmailVerified";
 import Activities from "./pages/Activities";
@@ -40,6 +43,24 @@ import MedicationTracker from "./pages/Activities/MedicationTracker";
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await axiosInstance.get("/auth/fetch-profile");
+        if (res.data.profile) {
+          dispatch(setUser(res.data.profile));
+        }
+      } catch (e) {
+        console.error("Error refreshing profile:", e);
+        // If profile fetch fails (e.g., token expired), interceptor will handle it
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     console.log("App mounted, user:", user);
@@ -75,6 +96,13 @@ const App = () => {
         <Route path="/admin/chat/:sessionId" element={<UserChat />} />
         <Route path="/admin/resources" element={<Resources />} />
         {/* <Route path="/admin/activity-graph/:userId" element={<UserActivityGraph />} /> */}
+      </Route>
+      <Route path="/psychology" element={<PsychologyLayout />}>
+        <Route index element={<PsychologyDashboard />} />
+        <Route path="/psychology/users" element={<PsychologyUserManagement />} />
+        <Route path="/psychology/sessions/:userId" element={<UserSessions />} />
+        <Route path="/psychology/chat/:sessionId" element={<UserChat />} />
+        <Route path="/psychology/resources" element={<Resources />} />
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

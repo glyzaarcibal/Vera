@@ -7,6 +7,7 @@ export async function getAllUsers(params = {}) {
     search = "",
     role = "all",
     status = "all",
+    exclude_roles = "",
   } = params;
 
   // Fetch all users from auth
@@ -49,11 +50,18 @@ export async function getAllUsers(params = {}) {
     );
   }
 
-  // Role filter
   if (role !== "all") {
     filteredUsers = filteredUsers.filter(
       (user) =>
         (user.profile?.role || "user").toLowerCase() === role.toLowerCase()
+    );
+  }
+
+  // Exclude roles filter
+  if (exclude_roles) {
+    const rolesToExclude = exclude_roles.split(",").map(r => r.toLowerCase().trim());
+    filteredUsers = filteredUsers.filter(
+      (user) => !rolesToExclude.includes((user.profile?.role || "user").toLowerCase())
     );
   }
 

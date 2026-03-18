@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { MdAdd, MdSearch, MdEdit, MdDelete, MdClose } from "react-icons/md";
+import { MdAdd, MdSearch, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import "./UserManagement.css";
+import "../Admin/UserManagement.css"; // Reuse styling
 import axiosInstance from "../../utils/axios.instance";
 
-const UserManagement = () => {
+const PsychologyUserManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -23,9 +23,6 @@ const UserManagement = () => {
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Form states
@@ -58,13 +55,13 @@ const UserManagement = () => {
         search: debouncedSearch,
         role: roleFilter,
         status: statusFilter,
+        exclude_roles: "admin",
       });
 
       const res = await axiosInstance.get(
         `/admin/users/get-all-users?${params}`
       );
       const usersData = res.data.users;
-      console.log(usersData);
       if (!Array.isArray(usersData)) {
         console.error("Users data is not an array:", res.data);
         return;
@@ -106,63 +103,6 @@ const UserManagement = () => {
     }
   };
 
-  const handleEditUser = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      await axiosInstance.put(
-        `/admin/users/update-user/${selectedUser.id}`,
-        formData
-      );
-      alert("User updated successfully!");
-      setShowEditModal(false);
-      setSelectedUser(null);
-      setFormData({ email: "", password: "", username: "", role: "user" });
-      fetchAllUsers();
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert(error.response?.data?.message || "Failed to update user");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    setIsLoading(true);
-
-    try {
-      await axiosInstance.delete(
-        `/admin/users/delete-user/${selectedUser.id}`
-      );
-      alert("User deleted successfully!");
-      setShowDeleteModal(false);
-      setSelectedUser(null);
-      fetchAllUsers();
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      alert(error.response?.data?.message || "Failed to delete user");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const openEditModal = (user) => {
-    setSelectedUser(user);
-    setFormData({
-      email: user.email,
-      password: "",
-      username: user.username,
-      role: user.role,
-    });
-    setShowEditModal(true);
-  };
-
-  const openDeleteModal = (user) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
-
 
   return (
     <div className="user-management-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
@@ -170,7 +110,7 @@ const UserManagement = () => {
         <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, color: '#22223b', marginBottom: 8 }}>
           User <span className="gradient-text" style={{ background: 'linear-gradient(90deg,#667eea,#764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
         </h1>
-        <p className="page-subtitle" style={{ color: '#6b7280', fontSize: 18, fontWeight: 500 }}>Manage system users, roles, and account status</p>
+        <p className="page-subtitle" style={{ color: '#6b7280', fontSize: 18, fontWeight: 500 }}>View system users, and manage sessions</p>
       </div>
 
       <div className="design-section" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 8px 32px rgba(102,126,234,0.08)', padding: 32, marginBottom: 32 }}>
@@ -194,7 +134,6 @@ const UserManagement = () => {
               style={{ minWidth: 120, fontSize: 15 }}
             >
               <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
               <option value="psychology">Psychology</option>
               <option value="moderator">Moderator</option>
               <option value="user">User</option>
@@ -253,9 +192,9 @@ const UserManagement = () => {
                 </td>
                 <td style={{ padding: '18px 24px' }}>
                   <span style={{
-                    background: user.role === 'admin' ? '#ede9fe' : user.role === 'moderator' ? '#dbeafe' : '#f3f4f6',
-                    color: user.role === 'admin' ? '#7c3aed' : user.role === 'moderator' ? '#2563eb' : '#6b7280',
-                    border: '1px solid ' + (user.role === 'admin' ? '#ddd6fe' : user.role === 'moderator' ? '#bfdbfe' : '#e5e7eb'),
+                    background: user.role === 'admin' ? '#ede9fe' : (user.role === 'psychology' ? '#fce7f3' : (user.role === 'moderator' ? '#dbeafe' : '#f3f4f6')),
+                    color: user.role === 'admin' ? '#7c3aed' : (user.role === 'psychology' ? '#db2777' : (user.role === 'moderator' ? '#2563eb' : '#6b7280')),
+                    border: '1px solid ' + (user.role === 'admin' ? '#ddd6fe' : (user.role === 'psychology' ? '#fbcfe8' : (user.role === 'moderator' ? '#bfdbfe' : '#e5e7eb'))),
                     borderRadius: 8,
                     fontSize: 12,
                     fontWeight: 700,
@@ -274,26 +213,13 @@ const UserManagement = () => {
                 <td style={{ padding: '18px 24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button
-                      onClick={() => navigate(`/admin/sessions/${user.id}`)}
+                      onClick={() => navigate(`/psychology/sessions/${user.id}`)}
                       style={{ padding: 10, color: '#6366f1', background: '#f5f3ff', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
                       title="View sessions"
                     >
                       <MdSearch style={{ fontSize: 20 }} />
                     </button>
-                    <button
-                      onClick={() => openEditModal(user)}
-                      style={{ padding: 10, color: '#f59e42', background: '#fff7ed', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
-                      title="Edit user"
-                    >
-                      <MdEdit style={{ fontSize: 20 }} />
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(user)}
-                      style={{ padding: 10, color: '#ef4444', background: '#fef2f2', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
-                      title="Delete user"
-                    >
-                      <MdDelete style={{ fontSize: 20 }} />
-                    </button>
+                    {/* Excluded edit and delete buttons for psychology user */}
                   </div>
                 </td>
               </tr>
@@ -423,7 +349,6 @@ const UserManagement = () => {
                     <option value="user">User</option>
                     <option value="moderator">Moderator</option>
                     <option value="psychology">Psychology</option>
-                    <option value="admin">Admin</option>
                   </select>
                 </div>
               </div>
@@ -456,163 +381,8 @@ const UserManagement = () => {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Edit User</h2>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setSelectedUser(null);
-                  setFormData({
-                    email: "",
-                    password: "",
-                    username: "",
-                    role: "user",
-                  });
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <MdClose className="text-2xl" />
-              </button>
-            </div>
-            <form onSubmit={handleEditUser}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password (leave blank to keep current)
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="user">User</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="psychology">Psychology</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setSelectedUser(null);
-                    setFormData({
-                      email: "",
-                      password: "",
-                      username: "",
-                      role: "user",
-                    });
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-xl hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  {isLoading ? "Updating..." : "Update User"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Delete User</h2>
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedUser(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <MdClose className="text-2xl" />
-              </button>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete user{" "}
-              <span className="font-semibold">{selectedUser?.username}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedUser(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteUser}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default UserManagement;
+export default PsychologyUserManagement;
