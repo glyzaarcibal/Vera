@@ -78,9 +78,9 @@ export default function DIDAgent({ onTranscript, onEnd }) {
 
   // Voice IDs for different avatars
   const VOICE_IDS = {
-    'woman-america': '21m00Tcm4TlvDq8ikWAM', // Rachel - natural female voice
+    'woman-america': 'cgSgspJ2msm6clMCkdW9', // Jessica - available on free tier API
     'man-america': 'pNInz6obpgDQGcFmaJgB', // Adam - natural male voice
-    'woman-filipino': '21m00Tcm4TlvDq8ikWAM', // Rachel (can be customized)
+    'woman-filipino': 'cgSgspJ2msm6clMCkdW9', // Jessica (can be customized)
     'man-filipino': 'pNInz6obpgDQGcFmaJgB' // Adam (can be customized)
   };
 
@@ -204,7 +204,7 @@ export default function DIDAgent({ onTranscript, onEnd }) {
   ];
 
   // AI Personality
-  const AI_PERSONALITY = 'You are a friendly, helpful AI assistant. Respond in a natural, conversational way with warmth and professionalism. Keep responses concise (2-3 sentences max).';
+  const AI_PERSONALITY = `You are a friendly, helpful AI assistant. Respond in a natural, conversational way with warmth and professionalism. Keep responses concise (2-3 sentences max). Important: When appropriate and directly related to the user's concern, briefly suggest using one of V.E.R.A.'s built-in wellness activities (e.g., 'Take a Breath' for anxiety, 'Diary' for venting, 'Mood Tracker' for emotional awareness, 'Sleep Tracker' for sleep issues, 'Clipcard Game' for a fun distraction, or 'Medication History'). Only suggest an activity if it truly fits the conversation.`;
 
   // Initialize session when avatar is selected
   const initializeSession = async (selectedAvatarType) => {
@@ -409,7 +409,12 @@ export default function DIDAgent({ onTranscript, onEnd }) {
       });
 
       if (!response.ok) {
-        throw new Error(`Transcription failed: ${response.status}`);
+        let errorMsg = response.statusText;
+        try {
+          const errData = await response.json();
+          errorMsg = JSON.stringify(errData);
+        } catch (e) {}
+        throw new Error(`Transcription failed: ${response.status} - ${errorMsg}`);
       }
 
       const data = await response.json();
@@ -606,6 +611,9 @@ export default function DIDAgent({ onTranscript, onEnd }) {
         if (response.status === 401) {
           throw new Error(`ElevenLabs API key invalid (401). Check VITE_ELEVENLABS_API_KEY in frontend/.env`);
         }
+        if (response.status === 402) {
+          throw new Error(`ElevenLabs quota exceeded (402).`);
+        }
         throw new Error(`TTS failed: ${response.status} - ${errorText}`);
       }
 
@@ -651,9 +659,54 @@ export default function DIDAgent({ onTranscript, onEnd }) {
       }
     } catch (err) {
       console.error('TTS error:', err);
-      setError(`Speech error: ${err.message}`);
-      setTimeout(() => setError(null), 3000);
-      setIsSpeaking(false);
+      
+      // Native Browser TTS Fallback if ElevenLabs fails
+      if ('speechSynthesis' in window) {
+        console.log("ElevenLabs failed, falling back to browser Web Speech API...");
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Adjust language for Filipino avatars if needed
+        if (avatarType?.includes('filipino')) {
+            utterance.lang = 'en-PH'; // Try Philippine English voice if available
+        }
+        
+        utterance.onend = () => {
+            handleAudioEnd();
+        };
+        
+        const video = videoRef.current;
+        const startNativeBoth = () => {
+            setIsSpeaking(true);
+            videoRef.current?.play().catch(e => console.error('Video play error:', e));
+            window.speechSynthesis.speak(utterance);
+        };
+        
+        const americanGirlTalkingVideo = AMERICAN_GIRL_VIDEOS[selectedAmericanGirlOutfit];
+        if (video && avatarType === 'woman-america' && americanGirlTalkingVideo) {
+          video.src = americanGirlTalkingVideo;
+          video.load();
+          let started = false;
+          const startOnce = () => {
+            if (started) return;
+            started = true;
+            startNativeBoth();
+          };
+          if (video.readyState >= 2) {
+            startOnce();
+          } else {
+            video.addEventListener('canplay', startOnce, { once: true });
+          }
+        } else if (video) {
+          startNativeBoth();
+        } else {
+          setIsSpeaking(true);
+          window.speechSynthesis.speak(utterance);
+        }
+      } else {
+        setError(`Speech error: ${err.message === "ElevenLabs quota exceeded (402)." ? "Out of ElevenLabs characters" : err.message}`);
+        setTimeout(() => setError(null), 3000);
+        setIsSpeaking(false);
+      }
     }
   };
 

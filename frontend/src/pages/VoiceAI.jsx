@@ -219,6 +219,9 @@ const VoiceAI = () => {
         if (response.status === 401) {
           throw new Error("ElevenLabs API key is invalid or unauthorized.");
         }
+        if (response.status === 402) {
+          throw new Error("ElevenLabs quota exceeded");
+        }
         throw new Error("Failed to generate speech");
       }
 
@@ -235,8 +238,29 @@ const VoiceAI = () => {
 
       audio.play();
     } catch (error) {
-      alert(error.message || "Failed to generate speech");
-      setConversationMode("listening");
+      console.error('Voice AI TTS error:', error);
+      
+      // Native Browser TTS Fallback if ElevenLabs fails
+      if ('speechSynthesis' in window) {
+          console.log("ElevenLabs failed, falling back to browser Web Speech API...");
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voiceDef = VOICES[selectedVoiceIndex];
+          
+          if (voiceDef.gender === 'Woman') {
+              utterance.pitch = 1.2;
+          } else {
+              utterance.pitch = 0.9;
+          }
+          
+          utterance.onend = () => {
+              setConversationMode("listening");
+          };
+          
+          window.speechSynthesis.speak(utterance);
+      } else {
+          alert(error.message === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : error.message || "Failed to generate speech");
+          setConversationMode("listening");
+      }
     }
   };
 
