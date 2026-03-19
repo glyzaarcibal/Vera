@@ -41,8 +41,8 @@ export default function AnimalAI({ onTranscript, onEnd }) {
 
     // Avatar personalities
     const AVATAR_PERSONALITIES = {
-        cat: 'You are a playful, slightly sassy cat AI assistant. Respond with feline charm, occasional "meows," and cat-like independence. Keep responses concise (2-3 sentences max).',
-        dog: 'You are an enthusiastic, loyal dog AI assistant. Respond with boundless energy, tail-wagging excitement, and occasional "woofs!" Keep responses concise (2-3 sentences max).'
+        cat: `You are a playful, slightly sassy cat AI assistant. Respond with feline charm, occasional "meows," and cat-like independence. Keep responses concise (2-3 sentences max). Important: When appropriate and directly related to the user's concern, briefly suggest using one of V.E.R.A.'s wellness activities (e.g., 'Take a Breath', 'Diary', 'Mood Tracker', 'Sleep Tracker', 'Clipcard Game', or 'Medication History').`,
+        dog: `You are an enthusiastic, loyal dog AI assistant. Respond with boundless energy, tail-wagging excitement, and occasional "woofs!" Keep responses concise (2-3 sentences max). Important: When appropriate and directly related to the user's concern, briefly suggest using one of V.E.R.A.'s wellness activities (e.g., 'Take a Breath', 'Diary', 'Mood Tracker', 'Sleep Tracker', 'Clipcard Game', or 'Medication History').`
     };
 
     // Video mapping
@@ -325,7 +325,12 @@ export default function AnimalAI({ onTranscript, onEnd }) {
             });
 
             if (!response.ok) {
-                throw new Error(`Text-to-speech failed: ${response.status}`);
+                const errorText = await response.text();
+                // If 402, we know it's a quota issue
+                if (response.status === 402) {
+                    throw new Error("ElevenLabs quota exceeded (402). Please check your account quota.");
+                }
+                throw new Error(`Text-to-speech failed: ${response.status} - ${errorText}`);
             }
 
             const audioBlob = await response.blob();
@@ -342,9 +347,30 @@ export default function AnimalAI({ onTranscript, onEnd }) {
             }
         } catch (err) {
             console.error('Text-to-speech error:', err);
-            setError(`Speech error: ${err.message}`);
-            setTimeout(() => setError(null), 5000);
-            setIsSpeaking(false);
+            
+            // Native Browser TTS Fallback if ElevenLabs fails
+            if ('speechSynthesis' in window) {
+                console.log("falling back to browser Web Speech API...");
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Adjust pitch slightly based on animal
+                utterance.pitch = animalType === 'cat' ? 1.6 : 1.0;
+                utterance.rate = animalType === 'cat' ? 1.1 : 1.0;
+                
+                utterance.onend = () => {
+                    handleAudioEnd();
+                };
+                
+                if (videoRef.current) {
+                    videoRef.current.play();
+                }
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                setError(`Speech error: ${err.message}`);
+                setTimeout(() => setError(null), 5000);
+                setIsSpeaking(false);
+            }
         }
     };
 

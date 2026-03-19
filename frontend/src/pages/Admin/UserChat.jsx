@@ -378,6 +378,46 @@ const UserChat = () => {
                           <p className="text-sm leading-relaxed">
                             {message.content || "(No content)"}
                           </p>
+                          
+                          {/* ── Suggested Activity Cards ── */}
+                          {message.sent_by !== "user" && (() => {
+                            const detectActivity = (text) => {
+                              if (!text) return [];
+                              const textLower = text.toLowerCase();
+                              const activities = [
+                                { name: 'Take a Breath', path: '/activities/take-a-breath', icon: '🌬️', desc: 'Guided breathing exercise for quick relaxation', keywords: ['take a breath', 'breathing exercise', 'breathe deeply', 'inhale slowly', 'deep breath', 'exhale'] },
+                                { name: 'Diary', path: '/activities/diary', icon: '📓', desc: 'Write and track your daily thoughts', keywords: ['diary', 'journal', 'write your thoughts', 'writing down', 'write down your feelings'] },
+                                { name: 'Mood Tracker', path: '/activities/mood-tracker', icon: '😊', desc: 'Track and monitor your mood', keywords: ['mood tracker', 'track your mood', 'monitor your mood', 'log your mood'] },
+                                { name: 'Sleep Tracker', path: '/activities/sleep-tracker', icon: '😴', desc: 'Monitor your sleep patterns', keywords: ['sleep tracker', 'track your sleep', 'monitor your sleep', 'sleep log'] },
+                                { name: 'Clipcard Game', path: '/activities/clipcard', icon: '🎮', desc: 'Test your memory with matching cards', keywords: ['clipcard game', 'memory game', 'matching cards', 'play a game', 'distract yourself'] },
+                                { name: 'Weekly Wellness Report', path: '/activities/weekly-wellness-report', icon: '📊', desc: 'View your weekly insights', keywords: ['weekly wellness report', 'wellness report', 'weekly progress'] },
+                                { name: 'Medication History', path: '/activities/medication-history', icon: '💊', desc: 'Log and track medication', keywords: ['medication history', 'track medication', 'log medication', 'medication reminder'] },
+                              ];
+                              return activities.filter(act => act.keywords.some(kw => textLower.includes(kw)));
+                            };
+
+                            const matchedActivities = detectActivity(message.content);
+                            if (matchedActivities.length === 0) return null;
+
+                            return (
+                              <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-200">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 text-left">Suggested Activity</p>
+                                {matchedActivities.map((act, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm text-left"
+                                  >
+                                    <div className="text-2xl">{act.icon}</div>
+                                    <div className="flex flex-col flex-1">
+                                      <span className="font-bold text-gray-800 text-sm">{act.name}</span>
+                                      <span className="text-gray-500 text-xs">{act.desc}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
                         </div>
                         {hasEmotion && selectedEmotion === message.id && (
                           <div className="mt-2 bg-white border border-gray-200 rounded-lg p-4 shadow-lg">
