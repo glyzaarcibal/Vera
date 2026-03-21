@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./UserSessions.css";
 import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend } from "recharts";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, PieChart, Pie } from "recharts";
 import axiosInstance from "../../utils/axios.instance";
 import Skeleton from "../../components/Skeleton";
 import RiskBadge from "../../components/RiskBadge";
@@ -58,15 +58,17 @@ const UserSessions = () => {
   });
   const [dailyEmotions, setDailyEmotions] = useState([]);
   const [emotionWords, setEmotionWords] = useState({});
-  const [showReports, setShowReports] = useState(false);
+  const [sessionRiskHistory, setSessionRiskHistory] = useState([]);
+  const [detailedActivities, setDetailedActivities] = useState({ mood: [], sleep: [], diary: [], medication: [], breath: [] });
 
   useEffect(() => {
     fetchData();
+    fetchReportsData();
   }, []);
 
   useEffect(() => {
     fetchSessions();
-  }, [pagination.currentPage, typeFilter, riskFilters]);
+  }, [pagination.currentPage, typeFilter, riskFilters, sortBy, sortOrder]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -97,6 +99,18 @@ const UserSessions = () => {
         textSessions: allSessions.filter((s) => s.type === "text").length,
         avatarSessions: allSessions.filter((s) => s.type === "Avatar").length,
       };
+
+      const riskHistory = allSessions
+        .filter((s) => s.risk_score != null)
+        .map((s) => ({
+          date: new Date(s.created_at).toLocaleDateString(),
+          time: new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          score: s.risk_score,
+          level: s.risk_level,
+          id: s.id
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      setSessionRiskHistory(riskHistory);
 
       // Fetch messages with emotion data from voice and avatar sessions only
       // (Hume AI is used for voice/avatar sessions)
@@ -211,7 +225,7 @@ const UserSessions = () => {
       setAiUsageStats(stats);
       setDailyEmotions(dailyEmotionArray);
 
-      // Fetch unified activities data (Mood, Sleep, Breath)
+      // Fetch unified activities data (Mood, Sleep, Breath, Diary, Medication)
       try {
         const activitiesRes = await axiosInstance.get(`/admin/users/get-user-activities/${userId}`);
         const activities = activitiesRes.data?.activities || [];
@@ -220,9 +234,56 @@ const UserSessions = () => {
           moodEntries: activities.filter(a => a.activity_type === 'mood').length,
           sleepEntries: activities.filter(a => a.activity_type === 'sleep').length,
           breathingSessions: activities.filter(a => a.activity_type === 'breath').length,
+          diaryEntries: activities.filter(a => a.activity_type === 'diary').length,
         };
-
         setActivitiesData(counts);
+
+        // Detailed Activity Parse
+        const moodList = activities.filter(a => a.activity_type === 'mood').map(a => {
+          // Extract literal text/type of mood
+          let typeStr = a.data?.mood || a.data?.moodType || "Neutral";
+          let type = typeof typeStr === 'string' ? typeStr.toLowerCase() : "neutral";
+
+          let val = a.data?.moodLevel; // check if number exists natively
+          if (val == null) {
+            // Try to map a realistic integer score from the text value so it plots dynamically on the visual chart
+            if (["happy", "joyful", "excited", "excellent", "great", "ecstatic"].includes(type)) val = 9;
+            else if (["good", "fine", "relaxed", "calm", "okay", "content"].includes(type)) val = 7;
+            else if (["neutral", "mixed", "average"].includes(type)) val = 5;
+            else if (["sad", "down", "tired", "stressed", "anxious", "worried", "nervous"].includes(type)) val = 3;
+            else if (["angry", "depressed", "miserable", "terrible", "bad", "furious", "awful"].includes(type)) val = 2;
+            else val = 5; // Default catch block
+          }
+
+          // Format type back to capitalized purely for cosmetic Tooltip visuals
+          if (typeof typeStr === 'string' && typeStr.length > 0) {
+            typeStr = typeStr.charAt(0).toUpperCase() + typeStr.slice(1);
+          }
+
+          return { date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), mood: val, moodType: typeStr };
+        });
+
+        const sleepList = activities.filter(a => a.activity_type === 'sleep').map(a => ({
+          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), hours: a.data?.sleepHours || a.data?.hours || a.data?.duration || 0
+        }));
+
+        const diaryList = activities.filter(a => a.activity_type === 'diary').map(a => {
+          const d = new Date(a.created_at);
+          return { date: d.toLocaleDateString(), time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), hourOfDay: d.getHours() + (d.getMinutes() / 60) };
+        });
+
+        const breathList = activities.filter(a => a.activity_type === 'breath').map(a => ({
+          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), duration: a.data?.durationSeconds || a.data?.duration || 0
+        }));
+
+        const medList = activities.filter(a => a.activity_type === 'medication').map(a => ({
+          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          name: a.data?.medicationName || a.data?.name || "Unknown Med",
+          dosage: a.data?.dosage || "N/A",
+          status: a.data?.status || (a.data?.taken ? "Taken" : "Missed")
+        }));
+
+        setDetailedActivities({ mood: moodList, sleep: sleepList, diary: diaryList, breath: breathList, medication: medList });
       } catch (e) {
         console.error("Error fetching activity data:", e);
       }
@@ -274,6 +335,10 @@ const UserSessions = () => {
       if (riskFilters.length > 0) {
         params.append("riskLevels", riskFilters.join(","));
       }
+
+      // Sort parameters
+      params.append("sortBy", sortBy);
+      params.append("sortOrder", sortOrder);
 
       const res = await axiosInstance.get(
         `/admin/users/get-sessions-by-user/${userId}?${params.toString()}`
@@ -467,9 +532,9 @@ const UserSessions = () => {
           {/* Main header */}
           <div className="user-sessions-main-head">
             <h1 className="page-title">
-              User <span className="gradient-text">Sessions</span>
+              User <span className="gradient-text">Analysis</span>
             </h1>
-            <p className="page-subtitle">View and manage user activity, risk assessments, and reports</p>
+            <p className="page-subtitle">View and manage user activity, risk assessments, detailed graphs, and reports</p>
           </div>
         </div>
 
@@ -499,18 +564,22 @@ const UserSessions = () => {
                   <span className="bg-gray-50 px-2 py-1 rounded">ID: {userInfo.id}</span>
                   <span className="bg-gray-50 px-2 py-1 rounded">Role: {userInfo.role}</span>
                   <span className="bg-gray-50 px-2 py-1 rounded">Joined: {new Date(userInfo.created_at).toLocaleDateString()}</span>
+                  <span className="bg-gray-50 px-2 py-1 rounded">Gender: {userInfo.gender || "Not specified"}</span>
+                  <span className="bg-gray-50 px-2 py-1 rounded">Birthday: {userInfo.birthday || userInfo.date_of_birth ? new Date(userInfo.birthday || userInfo.date_of_birth).toLocaleDateString() : "Not specified"}</span>
+                  <span className="bg-gray-50 px-2 py-1 rounded">Contact: {userInfo.contact_number || userInfo.phone || "Not specified"}</span>
                 </div>
-              </div>
-              <div className="hidden md:flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-4 text-xs font-medium uppercase tracking-wider text-gray-400">
-                  <span>Privacy Settings</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${userInfo.permit_store ? "bg-green-50 border-green-100 text-green-600" : "bg-red-50 border-red-100 text-red-600"}`}>
-                    STORE: {userInfo.permit_store ? "ON" : "OFF"}
+
+                <div className="mt-8 border-t border-gray-50 pt-8">
+                  <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 ml-1">
+                    Privacy Settings
                   </div>
-                  <div className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${userInfo.permit_analyze ? "bg-green-50 border-green-100 text-green-600" : "bg-red-50 border-red-100 text-red-600"}`}>
-                    ANALYZE: {userInfo.permit_analyze ? "ON" : "OFF"}
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className={`px-5 py-2 rounded-full text-xs font-black border transition-all shadow-sm ${userInfo.permit_store !== false ? "bg-green-50 border-green-200 text-green-600" : "bg-red-50 border-red-200 text-red-600"}`}>
+                      STORE: {userInfo.permit_store !== false ? "ON" : "OFF"}
+                    </div>
+                    <div className={`px-5 py-2 rounded-full text-xs font-black border transition-all shadow-sm ${userInfo.permit_analyze !== false ? "bg-green-50 border-green-200 text-green-600" : "bg-red-50 border-red-200 text-red-600"}`}>
+                      ANALYZE: {userInfo.permit_analyze !== false ? "ON" : "OFF"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -574,183 +643,347 @@ const UserSessions = () => {
                 </div>
                 User Analytics
               </h3>
-              <button
-                onClick={() => {
-                  if (!showReports) {
-                    fetchReportsData();
-                  }
-                  setShowReports(!showReports);
-                }}
-                className="user-analytics-toggle-btn"
-              >
-                {showReports ? "Hide Analytics" : "View Analytics"}
-              </button>
             </div>
 
-            {showReports && (
-              <div className="user-analytics-content">
-                {reportsLoading ? (
-                  <div className="user-analytics-loading">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-                    <p className="mt-2 text-sm text-gray-500">Loading reports...</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* AI Usage Statistics */}
-                    <div className="user-analytics-block">
-                      <h4 className="user-analytics-block-title">
-                        <MdPsychology className="text-lg" />
-                        AI Usage Statistics
-                      </h4>
-                      <div className="user-analytics-stats-grid">
-                        <div className="user-stat-card user-stat-indigo">
-                          <div className="text-sm text-gray-600 mb-1">Total Sessions</div>
-                          <div className="text-2xl font-bold text-indigo-600">{aiUsageStats.totalSessions}</div>
-                        </div>
-                        <div className="user-stat-card user-stat-blue">
-                          <div className="text-sm text-gray-600 mb-1">Total Messages</div>
-                          <div className="text-2xl font-bold text-blue-600">{aiUsageStats.totalMessages}</div>
-                        </div>
-                        <div className="user-stat-card user-stat-purple">
-                          <div className="text-sm text-gray-600 mb-1">Voice Sessions</div>
-                          <div className="text-2xl font-bold text-purple-600">{aiUsageStats.voiceSessions}</div>
-                        </div>
-                        <div className="user-stat-card user-stat-green">
-                          <div className="text-sm text-gray-600 mb-1">Text Sessions</div>
-                          <div className="text-2xl font-bold text-green-600">{aiUsageStats.textSessions}</div>
-                        </div>
-                        <div className="user-stat-card user-stat-pink">
-                          <div className="text-sm text-gray-600 mb-1">Avatar Sessions</div>
-                          <div className="text-2xl font-bold text-pink-600">{aiUsageStats.avatarSessions}</div>
-                        </div>
+            <div className="user-analytics-content">
+              {reportsLoading ? (
+                <div className="user-analytics-loading">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                  <p className="mt-2 text-sm text-gray-500">Loading reports...</p>
+                </div>
+              ) : (
+                <>
+                  {/* AI Usage Statistics */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">
+                      <MdPsychology className="text-lg" />
+                      AI Usage Statistics
+                    </h4>
+                    <div className="user-analytics-stats-grid">
+                      <div className="user-stat-card user-stat-indigo">
+                        <div className="text-sm text-gray-600 mb-1">Total Sessions</div>
+                        <div className="text-2xl font-bold text-indigo-600">{aiUsageStats.totalSessions}</div>
+                      </div>
+                      <div className="user-stat-card user-stat-blue">
+                        <div className="text-sm text-gray-600 mb-1">Total Messages</div>
+                        <div className="text-2xl font-bold text-blue-600">{aiUsageStats.totalMessages}</div>
+                      </div>
+                      <div className="user-stat-card user-stat-purple">
+                        <div className="text-sm text-gray-600 mb-1">Voice Sessions</div>
+                        <div className="text-2xl font-bold text-purple-600">{aiUsageStats.voiceSessions}</div>
+                      </div>
+                      <div className="user-stat-card user-stat-green">
+                        <div className="text-sm text-gray-600 mb-1">Text Sessions</div>
+                        <div className="text-2xl font-bold text-green-600">{aiUsageStats.textSessions}</div>
+                      </div>
+                      <div className="user-stat-card user-stat-pink">
+                        <div className="text-sm text-gray-600 mb-1">Avatar Sessions</div>
+                        <div className="text-2xl font-bold text-pink-600">{aiUsageStats.avatarSessions}</div>
                       </div>
                     </div>
+                  </div>
 
 
-                    {/* Daily Emotion Detection Chart */}
-                    <div className="user-analytics-block">
-                      <h4 className="user-analytics-block-title">
-                        Daily Emotion Detection (Hume AI Voice Analysis)
-                      </h4>
-                      {dailyEmotions.length === 0 ? (
-                        <div className="user-analytics-empty">
-                          <p className="text-gray-500 font-medium">No emotion data available yet.</p>
-                          <p className="text-sm text-gray-400 mt-2">
-                            Emotions are detected from <strong>voice</strong> and <strong>avatar</strong> sessions using Hume AI Prosody model.
-                          </p>
-                          <div className="mt-4 text-xs text-gray-500 space-y-1">
-                            <p>• Make sure you're using voice or avatar sessions (not text chat)</p>
-                            <p>• Emotions are detected from your voice recordings</p>
-                            <p>• Voice sessions: {aiUsageStats.voiceSessions} | Avatar sessions: {aiUsageStats.avatarSessions}</p>
-                          </div>
+                  {/* Daily Emotion Detection Chart */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">
+                      Daily Emotion Detection (Hume AI Voice Analysis)
+                    </h4>
+                    {dailyEmotions.length === 0 ? (
+                      <div className="user-analytics-empty">
+                        <p className="text-gray-500 font-medium">No emotion data available yet.</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          Emotions are detected from <strong>voice</strong> and <strong>avatar</strong> sessions using Hume AI Prosody model.
+                        </p>
+                        <div className="mt-4 text-xs text-gray-500 space-y-1">
+                          <p>• Make sure you're using voice or avatar sessions (not text chat)</p>
+                          <p>• Emotions are detected from your voice recordings</p>
+                          <p>• Voice sessions: {aiUsageStats.voiceSessions} | Avatar sessions: {aiUsageStats.avatarSessions}</p>
                         </div>
-                      ) : (
-                        <div className="user-analytics-chart-wrap">
-                          <ResponsiveContainer width="100%" height={400}>
-                            <BarChart
-                              data={dailyEmotions}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                              <XAxis
-                                dataKey="date"
-                                tick={{ fontSize: 12 }}
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
-                                interval={dailyEmotions.length > 14 ? Math.floor(dailyEmotions.length / 14) : 0}
-                              />
-                              <YAxis tick={{ fontSize: 12 }} />
-                              <Tooltip
-                                formatter={(value, name) => {
-                                  if (name === "date") return null;
-                                  return [value.toFixed(2), name.charAt(0).toUpperCase() + name.slice(1)];
-                                }}
-                                labelFormatter={(label) => `Date: ${label}`}
-                              />
-                              <Legend />
-                              <Bar dataKey="happy" stackId="a" fill="#10b981" name="Happy" />
-                              <Bar dataKey="sad" stackId="a" fill="#3b82f6" name="Sad" />
-                              <Bar dataKey="angry" stackId="a" fill="#ef4444" name="Angry" />
-                              <Bar dataKey="neutral" stackId="a" fill="#9ca3af" name="Neutral" />
-                              <Bar dataKey="calm" stackId="a" fill="#06b6d4" name="Calm" />
-                              <Bar dataKey="fearful" stackId="a" fill="#f59e0b" name="Fearful" />
-                              <Bar dataKey="surprised" stackId="a" fill="#8b5cf6" name="Surprised" />
-                              <Bar dataKey="disgust" stackId="a" fill="#ec4899" name="Disgust" />
-                              <Bar dataKey="doubt" stackId="a" fill="#a855f7" name="Doubt" />
-                              <Bar dataKey="confusion" stackId="a" fill="#f59e0b" name="Confusion" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                          <p className="text-xs text-gray-500 mt-2 text-center">
-                            Emotion scores detected from voice sessions using Hume AI Prosody model. Values represent aggregated emotion scores per day.
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={400}>
+                          <BarChart
+                            data={dailyEmotions}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis
+                              dataKey="date"
+                              tick={{ fontSize: 12 }}
+                              angle={-45}
+                              textAnchor="end"
+                              height={80}
+                              interval={dailyEmotions.length > 14 ? Math.floor(dailyEmotions.length / 14) : 0}
+                            />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip
+                              formatter={(value, name) => {
+                                if (name === "date") return null;
+                                return [value.toFixed(2), name.charAt(0).toUpperCase() + name.slice(1)];
+                              }}
+                              labelFormatter={(label) => `Date: ${label}`}
+                            />
+                            <Legend />
+                            <Bar dataKey="happy" stackId="a" fill="#10b981" name="Happy" />
+                            <Bar dataKey="sad" stackId="a" fill="#3b82f6" name="Sad" />
+                            <Bar dataKey="angry" stackId="a" fill="#ef4444" name="Angry" />
+                            <Bar dataKey="neutral" stackId="a" fill="#9ca3af" name="Neutral" />
+                            <Bar dataKey="calm" stackId="a" fill="#06b6d4" name="Calm" />
+                            <Bar dataKey="fearful" stackId="a" fill="#f59e0b" name="Fearful" />
+                            <Bar dataKey="surprised" stackId="a" fill="#8b5cf6" name="Surprised" />
+                            <Bar dataKey="disgust" stackId="a" fill="#ec4899" name="Disgust" />
+                            <Bar dataKey="doubt" stackId="a" fill="#a855f7" name="Doubt" />
+                            <Bar dataKey="confusion" stackId="a" fill="#f59e0b" name="Confusion" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                        <p className="text-xs text-gray-500 mt-2 text-center">
+                          Emotion scores detected from voice sessions using Hume AI Prosody model. Values represent aggregated emotion scores per day.
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Emotion-Hinting Words Section */}
-                    <div className="user-analytics-block">
-                      <h4 className="user-analytics-block-title">
-                        Emotion-Hinting Words Detected
-                      </h4>
-                      {Object.keys(emotionWords).length === 0 ? (
-                        <div className="user-analytics-empty">
-                          <p className="text-gray-500">No emotion-hinting words detected yet.</p>
-                          <p className="text-sm text-gray-400 mt-1">Words that indicate emotions will appear here as the user interacts.</p>
-                        </div>
-                      ) : (
-                        <div className="user-emotion-words-grid">
-                          {Object.entries(emotionWords).map(([emotion, data]) => {
-                            const emotionColors = {
-                              sad: "bg-blue-50 border-blue-200 text-blue-800",
-                              angry: "bg-red-50 border-red-200 text-red-800",
-                              happy: "bg-green-50 border-green-200 text-green-800",
-                              fearful: "bg-orange-50 border-orange-200 text-orange-800",
-                              surprised: "bg-purple-50 border-purple-200 text-purple-800",
-                              disgust: "bg-pink-50 border-pink-200 text-pink-800",
-                              calm: "bg-cyan-50 border-cyan-200 text-cyan-800",
-                              neutral: "bg-gray-50 border-gray-200 text-gray-800",
-                              doubt: "bg-violet-50 border-violet-200 text-violet-800",
-                              confusion: "bg-amber-50 border-amber-200 text-amber-800",
-                            };
-                            const colorClass = emotionColors[emotion] || emotionColors.neutral;
+                  {/* Emotion-Hinting Words Section */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">
+                      Emotion-Hinting Words Detected
+                    </h4>
+                    {Object.keys(emotionWords).length === 0 ? (
+                      <div className="user-analytics-empty">
+                        <p className="text-gray-500">No emotion-hinting words detected yet.</p>
+                        <p className="text-sm text-gray-400 mt-1">Words that indicate emotions will appear here as the user interacts.</p>
+                      </div>
+                    ) : (
+                      <div className="user-emotion-words-grid">
+                        {Object.entries(emotionWords).map(([emotion, data]) => {
+                          const emotionColors = {
+                            sad: "bg-blue-50 border-blue-200 text-blue-800",
+                            angry: "bg-red-50 border-red-200 text-red-800",
+                            happy: "bg-green-50 border-green-200 text-green-800",
+                            fearful: "bg-orange-50 border-orange-200 text-orange-800",
+                            surprised: "bg-purple-50 border-purple-200 text-purple-800",
+                            disgust: "bg-pink-50 border-pink-200 text-pink-800",
+                            calm: "bg-cyan-50 border-cyan-200 text-cyan-800",
+                            neutral: "bg-gray-50 border-gray-200 text-gray-800",
+                            doubt: "bg-violet-50 border-violet-200 text-violet-800",
+                            confusion: "bg-amber-50 border-amber-200 text-amber-800",
+                          };
+                          const colorClass = emotionColors[emotion] || emotionColors.neutral;
 
-                            return (
-                              <div key={emotion} className={`p-4 rounded-lg border-2 ${colorClass}`}>
-                                <div className="flex items-center justify-between mb-2">
-                                  <h5 className="font-bold text-sm uppercase">{emotion}</h5>
-                                  <span className="text-xs font-semibold bg-white px-2 py-1 rounded">
-                                    {data.count} words
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                  {data.words.slice(0, 8).map((word, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs bg-white px-2 py-0.5 rounded font-medium"
-                                    >
-                                      {word}
-                                    </span>
-                                  ))}
-                                  {data.words.length > 8 && (
-                                    <span className="text-xs text-gray-500 px-2 py-0.5">
-                                      +{data.words.length - 8} more
-                                    </span>
-                                  )}
-                                </div>
+                          return (
+                            <div key={emotion} className={`p-4 rounded-lg border-2 ${colorClass}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-bold text-sm uppercase">{emotion}</h5>
+                                <span className="text-xs font-semibold bg-white px-2 py-1 rounded">
+                                  {data.count} words
+                                </span>
                               </div>
-                            );
-                          })}
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {data.words.slice(0, 8).map((word, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs bg-white px-2 py-0.5 rounded font-medium"
+                                  >
+                                    {word}
+                                  </span>
+                                ))}
+                                {data.words.length > 8 && (
+                                  <span className="text-xs text-gray-500 px-2 py-0.5">
+                                    +{data.words.length - 8} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-3 text-center">
+                      Words detected from user messages that indicate emotional states. These words help identify patterns in emotional expression.
+                    </p>
+                  </div>
+
+                  {/* Session Risk Progression Graph */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Session Risk Progression</h4>
+                    {sessionRiskHistory.length === 0 ? (
+                      <div className="user-analytics-empty">No assessed sessions to display risk progression.</div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={sessionRiskHistory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[0, 100]} />
+                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`Score: ${value}`, `Time: ${props.payload.time}`]} />
+                            <Legend />
+                            <Line type="monotone" dataKey="score" name="Risk Score (/100)" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mood Tracker Profile Graph */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Mood Tracker Activity</h4>
+                    {detailedActivities.mood.length === 0 ? (
+                      <div className="user-analytics-empty">No mood logs.</div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={detailedActivities.mood} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis dataKey="date" />
+                            <YAxis domain={[0, 10]} />
+                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`${props.payload.moodType} (${value}/10)`, `Time: ${props.payload.time}`]} />
+                            <Line type="monotone" dataKey="mood" name="Mood (0=Low, 10=High)" stroke="#10b981" strokeWidth={3} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mood Statistics Widget */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Mood Statistics (Distribution)</h4>
+                    {detailedActivities.mood.length === 0 ? (
+                      <div className="user-analytics-empty">No mood data for statistics.</div>
+                    ) : (
+                      <div className="flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-full md:w-1/2 h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={Object.entries(detailedActivities.mood.reduce((acc, curr) => {
+                                  const type = curr.moodType || "Neutral";
+                                  acc[type] = (acc[type] || 0) + 1;
+                                  return acc;
+                                }, {})).map(([name, value]) => ({ name, value }))}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              >
+                                {Object.entries(detailedActivities.mood.reduce((acc, curr) => {
+                                  const type = curr.moodType || "Neutral";
+                                  acc[type] = (acc[type] || 0) + 1;
+                                  return acc;
+                                }, {})).map(([name], index) => {
+                                  const colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
+                                  return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                })}
+                              </Pie>
+                              <Tooltip />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
                         </div>
-                      )}
-                      <p className="text-xs text-gray-500 mt-3 text-center">
-                        Words detected from user messages that indicate emotional states. These words help identify patterns in emotional expression.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                        <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
+                          {Object.entries(detailedActivities.mood.reduce((acc, curr) => {
+                            const type = curr.moodType || "Neutral";
+                            acc[type] = (acc[type] || 0) + 1;
+                            return acc;
+                          }, {})).sort((a, b) => b[1] - a[1]).map(([name, count], idx) => (
+                            <div key={idx} className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
+                              <span className="block text-xs font-bold text-gray-400 uppercase mb-1">{name}</span>
+                              <span className="text-2xl font-bold text-gray-800">{count}</span>
+                              <span className="text-xs text-gray-400 ml-1">Entries</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sleep Logs Profile Graph */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Sleep Patterns</h4>
+                    {detailedActivities.sleep.length === 0 ? (
+                      <div className="user-analytics-empty">No sleep logs recorded.</div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={detailedActivities.sleep} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`${value} Hours`, `Time: ${props.payload.time}`]} />
+                            <Bar dataKey="hours" name="Hours Slept" fill="#8b5cf6" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Breath Patterns */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Breathing Sessions</h4>
+                    {detailedActivities.breath.length === 0 ? (
+                      <div className="user-analytics-empty">No breathing exercise data.</div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={detailedActivities.breath} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`${value} Seconds`, `Time: ${props.payload.time}`]} />
+                            <Bar dataKey="duration" name="Duration (s)" fill="#06b6d4" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Diary History Scatter Graph */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Diary Entry Patterns</h4>
+                    {detailedActivities.diary.length === 0 ? (
+                      <div className="user-analytics-empty">No diary entries found.</div>
+                    ) : (
+                      <div className="user-analytics-chart-wrap">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="category" dataKey="date" name="Date" />
+                            <YAxis type="number" dataKey="hourOfDay" name="Hour of Day" domain={[0, 24]} tickFormatter={(val) => `${Math.floor(val)}:00`} />
+                            <ZAxis type="number" range={[150, 150]} />
+                            <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value, name, props) => { if (name === 'Hour of Day') return props.payload.time; return value; }} />
+                            <Legend />
+                            <Scatter name="Diary Entries (Time of Day)" data={detailedActivities.diary} fill="#f59e0b" />
+                          </ScatterChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Medication Logging List */}
+                  <div className="user-analytics-block">
+                    <h4 className="user-analytics-block-title">Medication History</h4>
+                    {detailedActivities.medication.length === 0 ? (
+                      <div className="user-analytics-empty">No medication data.</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {detailedActivities.medication.map((med, idx) => (
+                          <div key={idx} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center shadow-sm hover:shadow-md transition-all">
+                            <div>
+                              <h5 className="font-bold text-gray-800 text-lg mb-1">{med.name}</h5>
+                              <p className="text-xs text-gray-500 font-medium">Dosage: {med.dosage} • Time: <span className="text-blue-600">{med.time}</span> • {med.date}</p>
+                            </div>
+                            <span className={`px-4 py-1.5 text-xs font-bold rounded-full ${med.status.toLowerCase() === 'taken' ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-red-100 text-red-700 ring-1 ring-red-300'}`}>{med.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -883,180 +1116,163 @@ const UserSessions = () => {
           </div>
         </div>
 
-        <div className="design-section user-sessions-controls">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Sessions ({pagination.totalSessions})
-            </h2>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Sort by:</span>
-                <button
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === "date"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
-                    }`}
-                  onClick={() => handleSortByChange("date")}
-                >
-                  <MdCalendarToday className="text-lg" />
-                  Date
-                </button>
-                <button
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === "risk"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-white text-gray-600 border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500"
-                    }`}
-                  onClick={() => handleSortByChange("risk")}
-                >
-                  <MdSort className="text-lg" />
-                  Risk
-                </button>
+        <div className="design-section user-sessions-section-container">
+          {/* Controls Container */}
+          <div className="user-sessions-controls mb-12">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10">
+              <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                Sessions <span className="text-indigo-500 font-bold ml-1">({pagination.totalSessions})</span>
+              </h2>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 flex-wrap">
+                {/* Unified Sort Dropdown */}
+                <div className="flex items-center gap-4 bg-gray-100 p-2 rounded-2xl border border-gray-200 shadow-sm">
+                  <span className="text-[12px] font-black uppercase tracking-widest text-gray-500 ml-3">Sort by</span>
+                  <select
+                    className="bg-white text-gray-700 text-sm font-black py-2.5 px-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all cursor-pointer min-w-[180px]"
+                    value={`${sortBy}_${sortOrder}`}
+                    onChange={(e) => {
+                      const [newSort, newOrder] = e.target.value.split('_');
+                      setSortBy(newSort);
+                      setSortOrder(newOrder);
+                    }}
+                  >
+                    <option value="date_desc">NEWEST FIRST</option>
+                    <option value="date_asc">OLDEST FIRST</option>
+                    <option value="risk_desc">HIGHEST RISK</option>
+                    <option value="risk_asc">LOWEST RISK</option>
+                  </select>
+                </div>
+                <div className="h-10 w-px bg-gray-200 hidden sm:block mx-2"></div>
+                <ViewToggle view={view} onViewChange={setView} />
               </div>
-              <button
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-lg text-gray-600 text-sm font-medium border border-gray-300 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-500 transition-all"
-                onClick={handleSortOrderToggle}
-              >
-                <MdSort className="text-lg" />
-                <span>
-                  {sortBy === "date"
-                    ? sortOrder === "desc"
-                      ? "Newest first"
-                      : "Oldest first"
-                    : sortOrder === "desc"
-                      ? "Highest Risk First"
-                      : "Lowest Risk First"}
-                </span>
-              </button>
-              <ViewToggle view={view} onViewChange={setView} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-10 border-y-2 border-gray-50">
+              <FilterChips
+                label="FILTER BY TYPE"
+                filters={[
+                  { label: "Voice", value: "voice" },
+                  { label: "Text", value: "text" },
+                  { label: "Avatar", value: "Avatar" },
+                ]}
+                activeFilters={typeFilter}
+                onFilterToggle={handleTypeFilterToggle}
+              />
+              <FilterChips
+                label="FILTER BY RISK"
+                filters={[
+                  { label: "Low", value: "low" },
+                  { label: "Moderate", value: "moderate" },
+                  { label: "High", value: "high" },
+                  { label: "Critical", value: "critical" },
+                ]}
+                activeFilters={riskFilters}
+                onFilterToggle={handleRiskFilterToggle}
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <FilterChips
-              label="Session Type"
-              filters={[
-                { label: "Voice", value: "voice" },
-                { label: "Text", value: "text" },
-                { label: "Avatar", value: "Avatar" },
-              ]}
-              activeFilters={typeFilter}
-              onFilterToggle={handleTypeFilterToggle}
-            />
-            <FilterChips
-              label="Risk Level"
-              filters={[
-                { label: "Low", value: "low" },
-                { label: "Moderate", value: "moderate" },
-                { label: "High", value: "high" },
-                { label: "Critical", value: "critical" },
-              ]}
-              activeFilters={riskFilters}
-              onFilterToggle={handleRiskFilterToggle}
-            />
+          {/* Sessions Content Grid/Table Area */}
+          <div className="sessions-display-area">
+            {loading ? (
+              <div
+                className={
+                  view === "card"
+                    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                    : ""
+                }
+              >
+                {view === "card" ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} variant="card" />
+                  ))
+                ) : (
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <Skeleton variant="table-row" count={6} />
+                  </div>
+                )}
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="bg-white py-[60px] px-10 rounded-xl shadow-sm text-center border border-dashed border-gray-200">
+                <p className="text-base text-gray-400 font-medium">
+                  No sessions found for this user with the current filters.
+                </p>
+              </div>
+            ) : view === "card" ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {sessions.map((session) => (
+                    <SessionCard key={session.id} session={session} />
+                  ))}
+                </div>
+                {pagination.totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-12 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                    <div className="text-sm text-gray-500 font-medium">
+                      Showing Page <span className="text-gray-900 font-bold">{pagination.currentPage}</span> of <span className="text-gray-900 font-bold">{pagination.totalPages}</span> • <span className="text-indigo-600 font-bold">{pagination.totalSessions}</span> Total Sessions
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handlePageChange(pagination.currentPage - 1)}
+                        disabled={!pagination.hasPrev}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${pagination.hasPrev
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100"
+                          : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          }`}
+                      >
+                        <MdChevronLeft className="text-xl" />
+                        <span>PREVIOUS</span>
+                      </button>
+                      <button
+                        onClick={() => handlePageChange(pagination.currentPage + 1)}
+                        disabled={!pagination.hasNext}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${pagination.hasNext
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100"
+                          : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          }`}
+                      >
+                        <span>NEXT</span>
+                        <MdChevronRight className="text-xl" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <SessionTable sessions={sessions} />
+                {pagination.totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                    <div className="text-sm text-gray-500 font-medium">
+                      Page {pagination.currentPage} of {pagination.totalPages} • Total: {pagination.totalSessions} sessions
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handlePageChange(pagination.currentPage - 1)}
+                        disabled={!pagination.hasPrev}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${pagination.hasPrev
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg"
+                          : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          }`}
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => handlePageChange(pagination.currentPage + 1)}
+                        disabled={!pagination.hasNext}
+                        className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${pagination.hasNext
+                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg"
+                          : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          }`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
-
-        {loading ? (
-          <div
-            className={
-              view === "card"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-                : ""
-            }
-          >
-            {view === "card" ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} variant="card" />
-              ))
-            ) : (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <Skeleton variant="table-row" count={6} />
-              </div>
-            )}
-          </div>
-        ) : sessions.length === 0 ? (
-          <div className="bg-white py-[60px] px-10 rounded-xl shadow-sm text-center">
-            <p className="text-base text-gray-400">
-              No sessions found for this user.
-            </p>
-          </div>
-        ) : view === "card" ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {sessions.map((session) => (
-                <SessionCard key={session.id} session={session} />
-              ))}
-            </div>
-            {pagination.totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 rounded-xl shadow-sm">
-                <div className="text-sm text-gray-600">
-                  Page {pagination.currentPage} of {pagination.totalPages} • Total:{" "}
-                  {pagination.totalSessions} sessions
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasPrev
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
-                  >
-                    <MdChevronLeft className="text-lg" />
-                    <span>Previous</span>
-                  </button>
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasNext
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
-                  >
-                    <span>Next</span>
-                    <MdChevronRight className="text-lg" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <SessionTable sessions={sessions} />
-            {pagination.totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-white p-4 rounded-xl shadow-sm">
-                <div className="text-sm text-gray-600">
-                  Page {pagination.currentPage} of {pagination.totalPages} • Total:{" "}
-                  {pagination.totalSessions} sessions
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasPrev
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
-                  >
-                    <MdChevronLeft className="text-lg" />
-                    <span>Previous</span>
-                  </button>
-                  <button
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                    className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${pagination.hasNext
-                      ? "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      }`}
-                  >
-                    <span>Next</span>
-                    <MdChevronRight className="text-lg" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
     </div>
   );

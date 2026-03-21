@@ -1,5 +1,16 @@
 import React from "react";
+import { motion } from "framer-motion";
 import "./About.css";
+
+const slideLeft = {
+  hidden: { opacity: 0, x: -60 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } }
+};
+
+const slideRight = {
+  hidden: { opacity: 0, x: 60 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } }
+};
 
 const About = () => {
   return (
@@ -11,7 +22,13 @@ const About = () => {
         <p className="about-subtitle">Voice Emotion Recognition Application</p>
       </div>
 
-      <div className="about-section">
+      <motion.div 
+        className="about-section"
+        variants={slideLeft}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <div className="section-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"></circle>
@@ -30,9 +47,15 @@ const About = () => {
           to understand your emotional state, providing a more empathetic and accurate
           interaction with our AI Avatar companion.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="about-section">
+      <motion.div 
+        className="about-section"
+        variants={slideRight}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <div className="section-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -48,9 +71,15 @@ const About = () => {
           self-awareness and professional intervention, providing an accessible tool that
           identifies risks through voice and behavioral patterns.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="about-section">
+      <motion.div 
+        className="about-section"
+        variants={slideLeft}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <div className="section-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -64,9 +93,15 @@ const About = () => {
           through technology that listens, understands, and provides immediate support while
           ensuring a path to professional clinical care when necessary.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="about-section objectives-section">
+      <motion.div 
+        className="about-section objectives-section"
+        variants={slideRight}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+      >
         <div className="section-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
@@ -110,8 +145,14 @@ const About = () => {
             </p>
           </div>
         </div>
-      </div>
-      <div className="about-section team-section">
+      </motion.div>
+      <motion.div 
+        className="about-section team-section"
+        variants={slideLeft}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+      >
         <div className="section-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -163,7 +204,7 @@ const About = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

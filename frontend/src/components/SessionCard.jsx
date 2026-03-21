@@ -26,37 +26,39 @@ const SessionCard = ({ session }) => {
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-2xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col gap-4 cursor-pointer border border-gray-200 w-full min-h-[160px]"
+      className="group bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 flex flex-col gap-5 cursor-pointer w-full"
     >
-      <div className="flex justify-between items-center gap-3">
-        <div className="flex items-center gap-3 text-indigo-500 font-semibold text-sm uppercase">
-          <MdChat className="text-lg" />
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex items-center gap-2.5 bg-indigo-50 px-3 py-1.5 rounded-lg text-indigo-600 font-bold text-xs uppercase tracking-wider">
+          <MdChat className="text-base" />
           <span>{session.type}</span>
         </div>
-        <RiskBadge level={session.risk_level} score={session.risk_score} />
+        <RiskBadge level={session.risk_level} score={session.risk_score} size="sm" />
       </div>
 
-      <div>
+      <div className="flex-1">
         {session.summary ? (
-          <p className="text-sm text-gray-800 leading-relaxed">
+          <p className="text-[15px] text-gray-700 leading-relaxed font-medium line-clamp-4 group-hover:text-gray-900 transition-colors">
             {session.summary}
           </p>
         ) : (
-          <p className="text-sm text-gray-400 italic">No summary available</p>
+          <p className="text-sm text-gray-400 italic">No summary available for this session</p>
         )}
       </div>
 
-      <div className="pt-3 border-t border-gray-100 text-xs text-gray-400 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-        <div className="flex items-center gap-2">
-          <MdCalendarToday className="text-sm" />
-          <span>{formatDate(session.created_at)}</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <MdMessage className="text-sm" />
-            <span>{session.messageCount || 0}</span>
+      <div className="pt-4 border-t border-gray-50 flex flex-col gap-3">
+        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-gray-400">
+          <div className="flex items-center gap-1.5">
+            <MdCalendarToday className="text-sm text-indigo-400" />
+            <span>{formatDate(session.created_at)}</span>
           </div>
-          <div className="font-mono">ID: {session.id}</div>
+          <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded">
+            <MdMessage className="text-sm text-indigo-400" />
+            <span>{session.messageCount || 0} msgs</span>
+          </div>
+        </div>
+        <div className="text-[10px] font-mono text-gray-300 text-right">
+          ID: {String(session.id || "").substring(0, 8)}...
         </div>
       </div>
     </div>

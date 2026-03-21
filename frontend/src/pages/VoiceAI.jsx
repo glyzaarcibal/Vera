@@ -7,42 +7,42 @@ const VOICES = [
     id: "JBFqnCBsd6RMkjVDRZzb",
     gender: "Man",
     name: "Atlas",
-    avatar: "🎙️",
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     gradient: "from-indigo-500 to-purple-600",
   },
   {
     id: "EXAVITQu4vr4xnSDxMaL",
     gender: "Woman",
     name: "Nova",
-    avatar: "✨",
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
     gradient: "from-pink-500 to-rose-600",
   },
   {
     id: "CwhRBWXzGAHq8TQ4Fs17",
     gender: "Man",
     name: "Orion",
-    avatar: "🔮",
+    avatar: "https://randomuser.me/api/portraits/men/46.jpg",
     gradient: "from-blue-500 to-cyan-600",
   },
   {
     id: "SAz9YHcvj6GT2YYXdXww",
     gender: "Woman",
     name: "Luna",
-    avatar: "🌙",
+    avatar: "https://randomuser.me/api/portraits/women/17.jpg",
     gradient: "from-purple-500 to-fuchsia-600",
   },
   {
     id: "TX3LPaxmHKxFdv7VOQHJ",
     gender: "Man",
     name: "Sage",
-    avatar: "🍃",
+    avatar: "https://randomuser.me/api/portraits/men/62.jpg",
     gradient: "from-green-500 to-emerald-600",
   },
   {
     id: "cgSgspJ2msm6clMCkdW9",
     gender: "Woman",
     name: "Ember",
-    avatar: "🔥",
+    avatar: "https://randomuser.me/api/portraits/women/31.jpg",
     gradient: "from-orange-500 to-red-600",
   },
 ];
@@ -552,12 +552,12 @@ const VoiceAI = () => {
                             }`}
                         >
                           <div
-                            className={`w-18 h-18 w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-3xl shadow-md ${isActive
-                              ? "bg-white/20"
+                            className={`w-18 h-18 w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-3xl shadow-md overflow-hidden ${isActive
+                              ? "bg-white/20 ring-4 ring-white/30"
                               : "bg-gray-50 border border-gray-100"
                               }`}
                           >
-                            {voice.avatar}
+                            <img src={voice.avatar} alt={voice.name} className="w-full h-full object-cover" />
                           </div>
                           <div className="text-center">
                             <p
@@ -638,10 +638,10 @@ const VoiceAI = () => {
 
               {/* Avatar */}
               <div
-                className={`voice-avatar-orb w-36 h-36 rounded-full flex items-center justify-center text-5xl relative ${conversationMode === "speaking" ? "speaking" : ""
+                className={`voice-avatar-orb w-36 h-36 rounded-full flex items-center justify-center text-5xl relative overflow-hidden shadow-2xl ${conversationMode === "speaking" ? "speaking" : ""
                   }`}
               >
-                {VOICES[selectedVoiceIndex].avatar}
+                <img src={VOICES[selectedVoiceIndex].avatar} alt={VOICES[selectedVoiceIndex].name} className="w-full h-full object-cover z-10" />
                 {conversationMode === "speaking" && (
                   <div className="ping-ring absolute inset-0 rounded-full" />
                 )}
@@ -816,17 +816,17 @@ const VoiceAI = () => {
           <div className="feature-grid">
             {[
               {
-                icon: "🎙️",
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>,
                 title: "Voice Chat",
                 desc: "Natural voice conversation with your AI",
               },
               {
-                icon: "💡",
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
                 title: "Live Support",
                 desc: "Real-time guidance & emotional support",
               },
               {
-                icon: "🛡️",
+                icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
                 title: "Private",
                 desc: "Secure, confidential interactions",
               },

@@ -261,3 +261,22 @@
     display: none;
   }
 }
+
+.new-chat-btn {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.new-chat-btn:hover {
+  background: rgba(102, 126, 234, 0.15);
+  transform: translateY(-1px);
+}

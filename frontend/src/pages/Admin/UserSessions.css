@@ -143,11 +143,11 @@
 }
 
 .user-analytics-container {
-  background: #fff;
-  border: 1px solid #eef2ff;
+  /* background: #fff; */
+  /* border: 1px solid #eef2ff; */
   border-radius: 18px;
   padding: 24px;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+  /* box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05); */
 }
 
 .user-analytics-head {

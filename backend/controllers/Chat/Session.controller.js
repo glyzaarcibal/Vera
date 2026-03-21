@@ -20,8 +20,8 @@ export const initSession = async (req, res) => {
 export const getAllSessionsOfByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page, limit, type, riskLevels } = req.query;
-
+    const { page, limit, type, riskLevels, sortBy, sortOrder } = req.query;
+    
     // Parse riskLevels from comma-separated string to array
     const parsedRiskLevels = riskLevels ? riskLevels.split(",") : [];
 
@@ -30,6 +30,8 @@ export const getAllSessionsOfByUser = async (req, res) => {
       limit,
       type,
       riskLevels: parsedRiskLevels,
+      sortBy,
+      sortOrder,
     });
 
     return res.status(200).json(result);

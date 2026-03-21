@@ -203,9 +203,9 @@ const Welcome = () => {
   };
   const domain = url => { try { return new URL(url).hostname.replace("www.", ""); } catch { return url; } };
 
-  const resourcesList = Array.isArray(resources) ? resources : [];
-  const featuredResource = resourcesList[0];
-  const otherResources = resourcesList.slice(1, 7);
+  const validResources = Array.isArray(resources) ? resources : [];
+  const featuredResource = validResources[0];
+  const otherResources = validResources.slice(1, 7);
 
   if (loading) return (
     <div className="v-loading">
@@ -283,6 +283,90 @@ const Welcome = () => {
               <p className="v-feat-desc">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="v-divider" />
+
+      {/* ══ MOBILE APP PROMO ═══════════════════════════════ */}
+      <div className="v-section" style={{ background: "linear-gradient(135deg, rgba(108, 99, 255, 0.04) 0%, rgba(167, 139, 250, 0.05) 100%)", borderRadius: "32px", padding: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "40px", flexWrap: "wrap", border: "1px solid rgba(108, 99, 255, 0.1)" }}>
+        <div style={{ flex: "1 1 400px" }}>
+          <span className="sa sa-up sa-d0 v-label">V.E.R.A for Mobile</span>
+          <h2 className="sa sa-up sa-d1 v-heading" style={{ marginBottom: "20px", fontSize: "36px" }}>Take your wellness <em>anywhere</em></h2>
+          <p className="sa sa-up sa-d2 v-sub" style={{ fontSize: "18px", color: "var(--muted)" }}>
+            Download the V.E.R.A mobile app to get 24/7 access to AI support, emotion tracking, and customized mental health resources right in your pocket. 
+          </p>
+        </div>
+
+        {/* Mock Mobile Phone Frame */}
+        <div className="sa sa-scale sa-d2" style={{ 
+          position: "relative",
+          width: "280px", 
+          height: "540px", 
+          background: "#2d3748", /* Dark sleek phone body */
+          padding: "50px 14px 60px 14px", /* Thick top and bottom bezels */
+          borderRadius: "40px", 
+          boxShadow: "0 30px 60px rgba(108, 99, 255, 0.2)", 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center", 
+          flexShrink: 0, 
+          margin: "auto",
+          border: "4px solid #1a202c"
+        }}>
+          {/* Top Speaker/Camera */}
+          <div style={{ position: "absolute", top: "22px", display: "flex", gap: "12px", alignItems: "center" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#4a5568" }} />
+            <div style={{ width: "40px", height: "6px", borderRadius: "3px", background: "#4a5568" }} />
+          </div>
+
+          {/* Phone Screen */}
+          <div style={{
+            width: "100%",
+            height: "100%",
+            background: "#ffffff",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            position: "relative",
+            boxShadow: "inset 0 0 10px rgba(0,0,0,0.05)"
+          }}>
+            {/* Top Text inside Screen removed */}
+
+            {/* QR Code container with scanner brackets */}
+            <div style={{ position: "relative", padding: "16px", marginBottom: "30px", background: "#f8fafc", borderRadius: "16px" }}>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=Download+VERA+App&color=25164d" alt="Scan QR Code" style={{ width: "160px", height: "160px", mixBlendMode: "multiply" }} />
+              
+              {/* Animated Scanner Bracket Corners */}
+              <div style={{ position: "absolute", top: "0", left: "0", width: "20px", height: "20px", borderTop: "3px solid #6c63ff", borderLeft: "3px solid #6c63ff", borderRadius: "8px 0 0 0" }} />
+              <div style={{ position: "absolute", top: "0", right: "0", width: "20px", height: "20px", borderTop: "3px solid #6c63ff", borderRight: "3px solid #6c63ff", borderRadius: "0 8px 0 0" }} />
+              <div style={{ position: "absolute", bottom: "0", left: "0", width: "20px", height: "20px", borderBottom: "3px solid #6c63ff", borderLeft: "3px solid #6c63ff", borderRadius: "0 0 0 8px" }} />
+              <div style={{ position: "absolute", bottom: "0", right: "0", width: "20px", height: "20px", borderBottom: "3px solid #6c63ff", borderRight: "3px solid #6c63ff", borderRadius: "0 0 8px 0" }} />
+            </div>
+
+            {/* Scan Now button pill */}
+            <div style={{ 
+               background: "#e8e6ff", 
+               color: "#6c63ff", 
+               padding: "12px 32px", 
+               borderRadius: "50px", 
+               fontWeight: "800", 
+               fontSize: "14px", 
+               letterSpacing: "1px",
+               textTransform: "uppercase",
+               boxShadow: "0 4px 15px rgba(108, 99, 255, 0.15)"
+            }}>
+               Scan Now
+            </div>
+          </div>
+
+          {/* Bottom Home Button */}
+          <div style={{ position: "absolute", bottom: "15px", width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #4a5568", display: "flex", justifyContent: "center", alignItems: "center", background: "#323743" }}>
+            <div style={{ width: "12px", height: "12px", borderRadius: "4px", border: "1.5px solid #4a5568" }} />
+          </div>
         </div>
       </div>
 
