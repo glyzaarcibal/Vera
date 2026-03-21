@@ -54,6 +54,31 @@ export async function unsetSession(req, res, next) {
 }
 
 export async function setSupabaseSession(req, res, next) {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  const bearerToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+  // Prefer explicit bearer token (mobile clients) and fall back to cookie sessions (web clients).
+  if (bearerToken) {
+    try {
+      const { data, error } = await supabaseAnon.auth.getUser(bearerToken);
+      if (error) throw new Error(error.message);
+      if (!data?.user) throw new Error("Invalid or expired token");
+
+      req.user = data.user;
+      req.userId = data.user.id;
+      return next();
+    } catch (e) {
+      console.error("Auth bearer token error:", e.message);
+      return res.status(401).json({
+        message: "Invalid or expired token",
+        error: e.message || "Invalid or expired token",
+      });
+    }
+  }
+
   const access_token = req.cookies.access_token;
   const refresh_token = req.cookies.refresh_token;
 

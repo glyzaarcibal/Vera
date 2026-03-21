@@ -4,14 +4,14 @@ import { TouchableOpacity, Text, View } from 'react-native';
 const TabButton = ({ label, isActive, onClick }) => {
   return (
     <TouchableOpacity
-      className={`px-8 py-4 relative ${
+      className={`px-5 py-3 relative ${
         isActive ? 'bg-white' : 'bg-transparent'
       }`}
       onPress={onClick}
       activeOpacity={0.7}
     >
       <Text
-        className={`font-semibold text-center ${
+        className={`font-semibold text-center text-sm ${
           isActive ? 'text-indigo-500' : 'text-gray-500'
         }`}
       >

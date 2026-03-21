@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Image, // Add this
+  Image,
+  Modal,
+  Alert,
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { Picker } from '@react-native-picker/picker'
@@ -20,6 +22,24 @@ const Analytics = ({ navigation }) => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deletingUserId, setDeletingUserId] = useState(null)
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false)
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [addForm, setAddForm] = useState({
+    username: '',
+    email: '',
+    role: 'user',
+    password: '',
+  })
+  const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
+    role: 'user',
+    password: '',
+  })
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -82,6 +102,174 @@ const Analytics = ({ navigation }) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const openEditModal = user => {
+    setEditingUser(user)
+    setEditForm({
+      username: user.username || '',
+      email: user.email || '',
+      role: (user.role || 'user').toLowerCase(),
+      password: '',
+    })
+    setIsEditModalVisible(true)
+  }
+
+  const openAddModal = () => {
+    setAddForm({
+      username: '',
+      email: '',
+      role: 'user',
+      password: '',
+    })
+    setIsAddModalVisible(true)
+  }
+
+  const closeAddModal = () => {
+    if (creatingUser) return
+    setIsAddModalVisible(false)
+  }
+
+  const handleCreateUser = async () => {
+    const username = addForm.username.trim()
+    const email = addForm.email.trim()
+    const password = addForm.password
+
+    if (!username || !email || !password) {
+      Alert.alert(
+        'Validation error',
+        'Username, email, and password are required.',
+      )
+      return
+    }
+
+    if (!email.includes('@')) {
+      Alert.alert('Validation error', 'Please enter a valid email address.')
+      return
+    }
+
+    if (password.length < 6) {
+      Alert.alert(
+        'Validation error',
+        'Password should be at least 6 characters long.',
+      )
+      return
+    }
+
+    try {
+      setCreatingUser(true)
+
+      await axiosInstance.post('/admin/users/create-user', {
+        username,
+        email,
+        password,
+        role: addForm.role,
+      })
+
+      Alert.alert('Success', 'User created successfully.')
+      setIsAddModalVisible(false)
+
+      if (currentPage !== 1) {
+        setCurrentPage(1)
+      } else {
+        await fetchAllUsers()
+      }
+    } catch (e) {
+      console.error('Error creating user:', e)
+      Alert.alert(
+        'Create failed',
+        e.response?.data?.message || 'Failed to create user.',
+      )
+    } finally {
+      setCreatingUser(false)
+    }
+  }
+
+  const closeEditModal = () => {
+    if (savingEdit) return
+    setIsEditModalVisible(false)
+    setEditingUser(null)
+    setEditForm({
+      username: '',
+      email: '',
+      role: 'user',
+      password: '',
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return
+
+    const username = editForm.username.trim()
+    const email = editForm.email.trim()
+
+    if (!username || !email) {
+      Alert.alert('Validation error', 'Username and email are required.')
+      return
+    }
+
+    if (!email.includes('@')) {
+      Alert.alert('Validation error', 'Please enter a valid email address.')
+      return
+    }
+
+    try {
+      setSavingEdit(true)
+
+      await axiosInstance.put(`/admin/users/update-user/${editingUser.id}`, {
+        username,
+        email,
+        role: editForm.role,
+        password: editForm.password,
+      })
+
+      Alert.alert('Success', 'User updated successfully.')
+      closeEditModal()
+      await fetchAllUsers()
+    } catch (e) {
+      console.error('Error updating user:', e)
+      Alert.alert(
+        'Update failed',
+        e.response?.data?.message || 'Failed to update user.',
+      )
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleDeleteUser = user => {
+    Alert.alert(
+      'Delete user',
+      `Are you sure you want to delete ${user.username}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeletingUserId(user.id)
+              await axiosInstance.delete(`/admin/users/delete-user/${user.id}`)
+              Alert.alert('Success', 'User deleted successfully.')
+
+              if (users.length === 1 && currentPage > 1) {
+                setCurrentPage(prev => Math.max(1, prev - 1))
+              } else {
+                await fetchAllUsers()
+              }
+            } catch (e) {
+              console.error('Error deleting user:', e)
+              Alert.alert(
+                'Delete failed',
+                e.response?.data?.message || 'Failed to delete user.',
+              )
+            } finally {
+              setDeletingUserId(null)
+            }
+          },
+        },
+      ],
+    )
   }
 
   const getRoleBadgeStyles = role => {
@@ -160,14 +348,23 @@ const Analytics = ({ navigation }) => {
             View Sessions
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity className="bg-blue-600 py-3 px-4 rounded-lg">
+        <TouchableOpacity
+          onPress={() => openEditModal(user)}
+          className="bg-blue-600 py-3 px-4 rounded-lg"
+        >
           <Text className="text-white text-center font-semibold text-sm">
             Edit
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity className="bg-red-600 py-3 px-4 rounded-lg">
+        <TouchableOpacity
+          onPress={() => handleDeleteUser(user)}
+          disabled={deletingUserId === user.id}
+          className={`py-3 px-4 rounded-lg ${
+            deletingUserId === user.id ? 'bg-red-400' : 'bg-red-600'
+          }`}
+        >
           <Text className="text-white text-center font-semibold text-sm">
-            Delete
+            {deletingUserId === user.id ? 'Deleting...' : 'Delete'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -233,7 +430,10 @@ const Analytics = ({ navigation }) => {
 
         {/* Add User Button */}
         <View className="px-4 mb-4">
-          <TouchableOpacity className="bg-blue-600 py-3 px-4 rounded-lg flex-row items-center justify-center gap-2">
+          <TouchableOpacity
+            onPress={openAddModal}
+            className="bg-blue-600 py-3 px-4 rounded-lg flex-row items-center justify-center gap-2"
+          >
             <Text className="text-white font-semibold text-base">
               + Add User
             </Text>
@@ -299,6 +499,186 @@ const Analytics = ({ navigation }) => {
           </Text>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={isAddModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeAddModal}
+      >
+        <View className="flex-1 bg-black/40 justify-center px-4">
+          <View className="bg-white rounded-2xl p-5">
+            <Text className="text-xl font-bold text-gray-900 mb-4">
+              Add User
+            </Text>
+
+            <Text className="text-sm text-gray-700 mb-1">Username</Text>
+            <TextInput
+              value={addForm.username}
+              onChangeText={value =>
+                setAddForm(prev => ({ ...prev, username: value }))
+              }
+              placeholder="Enter username"
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-3"
+              editable={!creatingUser}
+            />
+
+            <Text className="text-sm text-gray-700 mb-1">Email</Text>
+            <TextInput
+              value={addForm.email}
+              onChangeText={value =>
+                setAddForm(prev => ({ ...prev, email: value }))
+              }
+              placeholder="Enter email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-3"
+              editable={!creatingUser}
+            />
+
+            <Text className="text-sm text-gray-700 mb-1">Role</Text>
+            <View className="border border-gray-300 rounded-lg mb-3 overflow-hidden">
+              <Picker
+                selectedValue={addForm.role}
+                onValueChange={value =>
+                  setAddForm(prev => ({ ...prev, role: value }))
+                }
+                enabled={!creatingUser}
+              >
+                <Picker.Item label="Admin" value="admin" />
+                <Picker.Item label="Moderator" value="moderator" />
+                <Picker.Item label="User" value="user" />
+              </Picker>
+            </View>
+
+            <Text className="text-sm text-gray-700 mb-1">Password</Text>
+            <TextInput
+              value={addForm.password}
+              onChangeText={value =>
+                setAddForm(prev => ({ ...prev, password: value }))
+              }
+              placeholder="Enter temporary password"
+              secureTextEntry
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-5"
+              editable={!creatingUser}
+            />
+
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={closeAddModal}
+                disabled={creatingUser}
+                className="flex-1 bg-gray-200 py-3 rounded-lg"
+              >
+                <Text className="text-gray-800 text-center font-semibold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCreateUser}
+                disabled={creatingUser}
+                className={`flex-1 py-3 rounded-lg ${
+                  creatingUser ? 'bg-blue-400' : 'bg-blue-600'
+                }`}
+              >
+                <Text className="text-white text-center font-semibold">
+                  {creatingUser ? 'Creating...' : 'Create'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={isEditModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeEditModal}
+      >
+        <View className="flex-1 bg-black/40 justify-center px-4">
+          <View className="bg-white rounded-2xl p-5">
+            <Text className="text-xl font-bold text-gray-900 mb-4">
+              Edit User
+            </Text>
+
+            <Text className="text-sm text-gray-700 mb-1">Username</Text>
+            <TextInput
+              value={editForm.username}
+              onChangeText={value =>
+                setEditForm(prev => ({ ...prev, username: value }))
+              }
+              placeholder="Enter username"
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-3"
+              editable={!savingEdit}
+            />
+
+            <Text className="text-sm text-gray-700 mb-1">Email</Text>
+            <TextInput
+              value={editForm.email}
+              onChangeText={value =>
+                setEditForm(prev => ({ ...prev, email: value }))
+              }
+              placeholder="Enter email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-3"
+              editable={!savingEdit}
+            />
+
+            <Text className="text-sm text-gray-700 mb-1">Role</Text>
+            <View className="border border-gray-300 rounded-lg mb-3 overflow-hidden">
+              <Picker
+                selectedValue={editForm.role}
+                onValueChange={value =>
+                  setEditForm(prev => ({ ...prev, role: value }))
+                }
+                enabled={!savingEdit}
+              >
+                <Picker.Item label="Admin" value="admin" />
+                <Picker.Item label="Moderator" value="moderator" />
+                <Picker.Item label="User" value="user" />
+              </Picker>
+            </View>
+
+            <Text className="text-sm text-gray-700 mb-1">
+              New Password (optional)
+            </Text>
+            <TextInput
+              value={editForm.password}
+              onChangeText={value =>
+                setEditForm(prev => ({ ...prev, password: value }))
+              }
+              placeholder="Leave blank to keep current password"
+              secureTextEntry
+              className="border border-gray-300 rounded-lg px-3 py-2 mb-5"
+              editable={!savingEdit}
+            />
+
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={closeEditModal}
+                disabled={savingEdit}
+                className="flex-1 bg-gray-200 py-3 rounded-lg"
+              >
+                <Text className="text-gray-800 text-center font-semibold">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveEdit}
+                disabled={savingEdit}
+                className={`flex-1 py-3 rounded-lg ${
+                  savingEdit ? 'bg-blue-400' : 'bg-blue-600'
+                }`}
+              >
+                <Text className="text-white text-center font-semibold">
+                  {savingEdit ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
