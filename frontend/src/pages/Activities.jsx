@@ -136,59 +136,61 @@ const Activities = () => {
       id: 1,
       name: "Clipcard Game",
       description: "Test your memory with matching cards",
-      icon: "🎮",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>,
       path: "/activities/clipcard",
     },
     {
       id: 2,
       name: "Diary",
       description: "Write and track your daily thoughts",
-      icon: "📔",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>,
       path: "/activities/diary",
     },
     {
       id: 4,
       name: "Mood Tracker",
       description: "Track and monitor your mood",
-      icon: "😊",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>,
       path: "/activities/mood-tracker",
     },
     {
       id: 5,
       name: "Sleep Tracker",
       description: "Monitor your sleep patterns",
-      icon: "😴",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
       path: "/activities/sleep-tracker",
     },
     {
       id: 6,
       name: "Weekly Wellness Report",
       description: "View your weekly mood, sleep, and breathing insights",
-      icon: "📊",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>,
       path: "/activities/weekly-wellness-report",
     },
     {
       id: 7,
       name: "Take a Breath",
       description: "Guided breathing exercise for quick relaxation",
-      icon: "🌬️",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>,
       path: "/activities/take-a-breath",
     },
     {
       id: 8,
       name: "Medication History",
       description: "Log and track your medication records",
-      icon: "💊",
+      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>,
       path: "/activities/medication-history",
     },
   ];
 
   return (
     <div className="activities-container">
-      <h1>Activities</h1>
-      <p className="activities-subtitle">
-        Explore and engage with our wellness activities
-      </p>
+      <div className="activities-header">
+        <h1>Activities</h1>
+        <p className="activities-subtitle">
+          Explore and engage with our wellness activities
+        </p>
+      </div>
 
       {isReportsMode && (
         <div className="reports-section">
@@ -295,7 +297,9 @@ const Activities = () => {
             className="activity-card"
             onClick={() => navigate(activity.path)}
           >
-            <div className="activity-icon">{activity.icon}</div>
+            <div className="activity-icon-wrapper">
+              <div className="activity-icon">{activity.icon}</div>
+            </div>
             <h3>{activity.name}</h3>
             <p>{activity.description}</p>
             <div className="activity-footer">

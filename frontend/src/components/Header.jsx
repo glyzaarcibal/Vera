@@ -40,7 +40,7 @@ const Header = () => {
     <header className={`header ${isMenuOpen ? 'header--menu-open' : ''}`}>
       <nav className="header-nav">
         <Link to="/" className="header-logo">
-          <span className="logo-icon">V</span>
+          <img src="/icon.png" alt="V.E.R.A." className="logo-img" />
           <span className="logo-text">V.E.R.A.</span>
         </Link>
 
@@ -129,18 +129,40 @@ const Header = () => {
                 </div>
                 <span className="mobile-only">Notifications</span>
               </Link>
+              
+              {/* Desktop Profile Dropdown */}
+              <div className="desktop-profile-dropdown">
+                <div className="profile-trigger">
+                  <div className="profile-avatar">
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="Profile" className="header-profile-img" />
+                    ) : (
+                      user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
+                    )}
+                  </div>
+                  <span>{user?.username || user?.email}</span>
+                </div>
+                <div className="dropdown-menu">
+                  <Link to="/profile" className="dropdown-item">Profile</Link>
+                  <button onClick={handleLogout} className="dropdown-item text-red">Logout</button>
+                </div>
+              </div>
+
+              {/* Mobile Profile & Logout */}
               <Link
                 to="/profile"
-                className={`header-link profile-link ${isActive("/profile") ? "active" : ""}`}
+                className={`header-link profile-link mobile-only-flex ${isActive("/profile") ? "active" : ""}`}
               >
                 <div className="profile-avatar">
-                  {user?.username?.[0]?.toUpperCase() ||
-                    user?.email?.[0]?.toUpperCase() ||
-                    "U"}
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Profile" className="header-profile-img" />
+                  ) : (
+                    user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
+                  )}
                 </div>
                 <span>{user?.username || user?.email}</span>
               </Link>
-              <button onClick={handleLogout} className="header-button header-logout-mobile">
+              <button onClick={handleLogout} className="header-button header-logout-mobile mobile-only-flex">
                 <LogOut size={18} className="mobile-only" />
                 <span>Logout</span>
               </button>
