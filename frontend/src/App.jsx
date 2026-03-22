@@ -103,6 +103,7 @@ const App = () => {
         <Route path="/psychology/sessions/:userId" element={<UserSessions />} />
         <Route path="/psychology/chat/:sessionId" element={<UserChat />} />
         <Route path="/psychology/resources" element={<Resources />} />
+        <Route path="/psychology/reports" element={<Reports />} />
       </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

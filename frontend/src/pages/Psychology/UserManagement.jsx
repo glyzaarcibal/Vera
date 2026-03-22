@@ -3,6 +3,7 @@ import { MdAdd, MdSearch, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import "../Admin/UserManagement.css"; // Reuse styling
 import axiosInstance from "../../utils/axios.instance";
+import ReusableModal from "../../components/ReusableModal";
 
 const PsychologyUserManagement = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const PsychologyUserManagement = () => {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [notification, setNotification] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -81,7 +83,12 @@ const PsychologyUserManagement = () => {
       setPagination(res.data.pagination);
     } catch (e) {
       console.error("Error fetching users:", e);
-      alert(e.response?.data?.message || "Internal Server Error");
+      setNotification({ 
+        isOpen: true, 
+        title: "Fetch Failed", 
+        message: e.response?.data?.message || "Internal Server Error",
+        type: "error"
+      });
     }
   };
 
@@ -91,13 +98,23 @@ const PsychologyUserManagement = () => {
 
     try {
       await axiosInstance.post("/admin/users/create-user", formData);
-      alert("User created successfully!");
+      setNotification({ 
+        isOpen: true, 
+        title: "Success", 
+        message: "User account has been created successfully.",
+        type: "success"
+      });
       setShowAddModal(false);
       setFormData({ email: "", password: "", username: "", role: "user" });
       fetchAllUsers();
     } catch (error) {
       console.error("Error creating user:", error);
-      alert(error.response?.data?.message || "Failed to create user");
+      setNotification({ 
+        isOpen: true, 
+        title: "Creation Failed", 
+        message: error.response?.data?.message || "Failed to create user",
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +122,7 @@ const PsychologyUserManagement = () => {
 
 
   return (
-    <div className="user-management-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
+    <div className="user-management-container relative" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0', minHeight: '100vh' }}>
       <div className="page-header" style={{ marginBottom: 32 }}>
         <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, color: '#22223b', marginBottom: 8 }}>
           User <span className="gradient-text" style={{ background: 'linear-gradient(90deg,#667eea,#764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
@@ -270,117 +287,98 @@ const PsychologyUserManagement = () => {
         </div>
       </div>
 
-      {/* Add User Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Add New User</h2>
+      <ReusableModal
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setFormData({ email: "", password: "", username: "", role: "user" });
+        }}
+        title="Create New User"
+        type="confirm"
+        position="absolute"
+      >
+        <div className="py-2">
+          <p className="text-slate-500 mb-8 text-[15px] font-medium leading-relaxed">Please provide the credentials for the new system user.</p>
+          <form onSubmit={handleAddUser} className="space-y-6">
+            <div className="space-y-5">
+              <div className="group">
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Username</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  placeholder="Enter full name or username"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700"
+                />
+              </div>
+              <div className="group">
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="user@example.com"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700"
+                />
+              </div>
+              <div className="group">
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Security Password</label>
+                <input
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700"
+                />
+              </div>
+              <div className="group">
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Assigned Role</label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700 cursor-pointer appearance-none"
+                >
+                  <option value="user">Standard User</option>
+                  <option value="moderator">System Moderator</option>
+                  <option value="psychology">Licensed Psychologist</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-4 pt-4">
               <button
+                type="button"
                 onClick={() => {
                   setShowAddModal(false);
-                  setFormData({
-                    email: "",
-                    password: "",
-                    username: "",
-                    role: "user",
-                  });
+                  setFormData({ email: "", password: "", username: "", role: "user" });
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="flex-1 px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] tracking-widest transition-all"
               >
-                <MdClose className="text-2xl" />
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-[1.5] group relative overflow-hidden px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[12px] tracking-widest transition-all shadow-xl shadow-indigo-100 disabled:opacity-50 active:scale-95"
+              >
+                <span className="relative z-10">{isLoading ? "PROCESSING..." : "CREATE ACCOUNT"}</span>
+                <div className="absolute inset-x-0 h-full w-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </button>
             </div>
-            <form onSubmit={handleAddUser}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Role
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="user">User</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="psychology">Psychology</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setFormData({
-                      email: "",
-                      password: "",
-                      username: "",
-                      role: "user",
-                    });
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-xl hover:opacity-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                  {isLoading ? "Creating..." : "Create User"}
-                </button>
-              </div>
-            </form>
-          </div>
+          </form>
         </div>
-      )}
+      </ReusableModal>
 
+      <ReusableModal 
+        isOpen={notification.isOpen} 
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+        position="absolute"
+      />
     </div>
   );
 };

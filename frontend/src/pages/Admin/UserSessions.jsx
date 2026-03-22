@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import "./UserSessions.css";
 import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, PieChart, Pie } from "recharts";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 import Skeleton from "../../components/Skeleton";
 import RiskBadge from "../../components/RiskBadge";
@@ -10,6 +12,7 @@ import SessionCard from "../../components/SessionCard";
 import SessionTable from "../../components/SessionTable";
 import ViewToggle from "../../components/ViewToggle";
 import FilterChips from "../../components/FilterChips";
+import ReusableModal from "../../components/ReusableModal";
 
 const UserSessions = () => {
   const { userId } = useParams();
@@ -20,6 +23,8 @@ const UserSessions = () => {
   const [view, setView] = useState("card");
   const [sortOrder, setSortOrder] = useState("desc"); // desc = newest / highest risk first
   const [sortBy, setSortBy] = useState("date"); // "date" = recent to past, "risk" = by risk score
+  const [notification, setNotification] = useState({ isOpen: false, title: "", message: "", type: "info", onConfirm: null });
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Pagination state
   const [pagination, setPagination] = useState({
@@ -79,6 +84,207 @@ const UserSessions = () => {
       fetchAssignedResources(),
     ]);
     setLoading(false);
+  };
+
+  const downloadUserPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      const doc = new jsPDF();
+      const timestamp = new Date().toLocaleString();
+
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(79, 70, 229); // Indigo 600
+      doc.text("Vera User Analysis Report", 105, 20, { align: "center" });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Generated on: ${timestamp}`, 105, 28, { align: "center" });
+
+      // --- USER PROFILE SECTION ---
+      doc.setFontSize(16);
+      doc.setTextColor(31, 41, 55);
+      doc.text("1. User Profile", 14, 45);
+      
+      const profileData = [
+        ["Username", userInfo?.username || "N/A"],
+        ["Email", userInfo?.email || "N/A"],
+        ["Role", userInfo?.role || "user"],
+        ["Status", userInfo?.status || "Active"],
+        ["Gender", userInfo?.gender || "Not specified"],
+        ["Birthday", userInfo?.birthday || userInfo?.date_of_birth ? new Date(userInfo.birthday || userInfo.date_of_birth).toLocaleDateString() : "Not specified"],
+        ["Contact", userInfo?.contact_number || userInfo?.phone || "Not specified"],
+        ["Joined Date", userInfo?.created_at ? new Date(userInfo.created_at).toLocaleDateString() : "N/A"]
+      ];
+
+      autoTable(doc, {
+        startY: 50,
+        head: [["Field", "Details"]],
+        body: profileData,
+        theme: "grid",
+        headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
+        styles: { fontSize: 9 },
+      });
+
+      // --- EMOTION WORDS SECTION ---
+      const emotionWordsEntries = Object.entries(emotionWords);
+      if (emotionWordsEntries.length > 0) {
+        doc.setFontSize(16);
+        doc.text("2. Emotion-Hinting Words Detected", 14, (doc.lastAutoTable?.finalY || 50) + 15);
+        
+        const wordsData = emotionWordsEntries.map(([emotion, words]) => [
+          emotion.charAt(0).toUpperCase() + emotion.slice(1),
+          Array.isArray(words) 
+            ? words.map(w => typeof w === 'object' ? (w.word || w.text || String(w)) : w).join(", ") 
+            : String(words)
+        ]);
+
+        autoTable(doc, {
+          startY: (doc.lastAutoTable?.finalY || 50) + 20,
+          head: [["Emotion", "Detected Words / Phrases"]],
+          body: wordsData,
+          theme: "striped",
+          headStyles: { fillColor: [219, 39, 119], fontSize: 10 }, // Pink 600
+          styles: { fontSize: 9 },
+        });
+      }
+
+      // --- RISK PROGRESSION CHART ---
+      if (sessionRiskHistory.length > 0) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setTextColor(31, 41, 55);
+        doc.text("3. Session Risk Progression", 14, 20);
+
+        // Simple manual chart drawing
+        const chartX = 20;
+        const chartY = 30;
+        const chartW = 170;
+        const chartH = 60;
+        
+        doc.setDrawColor(229, 231, 235);
+        doc.line(chartX, chartY, chartX, chartY + chartH); // Y Axis
+        doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // X Axis
+        
+        const maxRisk = 100;
+        const stepX = chartW / Math.max(sessionRiskHistory.length - 1, 1);
+        
+        doc.setDrawColor(239, 68, 68); // Red-500
+        doc.setLineWidth(0.8);
+        sessionRiskHistory.forEach((point, i) => {
+          const px = chartX + (i * stepX);
+          const py = chartY + chartH - ((point.score / maxRisk) * chartH);
+          
+          doc.setFillColor(239, 68, 68);
+          doc.circle(px, py, 1.2, "F");
+          
+          if (i > 0) {
+            const prevPx = chartX + ((i - 1) * stepX);
+            const prevPy = chartY + chartH - ((sessionRiskHistory[i-1].score / maxRisk) * chartH);
+            doc.line(prevPx, prevPy, px, py);
+          }
+        });
+
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text("Risk Score (0-100)", chartX - 5, chartY - 5);
+        doc.text("High Risk", chartX + chartW + 2, chartY + (chartH * 0.3));
+        doc.text("Low Risk", chartX + chartW + 2, chartY + (chartH * 0.9));
+        
+        // --- MOOD DISTRIBUTION ---
+        const moodCounts = {};
+        detailedActivities.mood.forEach(m => {
+          const type = m.moodType || "Neutral";
+          moodCounts[type] = (moodCounts[type] || 0) + 1;
+        });
+        
+        const moodChartData = Object.entries(moodCounts).map(([name, count]) => ({ name, count }));
+        
+        doc.setFontSize(16);
+        doc.setTextColor(31, 41, 55);
+        doc.text("4. Mood Statistics", 14, chartY + chartH + 25);
+        
+        autoTable(doc, {
+          startY: chartY + chartH + 30,
+          head: [["Mood State", "Logged Frequency"]],
+          body: moodChartData.map(d => [d.name, String(d.count)]),
+          theme: "striped",
+          headStyles: { fillColor: [139, 92, 246] }, // Violet 500
+        });
+      }
+
+      // --- ACTIVITY DETAILS ---
+      // Page for Sleep & Breath
+      doc.addPage();
+      doc.setFontSize(16);
+      doc.text("5. Wellness Activity Log", 14, 20);
+
+      // Sleep Table
+      doc.setFontSize(12);
+      doc.text("A. Sleep Patterns", 14, 30);
+      autoTable(doc, {
+        startY: 35,
+        head: [["Date", "Time", "Duration (Hours)"]],
+        body: detailedActivities.sleep.map(s => [s.date, s.time, String(s.hours)]),
+        theme: "grid",
+        headStyles: { fillColor: [59, 130, 246] }, // Blue 500
+      });
+
+      // Breath Table
+      doc.text("B. Breathing Sessions", 14, (doc.lastAutoTable?.finalY || 35) + 15);
+      autoTable(doc, {
+        startY: (doc.lastAutoTable?.finalY || 35) + 20,
+        head: [["Date", "Time", "Duration (Seconds)"]],
+        body: detailedActivities.breath.map(b => [b.date, b.time, String(b.duration)]),
+        theme: "grid",
+        headStyles: { fillColor: [16, 185, 129] }, // Emerald 500
+      });
+
+      // Page for Diary & Medication
+      doc.addPage();
+      doc.setFontSize(12);
+      doc.text("C. Diary Entry Patterns", 14, 20);
+      autoTable(doc, {
+        startY: 25,
+        head: [["Date", "Timestamp", "Activity Level"]],
+        body: detailedActivities.diary.map(d => [d.date, d.time, "Observation recorded"]),
+        theme: "grid",
+        headStyles: { fillColor: [245, 158, 11] }, // Amber 500
+      });
+
+      if (detailedActivities.medication.length > 0) {
+        doc.text("D. Medication History", 14, (doc.lastAutoTable?.finalY || 25) + 15);
+        autoTable(doc, {
+          startY: (doc.lastAutoTable?.finalY || 25) + 20,
+          head: [["Date", "Name", "Dosage", "Status"]],
+          body: detailedActivities.medication.map(m => [m.date, m.name, m.dosage, m.status]),
+          theme: "grid",
+          headStyles: { fillColor: [239, 68, 68] }, // Red 500
+        });
+      }
+
+      // Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(156, 163, 175);
+        doc.text(`Vera Report - Confidential - Page ${i} of ${pageCount}`, 105, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+      }
+
+      const filename = `UserAnalysis_${userInfo?.username || "Report"}_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+    } catch (error) {
+      console.error("PDF Export Error:", error);
+      setNotification({
+        isOpen: true,
+        title: "Export Failed",
+        message: "Failed to generate the enhanced report. Please check data availability.",
+        type: "error"
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   // Fetch reports data
@@ -298,6 +504,12 @@ const UserSessions = () => {
       }
     } catch (e) {
       console.error("Error fetching reports data:", e);
+      setNotification({
+        isOpen: true,
+        title: "Analysis Failure",
+        message: e.response?.data?.message || "We encountered an issue while generating the user analysis. Please try again.",
+        type: "error"
+      });
     } finally {
       setReportsLoading(false);
     }
@@ -313,7 +525,12 @@ const UserSessions = () => {
       setUserInfo(profile);
     } catch (e) {
       console.error("Error fetching user info:", e);
-      alert("Failed to load user information");
+      setNotification({
+        isOpen: true,
+        title: "User Info Failed",
+        message: e.response?.data?.message || "Failed to load user information. Please try again.",
+        type: "error"
+      });
     }
   };
 
@@ -349,7 +566,12 @@ const UserSessions = () => {
       setPagination(paginationData);
     } catch (e) {
       console.error("Error fetching sessions:", e);
-      alert("Failed to load sessions");
+      setNotification({
+        isOpen: true,
+        title: "Sessions Failed",
+        message: e.response?.data?.message || "Failed to load sessions. Please try again.",
+        type: "error"
+      });
     }
   };
 
@@ -445,30 +667,54 @@ const UserSessions = () => {
         });
       }
 
-      alert(`Successfully assigned ${selectedResourceIds.length} resource(s)`);
+      setNotification({
+        isOpen: true,
+        title: "Resources Assigned",
+        message: `Successfully assigned ${selectedResourceIds.length} resource(s) to the user profile.`,
+        type: "success"
+      });
       setSelectedResourceIds([]);
       await fetchAssignedResources();
     } catch (e) {
       console.error("Error assigning resources:", e);
-      alert(e.response?.data?.message || "Failed to assign resources");
+      setNotification({
+        isOpen: true,
+        title: "Assignment Failed",
+        message: e.response?.data?.message || "Failed to assign resources. Please try again.",
+        type: "error"
+      });
     } finally {
       setAssigning(false);
     }
   };
 
   const handleRemoveAssignment = async (assignmentId) => {
-    if (!window.confirm("Are you sure you want to remove this resource assignment?")) {
-      return;
-    }
-
-    try {
-      await axiosInstance.delete(`/resources/delete-assignment/${assignmentId}`);
-      alert("Resource assignment removed successfully");
-      await fetchAssignedResources();
-    } catch (e) {
-      console.error("Error removing assignment:", e);
-      alert(e.response?.data?.message || "Failed to remove assignment");
-    }
+    setNotification({
+      isOpen: true,
+      title: "Confirm Removal",
+      message: "Are you sure you want to remove this resource assignment? This action cannot be undone.",
+      type: "confirm",
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/resources/delete-assignment/${assignmentId}`);
+          setNotification({
+            isOpen: true,
+            title: "Success",
+            message: "Resource assignment removed successfully",
+            type: "success"
+          });
+          await fetchAssignedResources();
+        } catch (e) {
+          console.error("Error removing assignment:", e);
+          setNotification({
+            isOpen: true,
+            title: "Removal Failed",
+            message: e.response?.data?.message || "Failed to remove assignment. Please try again.",
+            type: "error"
+          });
+        }
+      }
+    });
   };
 
   const getRiskStats = () => {
@@ -515,30 +761,66 @@ const UserSessions = () => {
   const overallRisk = getOverallRisk();
 
   return (
-    <div className="user-sessions-outer-container">
+    <div className="user-sessions-outer-container relative min-h-screen">
       <div className="user-sessions-container">
         {/* Header Section */}
-        <div className="user-sessions-header-row">
-          {/* Sidebar with Back button */}
-          <div className="user-sessions-back-col">
-            <button
-              className="user-sessions-back-btn"
-              onClick={() => navigate(-1)}
-            >
-              <MdArrowBack className="text-xl" />
-              <span>Back</span>
-            </button>
+        <div className="user-sessions-header-row flex items-center justify-between mb-10">
+          <div className="flex items-center">
+            <div className="user-sessions-back-col mr-6">
+              <button
+                className="user-sessions-back-btn flex items-center gap-2.5 bg-white border border-gray-100 px-6 py-3 rounded-2xl text-[13px] font-black shadow-sm hover:shadow-indigo-100 hover:border-indigo-100 transition-all active:scale-95 text-gray-700"
+                onClick={() => navigate(-1)}
+              >
+                <MdArrowBack className="text-lg text-indigo-500" />
+                <span>BACK</span>
+              </button>
+            </div>
+            <div className="user-sessions-main-head">
+              <h1 className="page-title text-4xl font-black text-[#1e1b4b] leading-tight tracking-tight">
+                User <span className="text-indigo-600">Analysis</span>
+              </h1>
+              <p className="page-subtitle text-sm text-gray-500 font-bold opacity-70 mt-1">View and manage user activity, risk assessments, detailed graphs, and reports</p>
+            </div>
           </div>
-          {/* Main header */}
-          <div className="user-sessions-main-head">
-            <h1 className="page-title">
-              User <span className="gradient-text">Analysis</span>
-            </h1>
-            <p className="page-subtitle">View and manage user activity, risk assessments, detailed graphs, and reports</p>
+
+          <div className="user-sessions-export-actions ml-auto flex items-center gap-4">
+            {!loading && !reportsLoading && userInfo && (
+              <button
+                className={`px-8 py-4 bg-linear-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white font-black rounded-2xl shadow-2xl shadow-indigo-100 hover:shadow-indigo-200 transition-all flex items-center gap-3 active:scale-95 hover:-translate-y-0.5 ${isGeneratingPDF ? "opacity-75 cursor-wait" : ""}`}
+                onClick={downloadUserPDF}
+                disabled={loading || !userInfo || isGeneratingPDF}
+              >
+                <span className="text-[13px] tracking-widest uppercase font-black">{isGeneratingPDF ? "GENERATING..." : "DOWNLOAD USER REPORT"}</span>
+              </button>
+            )}
+            {reportsLoading && (
+              <div className="flex items-center gap-3 text-indigo-600 font-black text-[11px] animate-pulse bg-indigo-50/50 px-6 py-4 rounded-2xl border border-indigo-100/50 shadow-sm">
+                <div className="w-2 h-2 bg-indigo-600 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
+                SYSTEM ANALYZING DATA...
+              </div>
+            )}
           </div>
         </div>
-
         {/* Profile Section */}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         <div className="design-section user-profile-section">
           {loading ? (
             <div className="flex items-center gap-5">
@@ -696,9 +978,9 @@ const UserSessions = () => {
                           Emotions are detected from <strong>voice</strong> and <strong>avatar</strong> sessions using Hume AI Prosody model.
                         </p>
                         <div className="mt-4 text-xs text-gray-500 space-y-1">
-                          <p>• Make sure you're using voice or avatar sessions (not text chat)</p>
-                          <p>• Emotions are detected from your voice recordings</p>
-                          <p>• Voice sessions: {aiUsageStats.voiceSessions} | Avatar sessions: {aiUsageStats.avatarSessions}</p>
+                          <p>â€¢ Make sure you're using voice or avatar sessions (not text chat)</p>
+                          <p>â€¢ Emotions are detected from your voice recordings</p>
+                          <p>â€¢ Voice sessions: {aiUsageStats.voiceSessions} | Avatar sessions: {aiUsageStats.avatarSessions}</p>
                         </div>
                       </div>
                     ) : (
@@ -973,7 +1255,7 @@ const UserSessions = () => {
                           <div key={idx} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center shadow-sm hover:shadow-md transition-all">
                             <div>
                               <h5 className="font-bold text-gray-800 text-lg mb-1">{med.name}</h5>
-                              <p className="text-xs text-gray-500 font-medium">Dosage: {med.dosage} • Time: <span className="text-blue-600">{med.time}</span> • {med.date}</p>
+                              <p className="text-xs text-gray-500 font-medium">Dosage: {med.dosage} â€¢ Time: <span className="text-blue-600">{med.time}</span> â€¢ {med.date}</p>
                             </div>
                             <span className={`px-4 py-1.5 text-xs font-bold rounded-full ${med.status.toLowerCase() === 'taken' ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-red-100 text-red-700 ring-1 ring-red-300'}`}>{med.status}</span>
                           </div>
@@ -1208,7 +1490,7 @@ const UserSessions = () => {
                 {pagination.totalPages > 1 && (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-12 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                     <div className="text-sm text-gray-500 font-medium">
-                      Showing Page <span className="text-gray-900 font-bold">{pagination.currentPage}</span> of <span className="text-gray-900 font-bold">{pagination.totalPages}</span> • <span className="text-indigo-600 font-bold">{pagination.totalSessions}</span> Total Sessions
+                      Showing Page <span className="text-gray-900 font-bold">{pagination.currentPage}</span> of <span className="text-gray-900 font-bold">{pagination.totalPages}</span> â€¢ <span className="text-indigo-600 font-bold">{pagination.totalSessions}</span> Total Sessions
                     </div>
                     <div className="flex items-center gap-3">
                       <button
@@ -1243,7 +1525,7 @@ const UserSessions = () => {
                 {pagination.totalPages > 1 && (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                     <div className="text-sm text-gray-500 font-medium">
-                      Page {pagination.currentPage} of {pagination.totalPages} • Total: {pagination.totalSessions} sessions
+                      Page {pagination.currentPage} of {pagination.totalPages} â€¢ Total: {pagination.totalSessions} sessions
                     </div>
                     <div className="flex items-center gap-3">
                       <button
@@ -1272,8 +1554,61 @@ const UserSessions = () => {
               </>
             )}
           </div>
+
+
+
+
+
+
+
+
+
+
+
         </div>
-      </div>
+
+      <ReusableModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        type={notification.type}
+        position="absolute"
+      >
+        <div className="py-2">
+          <p className="text-slate-500 mb-10 font-medium leading-[1.6] text-[15px]">{notification.message}</p>
+          <div className="flex justify-end gap-4">
+            {notification.type === "confirm" ? (
+              <>
+                <button
+                  onClick={() => setNotification({ ...notification, isOpen: false })}
+                  className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-[12px] tracking-widest transition-all active:scale-95"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={() => {
+                    if (notification.onConfirm) notification.onConfirm();
+                    setNotification({ ...notification, isOpen: false });
+                  }}
+                  className="px-10 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black text-[12px] tracking-widest transition-all shadow-xl shadow-rose-100 active:scale-95"
+                >
+                  REMOVE
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setNotification({ ...notification, isOpen: false })}
+                className={`group relative overflow-hidden px-12 py-4 rounded-2xl font-black text-[12px] tracking-widest text-white transition-all shadow-xl active:scale-95 ${
+                  notification.type === "error" ? "bg-rose-500 hover:bg-rose-600 shadow-rose-100" : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100"
+                }`}
+              >
+                <span className="relative z-10 uppercase">Got it</span>
+                <div className="absolute inset-x-0 h-full w-full bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              </button>
+            )}
+          </div>
+        </div>
+      </ReusableModal>      </div>
     </div>
   );
 };
