@@ -10,9 +10,29 @@ import {
 
 import { v4 as uuidv4 } from "uuid";
 
+async function generateUniquePendingUserCode(maxAttempts = 10) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const { data, error } = await supabaseAdmin
+      .from("pending_users")
+      .select("id")
+      .eq("token", code)
+      .limit(1);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data || data.length === 0) {
+      return code;
+    }
+  }
+
+  throw new Error("Unable to generate a unique verification code. Please try again.");
+}
+
 export async function createUsers(user) {
-  // Generate a 6-digit OTP code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const code = await generateUniquePendingUserCode();
 
   // 1. Save to pending_users table
   const { error: insertError } = await supabaseAdmin
@@ -160,7 +180,7 @@ export async function resendVerificationLink(email) {
 
   if (!requireEmailConfirmation) return;
 
-  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const newCode = await generateUniquePendingUserCode();
 
   // 1. Check if user is in pending_users
   const { data: pendingUser } = await supabaseAdmin

@@ -176,13 +176,29 @@ const Welcome = () => {
     }
   };
 
+  const normalizeResources = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.resources)) return payload.resources;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.items)) return payload.items;
+    return [];
+  };
+
   const fetchData = async () => { setLoading(true); await fetchResources(); if (user?.id) await fetchAssignedResources(); setLoading(false); };
-  const fetchResources = async () => { try { const r = await axiosInstance.get("/resources"); setResources(r.data.resources || r.data || []); } catch (e) { console.error(e); } };
+  const fetchResources = async () => {
+    try {
+      const r = await axiosInstance.get("/resources");
+      setResources(normalizeResources(r.data));
+    } catch (e) {
+      console.error(e);
+      setResources([]);
+    }
+  };
   const fetchAssignedResources = async () => {
     try {
       const r = await axiosInstance.get(`/resources/get-assignments/${user.id}`);
       const assignments = r.data.assignments || [];
-      const all = (await axiosInstance.get("/resources")).data.resources || [];
+      const all = normalizeResources((await axiosInstance.get("/resources")).data);
       setAssignedResourceDetails(assignments.map(a => all.find(x => x.id === a.resource_id)).filter(Boolean));
     } catch (e) { console.error(e); }
   };
@@ -379,7 +395,7 @@ const Welcome = () => {
       )}
 
       {/* ══ ALL RESOURCES ══════════════════════════════════ */}
-      {resources.length > 0 && (
+      {resourcesList.length > 0 && (
         <div className="v-section">
           <div className="v-section-head">
             <span className="sa sa-up sa-d0 v-label">Library</span>

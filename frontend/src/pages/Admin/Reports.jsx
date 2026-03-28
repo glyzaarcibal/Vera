@@ -579,6 +579,18 @@ const PsychologyReports = () => {
             <div className="text-[11px] font-black text-indigo-500 uppercase tracking-widest">Wellness Recovery</div>
           </div>
         </div>
+        <div className="reports-summary-card">
+          <span className="reports-summary-label">Total Activities</span>
+          <span className="reports-summary-value">
+            {loading ? "..." : aggregateReport.totalActivities.toLocaleString()}
+          </span>
+        </div>
+        <div className="reports-summary-card">
+          <span className="reports-summary-label">Total Sessions</span>
+          <span className="reports-summary-value">
+            {loading ? "..." : aggregateReport.totalSessions.toLocaleString()}
+          </span>
+        </div>
       </div>
 
       <div className="reports-grid gap-12">
