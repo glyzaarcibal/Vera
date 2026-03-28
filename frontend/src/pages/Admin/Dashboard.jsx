@@ -153,13 +153,13 @@ const Dashboard = () => {
 
       <div className="dashboard-content">
         <div className="activity-card chart-card-full">
-          <h2 className="activity-title">Avatar sessions – risk distribution</h2>
+          <h2 className="activity-title">Total sessions – risk distribution</h2>
           {avatarRiskLoading ? (
             <p className="chart-loading">Loading chart...</p>
           ) : avatarRiskStats && avatarRiskStats.total > 0 ? (
             <>
               <div className="avatar-risk-summary">
-                <span className="avatar-risk-total">Total avatar sessions: {avatarRiskStats.total}</span>
+                <span className="avatar-risk-total">Total sessions analyzed: {avatarRiskStats.total}</span>
                 {avatarRiskStats.averageScore != null && (
                   <span className="avatar-risk-avg">Avg risk score: {avatarRiskStats.averageScore}</span>
                 )}

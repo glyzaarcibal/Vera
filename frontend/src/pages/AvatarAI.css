@@ -148,6 +148,30 @@
   color: var(--vera-primary);
 }
 
+.avatarai-option-status.coming-soon {
+  color: #db2777;
+  background: #fdf2f8;
+  padding: 4px 10px;
+  border-radius: 99px;
+  border: 1px solid #fce7f3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: shine 2s linear infinite;
+  background-size: 200% auto;
+  background-image: linear-gradient(to right, #fdf2f8 0%, #fae8f0 50%, #fdf2f8 100%);
+}
+
+@keyframes shine {
+  to { background-position: 200% center; }
+}
+
+.avatarai-option.coming-soon-card {
+  opacity: 0.85;
+  background: #fafafb;
+  border-style: dashed;
+}
+
 /* ── Content Panel (video + conversation side by side) ── */
 .avatarai-content-panel {
   display: grid;

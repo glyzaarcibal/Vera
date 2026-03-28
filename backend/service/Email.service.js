@@ -143,3 +143,46 @@ export const sendPasswordResetEmail = async (email, link) => {
     handleSendGridError("password reset", error);
   }
 };
+export const sendGuardianVerificationEmail = async (email, code, childName) => {
+  // Always log the code for development debugging
+  console.log("-----------------------------------------");
+  console.log(`[GUARDIAN] Verification Code for ${email}: ${code}`);
+  console.log("-----------------------------------------");
+
+  const { fromEmail, fromName } = getEmailConfig();
+
+  try {
+    const msg = {
+      to: email,
+      from: {
+        email: fromEmail,
+        name: fromName,
+      },
+      subject: "Action Required: Guardian Consent for Vera",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f4f7f6; border-radius: 12px; border: 1px solid #e0e0e0;">
+          <h2 style="color: #4a148c; text-align: center;">Guardian Consent Required</h2>
+          <p style="color: #333; font-size: 16px;">Hello,</p>
+          <p style="color: #333; font-size: 16px;"><strong>${childName}</strong> is attempting to create an account on <strong>Vera</strong> (AI-powered mental wellness companion). As they are under 19, your consent is required.</p>
+          <p style="color: #333; font-size: 16px;">Please provide the following verification code to the applicant to approve their registration:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background-color: #4a148c; color: white; padding: 15px 40px; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 8px;">
+              ${code}
+            </div>
+          </div>
+          <p style="color: #666; font-size: 14px; text-align: center;">This code will expire in 15 minutes.</p>
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="font-size: 12px; color: #999;">If you did not authorize this request, please ignore this email.</p>
+            <p style="font-size: 12px; color: #999;">Vera - Your AI mental wellness companion.</p>
+          </div>
+        </div>
+      `,
+    };
+
+    const response = await sgMail.send(msg);
+    console.log("Guardian verification email sent via SendGrid");
+    return response;
+  } catch (error) {
+    handleSendGridError("guardian verification", error);
+  }
+};

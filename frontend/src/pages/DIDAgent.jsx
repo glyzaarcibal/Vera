@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { updateTokens } from '../store/slices/authSlice';
 import './Welcome.css';
 import womanAmericaVideo from '../assets/Unleash+yo.mp4';
 import americanGirlVideo from '../assets/american-girl.mp4';
@@ -57,6 +59,7 @@ export default function DIDAgent({ onTranscript, onEnd }) {
   const [selectedFilipinoBoyOutfit, setSelectedFilipinoBoyOutfit] = useState('default');
   const [selectedAmericanBoyOutfit, setSelectedAmericanBoyOutfit] = useState('default');
   const [detectedEmotion, setDetectedEmotion] = useState(null); // { emotion, score } from Emotion-Detection-By-Voice
+  const dispatch = useDispatch();
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -219,7 +222,12 @@ export default function DIDAgent({ onTranscript, onEnd }) {
         `/sessions/start-session/Avatar`,
         { avatar: avatarData }
       );
-      const { session } = res.data;
+      const { session, updatedTokens } = res.data;
+      
+      if (updatedTokens !== null) {
+        dispatch(updateTokens(updatedTokens));
+      }
+
       setSessionId(session.id);
       console.log('Session initialized:', session.id);
       return session;

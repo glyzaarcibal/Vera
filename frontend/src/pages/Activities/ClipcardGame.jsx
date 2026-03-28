@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
+import axiosInstance from "../../utils/axios.instance";
 
 const icons = [
   { icon: "🐰", name: "bunny", color: "#FFB6C1" },
@@ -126,6 +129,7 @@ const Card = ({ card, onClick, isDisabled }) => {
 
 const ClipCardGame = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   
   const [level, setLevel] = useState(1);
   const [cards, setCards] = useState(generateCards(level));
@@ -184,6 +188,22 @@ const ClipCardGame = () => {
       winnerAudio = audio;
       setIsTimerActive(false);
       
+      // Save activity and earn tokens
+      const saveGameActivity = async () => {
+        try {
+          const res = await axiosInstance.post("/activities/save", {
+            activityType: "clipcard",
+            data: { score, level, moves, timestamp: new Date().toISOString() }
+          });
+          if (res.data?.updatedTokens !== null) {
+            dispatch(updateTokens(res.data.updatedTokens));
+          }
+        } catch (error) {
+          console.error("Failed to save clipcard activity:", error);
+        }
+      };
+      saveGameActivity();
+
       // Add bonus time score
       setScore(prev => prev + timeLeft * 5);
       

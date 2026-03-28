@@ -84,6 +84,12 @@ const PsychologySidebar = ({ isOpen, onClose }) => {
           label="Resources"
           collapsed={collapsed}
         />
+        <SidebarLink
+          to="/psychology/reports"
+          icon={<MdBarChart />}
+          label="Analytics"
+          collapsed={collapsed}
+        />
       </nav>
 
       <div className="sidebar-footer">

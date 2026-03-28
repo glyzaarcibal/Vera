@@ -17,14 +17,13 @@
 .profile-page-container {
   max-width: 1200px;
   margin: 0 auto;
-  height: calc(100vh - 76px); /* Adjusted to free more bottom space */
+  min-height: calc(100vh - 76px);
   padding: 10px 24px 10px;
   font-family: 'DM Serif Display', serif;
   color: var(--text-dark);
   display: flex;
   gap: 30px;
   background-color: transparent;
-  overflow: hidden; /* No page scroll */
 }
 
 /* ── LEFT SIDEBAR ── */
@@ -604,6 +603,8 @@
   .profile-page-container {
     flex-direction: column;
     padding: 24px 16px 48px;
+    height: auto;
+    overflow: visible;
   }
 
   .profile-sidebar {

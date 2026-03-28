@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
+import axiosInstance from "../../utils/axios.instance";
+import ModalPortal from "../../components/ModalPortal";
 import jarImage from "../../assets/jar.png";
 
 const Diary = () => {
@@ -495,6 +499,7 @@ const Diary = () => {
 
       {/* Modal */}
       {modalVisible && selectedEntry && (
+        <ModalPortal>
         <div
           style={{
             position: "fixed",
@@ -645,6 +650,7 @@ const Diary = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

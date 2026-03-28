@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { updateTokens } from '../store/slices/authSlice';
 import './Welcome.css';
 import meowVideo from '../assets/meow+meow+.mp4';
 import arfarfVideo from '../assets/++arf+arf+.mp4';
@@ -23,6 +25,7 @@ export default function AnimalAI({ onTranscript, onEnd }) {
     const [sessionId, setSessionId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [detectedEmotion, setDetectedEmotion] = useState(null);
+    const dispatch = useDispatch();
 
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -64,7 +67,12 @@ export default function AnimalAI({ onTranscript, onEnd }) {
                 `/sessions/start-session/Avatar`,
                 { avatar: avatarData }
             );
-            const { session } = res.data;
+            const { session, updatedTokens } = res.data;
+            
+            if (updatedTokens !== null) {
+                dispatch(updateTokens(updatedTokens));
+            }
+
             setSessionId(session.id);
             console.log('Session initialized:', session.id);
             return session;

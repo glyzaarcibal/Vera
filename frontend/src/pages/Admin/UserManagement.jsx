@@ -3,6 +3,7 @@ import { MdAdd, MdSearch, MdEdit, MdDelete, MdClose } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import "./UserManagement.css";
 import axiosInstance from "../../utils/axios.instance";
+import ModalPortal from "../../components/ModalPortal";
 
 const UserManagement = () => {
   const navigate = useNavigate();
@@ -346,6 +347,7 @@ const UserManagement = () => {
 
       {/* Add User Modal */}
       {showAddModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
@@ -454,10 +456,12 @@ const UserManagement = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Edit User Modal */}
       {showEditModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
@@ -567,10 +571,12 @@ const UserManagement = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
@@ -610,6 +616,7 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

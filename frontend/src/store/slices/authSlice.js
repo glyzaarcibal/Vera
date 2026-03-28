@@ -14,6 +14,11 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = true;
     },
+    updateTokens: (state, action) => {
+      if (state.user) {
+        state.user.tokens = action.payload;
+      }
+    },
     clearUser: (state) => {
       console.log("clearUser called");
       state.user = null;
@@ -22,5 +27,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions;
+export const { setUser, clearUser, updateTokens } = authSlice.actions;
 export default authSlice.reducer;

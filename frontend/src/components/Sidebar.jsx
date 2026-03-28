@@ -11,6 +11,7 @@ import {
   MdHome,
   MdFolder,
   MdBarChart,
+  MdFeedback,
 } from "react-icons/md";
 import { X } from "lucide-react";
 import SidebarLink from "./SidebarLink";
@@ -88,6 +89,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           to="/admin/reports"
           icon={<MdBarChart />}
           label="Reports"
+          collapsed={collapsed}
+        />
+        <SidebarLink
+          to="/admin/feedback"
+          icon={<MdFeedback />}
+          label="User Feedback"
           collapsed={collapsed}
         />
       </nav>
