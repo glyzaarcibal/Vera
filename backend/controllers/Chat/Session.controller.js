@@ -3,14 +3,31 @@ import {
   fetchMessagesBySessionId,
   fetchSessionsByUserId,
 } from "../../service/Chat/Session.service.js";
+import { deductToken } from "../../service/Auth/Token.service.js";
 
 export const initSession = async (req, res) => {
   try {
     const userId = req.userId;
     const { type } = req.params;
     const { voice } = req.body ?? {};
+
+    // Deduct token for AI Voice/Avatar sessions
+    let updatedTokens = null;
+    const amount = type === "Avatar" ? 3 : type === "voice" ? 2 : 0;
+    
+    if (amount > 0) {
+      try {
+        updatedTokens = await deductToken(userId, `${type} Session Started`, amount);
+      } catch (tokenError) {
+        return res.status(403).json({ 
+          message: tokenError.message,
+          insufficientTokens: true 
+        });
+      }
+    }
+
     const session = await createSession(userId, type, voice);
-    return res.status(200).json({ session });
+    return res.status(200).json({ session, updatedTokens });
   } catch (e) {
     console.log(e);
     return res.status(500).json({ message: "Failed to start Session" });

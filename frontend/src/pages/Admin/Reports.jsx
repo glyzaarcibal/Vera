@@ -16,14 +16,14 @@ import {
   Area,
   Legend,
 } from "recharts";
-import { MdPsychology, MdTimeline, MdAccessTime, MdPeople, MdTrendingUp, MdNightsStay } from "react-icons/md";
+import { MdPsychology, MdTimeline, MdAccessTime, MdPeople, MdBarChart, MdNightsStay } from "react-icons/md";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 import ReusableModal from "../../components/ReusableModal";
 import "../Admin/Reports.css";
 
-const CHART_COLORS = ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
+const CHART_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
 
 const getMonthLabel = (dateValue) => {
   const date = new Date(dateValue);
@@ -119,7 +119,6 @@ const PsychologyReports = () => {
         let activeThisWeek = new Set();
         const genderCounts = {};
 
-        // Manually compute risk distribution for all users
         const dynamicRiskLevels = { low: 0, moderate: 0, high: 0, critical: 0 };
         let totalAssessedSessions = 0;
         let totalRiskScoreSum = 0;
@@ -151,7 +150,6 @@ const PsychologyReports = () => {
           const gender = user.profile?.gender || "Unknown";
           genderCounts[gender] = (genderCounts[gender] || 0) + 1;
 
-          // Process and Aggregate Session Risk Data
           let maxUserRiskScore = 0;
           let userCriticalCount = 0;
           userSessionsList.forEach(session => {
@@ -355,12 +353,10 @@ const PsychologyReports = () => {
   const downloadPDF = () => {
     const doc = new jsPDF();
 
-    // Title
     doc.setFontSize(22);
     doc.setTextColor(102, 126, 234);
     doc.text("User Insights Report", 105, 20, { align: "center" });
 
-    // Date
     doc.setFontSize(10);
     doc.setTextColor(113, 128, 150);
     doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
@@ -370,7 +366,6 @@ const PsychologyReports = () => {
       day: 'numeric'
     })}`, 105, 28, { align: "center" });
 
-    // Summary Statistics
     doc.setFontSize(14);
     doc.setTextColor(26, 32, 44);
     doc.text("Metrics Overview", 14, 45);
@@ -392,40 +387,42 @@ const PsychologyReports = () => {
       styles: { fontSize: 10 }
     });
 
-    // Save the PDF
     doc.save(`psychology-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
-    <div className="reports-page">
-      <div className="reports-header mb-2">
+    <div className="reports-page pt-10 pb-20 px-4 lg:px-10">
+      <div className="reports-header mb-16">
         <div>
           <h1 className="reports-title">User Analytics</h1>
-          <p className="reports-subtitle">Comprehensive data visualization of user engagement and emotional trends.</p>
+          <p className="reports-subtitle">Comprehensive data visualization of user engagement and behavioral trends.</p>
         </div>
         {!loading && aggregateReport.loaded && (
           <button
             onClick={downloadPDF}
-            className="reports-download-btn"
+            className="reports-download-btn group"
             disabled={loading}
             style={{
-              padding: "12px 24px",
-              borderRadius: "14px",
+              padding: "16px 32px",
+              borderRadius: "20px",
               border: "none",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
               color: "white",
               cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: "700",
+              fontWeight: "900",
               fontSize: "14px",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              boxShadow: "0 10px 20px -5px rgba(102, 126, 234, 0.4)",
-              transition: "all 0.3s ease",
+              gap: "14px",
+              boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.4)",
+              transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
               opacity: loading ? 0.6 : 1,
             }}
           >
-            📄 Export Analytics PDF
+            <div className="bg-white/10 p-2.5 rounded-xl group-hover:bg-white/20 transition-colors">
+              <MdBarChart className="text-2xl" />
+            </div>
+            <span>EXPORT ANALYTICS PDF</span>
           </button>
         )}
       </div>
@@ -437,155 +434,196 @@ const PsychologyReports = () => {
         message={errorModal.message}
       />
 
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 p-5 rounded-2xl mb-8 shadow-sm">
-        <h3 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">📊 About This Dashboard</h3>
-        <p className="text-[13px] text-indigo-800 leading-relaxed text-justify">
-          This <strong>User Analytics Dashboard</strong> is designed to visually monitor <strong>Mental Health Trends</strong> and <strong>App Engagement</strong> in real-time. By cross-referencing AI-driven risk assessments, sleep variations, and emotional trackers, it helps practitioners proactively monitor behavioral changes. The computed data empowers administrators and psychologists to implement data-driven interventions and continuously evaluate feature effectiveness.
-        </p>
-      </div>
-
-      {error && <p className="reports-error">{error}</p>}
-
-      <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-950 rounded-2xl p-6 text-white mb-8 shadow-2xl relative overflow-hidden border border-white/10 mt-6">
-        <div className="absolute -right-8 -top-8 text-white opacity-5 pointer-events-none">
-          <MdPsychology size={180} />
-        </div>
-        <h2 className="text-2xl font-black mb-6 flex items-center gap-3 tracking-tight">
-          <span className="bg-white/20 p-2 rounded-xl backdrop-blur-sm"><MdPsychology className="text-3xl text-indigo-300" /></span> 
-          AI Insights & Predictions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-          <div className="bg-black/20 p-5 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-black/30 transition-all">
-            <h4 className="text-red-300 font-bold mb-3 flex items-center gap-2 text-lg uppercase tracking-widest text-xs">
-              <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div> Risk Alerts
-            </h4>
-            <ul className="text-sm space-y-3 font-medium text-indigo-50">
-              {aggregateReport.riskLevelData.find(r => r.name === 'critical')?.value > 0 ? (
-                <li className="flex items-start gap-2 bg-red-500/10 p-2 rounded-lg border border-red-500/20"><span className="text-red-400">⚠️</span> {aggregateReport.riskLevelData.find(r => r.name === 'critical')?.value} users are showing CRITICAL risk levels. Immediate intervention recommended.</li>
-              ) : (
-                <li className="flex items-start gap-2 "><span className="text-green-400">✅</span> No critical risk users found.</li>
-              )}
-              {aggregateReport.riskLevelData.find(r => r.name === 'high')?.value > 0 && (
-                <li className="flex items-start gap-2 "><span className="text-orange-400">📈</span> {aggregateReport.riskLevelData.find(r => r.name === 'high')?.value} users elevated to High Risk status.</li>
-              )}
-              {aggregateReport.wau < analytics.totalUsers * 0.5 && (
-                 <li className="flex items-start gap-2"><span className="text-yellow-400">📉</span> Weekly engagement dropped. Consider deploying retention campaigns.</li>
-              )}
-              {aggregateReport.avgSleep < 5.5 && aggregateReport.avgSleep > 0 && (
-                 <li className="flex items-start gap-2 "><span className="text-indigo-300">😴</span> Sleep quality decreasing across active users.</li>
-              )}
-            </ul>
-          </div>
-          <div className="bg-black/20 p-5 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-black/30 transition-all">
-            <h4 className="text-emerald-300 font-bold mb-3 flex items-center gap-2 text-lg uppercase tracking-widest text-xs">
-              🤖 AI Predictions
-            </h4>
-            <ul className="text-sm space-y-3 font-medium text-emerald-50">
-              <li className="flex items-start gap-2 "><span className="text-emerald-400">🔮</span> Based on current emotional trends, {Math.max(1, Math.floor(analytics.totalUsers * 0.15))} users are likely to experience increased anxiety in 3 days.</li>
-              <li className="flex items-start gap-2 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20"><span className="text-emerald-300">💡</span> Suggestion: Auto-suggest "Guided Breathing Exercises" around {aggregateReport.peakHour} when users are most active.</li>
-            </ul>
-          </div>
+      {/* Spacing wrapper for briefing */}
+      <div className="mb-16">
+        <div className="bg-linear-to-r from-blue-50/70 to-indigo-50/70 border border-indigo-100/60 p-8 rounded-[2.5rem] backdrop-blur-md relative overflow-hidden group shadow-sm">
+          <div className="absolute right-0 top-0 w-48 h-48 bg-indigo-200/20 blur-3xl -mr-24 -mt-24 rounded-full group-hover:scale-150 transition-transform duration-1000" />
+          <h3 className="font-black text-indigo-900 mb-4 flex items-center gap-4 uppercase tracking-[0.2em] text-[11px]">
+            <span className="w-1.5 h-6 bg-indigo-500 rounded-full" /> Dashboard Intelligence
+          </h3>
+          <p className="text-[15px] text-slate-600 leading-relaxed font-semibold max-w-4xl">
+            This <strong className="text-indigo-900">Intelligence Briefing</strong> aggregates deep-learning assessments from total user interactions. By cross-referencing AI-driven risk scores, wellness logs, and engagement velocity, it identifies hidden patterns to help practitioners implement preemptive clinical strategies.
+          </p>
         </div>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-800 mb-4 ml-1">Key Performance Metrics</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="Measures user involvement based on daily/weekly interactions">
-          <div className="bg-blue-50 p-3 rounded-xl text-blue-500"><MdTimeline size={24} /></div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Engagement Score</div>
-            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : aggregateReport.engagementScore}%</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Overall App Habit</div>
-          </div>
+      {error && <p className="reports-error mb-12">{error}</p>}
+
+      {/* Large AI Hub Card with more internal padding */}
+      <div className="bg-linear-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-[3rem] p-12 text-white mb-20 shadow-[0_40px_100px_-20px_rgba(15,23,42,0.6)] relative overflow-hidden border border-white/10">
+        <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-500 rounded-full blur-[140px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-purple-500 rounded-full blur-[120px]" />
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="Daily Active Users / Weekly Active Users">
-          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-500"><MdPeople size={24} /></div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DAU / WAU</div>
-            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : `${aggregateReport.dau} / ${aggregateReport.wau}`}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">User Retention Ratio</div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-6 mb-16">
+            <div className="bg-linear-to-br from-indigo-500 to-purple-600 p-5 rounded-3xl shadow-2xl shadow-indigo-500/40 transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+              <MdPsychology className="text-5xl text-white" />
+            </div>
+            <div>
+              <h2 className="text-4xl font-black tracking-tight leading-none mb-2">AI Analytics Hub</h2>
+              <p className="text-indigo-300 font-black text-xs uppercase tracking-[0.3em] opacity-80">Neural Intelligence Report</p>
+            </div>
           </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="The most active hour where users tend to use the application">
-          <div className="bg-purple-50 p-3 rounded-xl text-purple-500"><MdAccessTime size={24} /></div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Peak Usage</div>
-            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : aggregateReport.peakHour}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Highest Traffic Time</div>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="The collective average sleep duration across all user logs">
-          <div className="bg-indigo-50 p-3 rounded-xl text-indigo-500"><MdNightsStay size={24} /></div>
-          <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avg Sleep</div>
-            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : `${aggregateReport.avgSleep} hrs`}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Global Sleep Quality</div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="bg-white/5 p-8 rounded-[2.5rem] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.07] transition-all group">
+              <h4 className="text-rose-400 font-black mb-6 flex items-center justify-between uppercase tracking-widest text-[11px]">
+                <span className="flex items-center gap-4">
+                  <div className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping" /> Strategic Risk Alerts
+                </span>
+                <span className="bg-rose-500/20 px-3 py-1 rounded-full text-[10px] border border-rose-500/20 font-black">REAL-TIME</span>
+              </h4>
+              <ul className="space-y-6">
+                {aggregateReport.riskLevelData.find(r => r.name === 'critical')?.value > 0 ? (
+                  <li className="flex gap-5 bg-rose-500/10 p-6 rounded-[1.75rem] border border-rose-500/20 group-hover:scale-[1.03] transition-transform duration-500">
+                    <span className="text-3xl">🚨</span>
+                    <div>
+                      <div className="font-extrabold text-white text-lg">Critical Intervention Needed</div>
+                      <div className="text-sm text-rose-200/90 mt-2 font-medium leading-relaxed">{aggregateReport.riskLevelData.find(r => r.name === 'critical')?.value} user identities flagged with severe psychological stress indicators.</div>
+                    </div>
+                  </li>
+                ) : (
+                  <li className="flex items-center gap-4 text-emerald-400 font-black bg-emerald-500/10 p-6 rounded-[1.75rem] border border-emerald-500/20">
+                    <span className="text-2xl">🛡️</span> Stable Baseline: No immediate life-safety risks detected.
+                  </li>
+                )}
+                <div className="grid grid-cols-1 gap-4 mt-6">
+                  {aggregateReport.riskLevelData.find(r => r.name === 'high')?.value > 0 && (
+                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/10 transition-colors">
+                        <span className="text-[13px] font-extrabold text-indigo-100">Elevated Risk Trajectory</span>
+                        <span className="bg-orange-500 text-[10px] font-black px-3 py-1.5 rounded-xl">{aggregateReport.riskLevelData.find(r => r.name === 'high')?.value} USERS</span>
+                     </div>
+                  )}
+                  {aggregateReport.wau < analytics.totalUsers * 0.5 && (
+                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/10 transition-colors">
+                        <span className="text-[13px] font-extrabold text-indigo-100">Retention Anomaly</span>
+                        <span className="text-yellow-400 font-black text-[12px] uppercase">Low Velocity</span>
+                     </div>
+                  )}
+                </div>
+              </ul>
+            </div>
+
+            <div className="bg-white/5 p-8 rounded-[2.5rem] backdrop-blur-2xl border border-white/10 hover:bg-white/[0.07] transition-all group">
+              <h4 className="text-emerald-400 font-black mb-6 flex items-center gap-4 uppercase tracking-widest text-[11px]">
+                <span className="p-2 bg-emerald-500/20 rounded-xl">🤖</span> Predictive Forecasts
+              </h4>
+              <div className="space-y-6">
+                <div className="bg-emerald-500/5 p-6 rounded-[1.75rem] border border-emerald-500/15 group-hover:bg-emerald-500/10 transition-colors">
+                   <div className="flex items-start gap-5">
+                      <div className="text-3xl font-black text-emerald-400">-{Math.max(1, Math.floor(analytics.totalUsers * 0.15))}</div>
+                      <div>
+                         <div className="text-[15px] font-black text-white">Projected Resilience Drop</div>
+                         <p className="text-[12px] text-emerald-300/70 mt-2 leading-relaxed font-medium">Early emotional markers suggest increased anxiety in a subset of users within the 72h window.</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="bg-indigo-500/5 p-6 rounded-[1.75rem] border border-indigo-500/15 group-hover:bg-indigo-500/10 transition-colors">
+                   <div className="flex items-start gap-4">
+                      <div className="bg-indigo-500/20 p-2.5 rounded-lg"><MdPsychology className="text-indigo-300 text-2xl" /></div>
+                      <div>
+                         <div className="text-[14px] font-black text-white">Smart Timing Recommendation</div>
+                         <p className="text-[12px] text-indigo-200/70 mt-2 leading-relaxed font-medium">Highest engagement expected at <strong className="text-white font-black">{aggregateReport.peakHour}</strong>. Recommend scheduling group sessions during this window.</p>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="reports-summary-cards">
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Total Users</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : analytics.totalUsers.toLocaleString()}
-          </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+        <div className="reports-summary-card p-8 !gap-6">
+          <div className="flex justify-between items-start">
+             <div className="reports-summary-label">App Affinity</div>
+             <div className="bg-blue-50 text-blue-600 p-3 rounded-2xl"><MdTimeline size={24} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value text-4xl mb-1">{loading ? "..." : aggregateReport.engagementScore}%</div>
+            <div className="text-[11px] font-black text-indigo-500 uppercase tracking-widest">Habit Strength Index</div>
+          </div>
         </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Active Engagement</span>
-          <span className="reports-summary-value">
-            {loading
-              ? "..."
-              : (analytics.statusDistribution.find((item) => item.name === "Active")?.value || 0).toLocaleString()}
-          </span>
+        
+        <div className="reports-summary-card p-8 !gap-6">
+          <div className="flex justify-between items-start">
+             <div className="reports-summary-label">Retention Ratio</div>
+             <div className="bg-emerald-50 text-emerald-600 p-3 rounded-2xl"><MdPeople size={24} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value text-4xl mb-1">{loading ? "..." : `${aggregateReport.dau}/${aggregateReport.wau}`}</div>
+            <div className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">DAU / WAU Efficiency</div>
+          </div>
         </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Sessions Analyzed</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : aggregateReport.totalSessions.toLocaleString()}
-          </span>
+
+        <div className="reports-summary-card p-8 !gap-6">
+          <div className="flex justify-between items-start">
+             <div className="reports-summary-label">Traffic Peak</div>
+             <div className="bg-purple-50 text-purple-600 p-3 rounded-2xl"><MdAccessTime size={24} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value text-4xl mb-1">{loading ? "..." : aggregateReport.peakHour}</div>
+            <div className="text-[11px] font-black text-purple-500 uppercase tracking-widest">Active Velocity Time</div>
+          </div>
         </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Avg Risk Score</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : aggregateReport.averageRiskScore ?? "N/A"}
-          </span>
+
+        <div className="reports-summary-card p-8 !gap-6">
+          <div className="flex justify-between items-start">
+             <div className="reports-summary-label">Sleep Avg</div>
+             <div className="bg-indigo-50 text-indigo-600 p-3 rounded-2xl"><MdNightsStay size={24} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value text-4xl mb-1">{loading ? "..." : `${aggregateReport.avgSleep}h`}</div>
+            <div className="text-[11px] font-black text-indigo-500 uppercase tracking-widest">Wellness Recovery</div>
+          </div>
         </div>
       </div>
 
-      <div className="reports-grid">
-
-         <div className="report-card lg:col-span-2">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Top 5 Engaged Users (Total Sessions)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Reveals the most devoted members of your platform based on chat/avatar usage history.</p>
+      <div className="reports-grid gap-12">
+        <div className="report-card lg:col-span-8 flex flex-col !p-10">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+              <h3 className="report-card-title text-2xl mb-2">User Engagement Distribution</h3>
+              <p className="text-sm text-slate-400 font-semibold">Relative activity volume ranked by total user sessions.</p>
+            </div>
           </div>
-          <div className="report-chart-wrap">
+          <div className="report-chart-wrap flex-1 min-h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={aggregateReport.topUsersData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
+              <BarChart data={aggregateReport.topUsersData} margin={{ top: 20 }}>
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#0891b2" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+                  contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 30px 60px -10px rgba(0,0,0,0.15)', padding: '20px'}}
+                  itemStyle={{fontWeight: 900, fontSize: '16px'}}
                 />
-                <Bar dataKey="value" fill="#06b6d4" radius={[6, 6, 0, 0]} barSize={40} />
+                <Bar dataKey="value" fill="url(#barGradient)" radius={[12, 12, 0, 0]} barSize={56} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-        
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1 text-red-600 font-bold">⚠️ Critical Risk Users</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Specific users whose sessions reached critical risk thresholds.</p>
+
+        <div className="report-card lg:col-span-4 flex flex-col !p-10">
+          <div className="mb-8">
+            <h3 className="report-card-title !text-rose-600 text-2xl mb-2 flex items-center justify-between">
+              Critical Thresholds
+              <span className="text-[10px] bg-rose-100 text-rose-600 px-3 py-1 rounded-full uppercase font-black tracking-widest">Priority 1</span>
+            </h3>
+            <p className="text-sm text-slate-400 font-semibold">Users requiring immediate clinical oversight.</p>
           </div>
-          <div className="report-chart-wrap">
+          <div className="flex-1 min-h-[300px]">
             {aggregateReport.criticalUsersData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={aggregateReport.criticalUsersData} layout="vertical" margin={{ left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#fee2e2" />
+                <BarChart data={aggregateReport.criticalUsersData} layout="vertical" margin={{ left: 10, right: 30 }}>
                   <XAxis type="number" hide />
                   <YAxis 
                     dataKey="name" 
@@ -593,78 +631,52 @@ const PsychologyReports = () => {
                     axisLine={false} 
                     tickLine={false} 
                     width={100} 
-                    tick={{fill: '#b91c1c', fontSize: 10, fontWeight: 600}} 
+                    tick={{fill: '#1e293b', fontSize: 12, fontWeight: 800}} 
                   />
                   <Tooltip 
-                    cursor={{fill: '#fef2f2'}}
-                    contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                    formatter={(value) => [value, "Critical Sessions"]}
+                    cursor={{fill: '#fff1f2'}}
+                    contentStyle={{borderRadius: '24px', border: 'none', padding: '16px'}}
                   />
-                  <Bar dataKey="sessions" radius={[0, 4, 4, 0]} fill="#ef4444" barSize={20} />
+                  <Bar dataKey="sessions" radius={[0, 12, 12, 0]} fill="#fb7185" barSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-2 opacity-60">
-                   <MdPsychology size={48} />
-                   <p className="text-xs font-bold uppercase tracking-widest">No critical users detected</p>
+                <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-6 opacity-40 grayscale">
+                   <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center">
+                     <MdPeople size={40} />
+                   </div>
+                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-center px-8 leading-loose">Baseline Normal</p>
                 </div>
             )}
           </div>
         </div>
 
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">User Growth (Cumulative)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Tracks steady user acquisitions and system adoption over time.</p>
-          </div>
-          <div className="report-chart-wrap">
+        {/* Growth Velocity */}
+        <div className="report-card lg:col-span-6 !p-10">
+           <h3 className="report-card-title text-2xl mb-8">Growth Velocity</h3>
+           <div className="report-chart-wrap min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={analytics.cumulativePoints}>
                 <defs>
-                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                     <stop offset="5%" stopColor="#667eea" stopOpacity={0.1}/>
-                     <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
+                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25}/>
+                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                    </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Area type="monotone" dataKey="users" stroke="#667eea" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} dy={15} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 30px 60px -10px rgba(0,0,0,0.1)'}} />
+                <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={5} fillOpacity={1} fill="url(#areaGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Activity Levels (Weekday)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Identifies on which days users engage the most, helpful for timing notifications.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.weekdayActivity}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Bar dataKey="records" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Session Risk Distribution</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Categorizes the psychological risk states of your user base generated by AI.</p>
-          </div>
-          <div className="report-chart-wrap">
+        {/* Risk Distribution */}
+        <div className="report-card lg:col-span-6 !p-10">
+           <h3 className="report-card-title text-2xl mb-8">Risk Profile Summary</h3>
+           <div className="report-chart-wrap flex items-center justify-center min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -673,120 +685,49 @@ const PsychologyReports = () => {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={60}
-                  paddingAngle={5}
+                  outerRadius={120}
+                  innerRadius={90}
+                  stroke="none"
+                  paddingAngle={10}
                 >
                   {aggregateReport.riskLevelData.map((entry, index) => (
-                    <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <Cell key={entry.name} fill={['#10b981', '#f59e0b', '#f97316', '#ef4444'][index % 4]} cornerRadius={12} />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+                <Tooltip contentStyle={{borderRadius: '24px', border: 'none'}} />
+                <Legend iconType="circle" iconSize={10} wrapperStyle={{paddingTop: '30px', fontWeight: 900, fontSize: '11px', textTransform: 'uppercase'}} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Top Activity Types</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Highlights the most popular features (e.g., mood logs) to guide app focus.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={aggregateReport.activityTypeData} layout="vertical" margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 11}} />
-                <Tooltip 
-                   contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 6, 6, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Activity Volume (Last 7 Days)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Tracks exact fluctuation of daily interactions to alert for user burnout or disengagement.</p>
-          </div>
-          <div className="report-chart-wrap">
+        {/* Activity Velocity */}
+        <div className="report-card lg:col-span-6 !p-10">
+           <h3 className="report-card-title text-2xl mb-8">Daily Activity Velocity</h3>
+           <div className="report-chart-wrap min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={aggregateReport.weeklyActivityData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Line type="monotone" dataKey="activities" stroke="#ef4444" strokeWidth={4} dot={{ stroke: '#ef4444', strokeWidth: 2, r: 4, fill: '#ffffff' }} activeDot={{ r: 6 }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} dy={15} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 30px 60px -10px rgba(0,0,0,0.1)'}} />
+                <Line type="monotone" dataKey="activities" stroke="#ef4444" strokeWidth={5} dot={{ stroke: '#ef4444', strokeWidth: 3, r: 6, fill: '#ffffff' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Account Status Distribution</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Shows the ratio of completely verified internal users versus inactive/anonymous.</p>
-          </div>
-          <div className="report-chart-wrap">
+        {/* Modal Distribution */}
+        <div className="report-card lg:col-span-6 !p-10">
+           <h3 className="report-card-title text-2xl mb-8">Top Activity Modalities</h3>
+           <div className="report-chart-wrap min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.statusDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={60}
-                  paddingAngle={5}
-                >
-                  {analytics.statusDistribution.map((entry, index) => (
-                    <Cell key={entry.name} fill={entry.name === "Active" ? "#10b981" : "#9ca3af"} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">User Demographics (Gender)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Visualizes your app's base to ensure your clinical content is relevant to the demographic.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={aggregateReport.genderDemographics}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={0}
-                >
-                  {aggregateReport.genderDemographics && aggregateReport.genderDemographics.map((entry, index) => (
-                    <Cell key={entry.name} fill={['#6366f1', '#ec4899', '#f59e0b', '#10b981'][index % 4]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-              </PieChart>
+              <BarChart data={aggregateReport.activityTypeData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={110} axisLine={false} tickLine={false} tick={{fill: '#1e293b', fontSize: 12, fontWeight: 800}} />
+                <Tooltip contentStyle={{borderRadius: '24px', border: 'none'}} />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 12, 12, 0]} barSize={28} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

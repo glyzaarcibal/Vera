@@ -15,6 +15,7 @@ import {
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
+import ModalPortal from "../../components/ModalPortal";
 
 const WeeklyWellnessReport = () => {
   const sanitizePdfText = (value) =>
@@ -391,28 +392,30 @@ const WeeklyWellnessReport = () => {
     if (!show) return null;
 
     return (
-      <div style={styles.modalOverlay} onClick={onClose}>
-        <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-          <h3 style={styles.modalTitle}>Sleep Details</h3>
-          <p style={styles.modalText}><strong>Date:</strong> {content.date}</p>
-          <p style={styles.modalText}><strong>Sleep Time:</strong> {content.sleepTime}</p>
-          <p style={styles.modalText}><strong>Wake Time:</strong> {content.wakeTime}</p>
-          <p style={styles.modalText}><strong>Duration:</strong> {content.duration} hours</p>
-          <p style={styles.modalText}><strong>Analysis:</strong> {content.message}</p>
-          <p style={styles.modalQuote}>"Rest is the best investment for a productive tomorrow!"</p>
-          <button
-            style={{
-              ...styles.closeButton,
-              ...(isCloseButtonHovered ? styles.closeButtonHover : {})
-            }}
-            onMouseEnter={() => setIsCloseButtonHovered(true)}
-            onMouseLeave={() => setIsCloseButtonHovered(false)}
-            onClick={onClose}
-          >
-            Close
-          </button>
+      <ModalPortal>
+        <div style={styles.modalOverlay} onClick={onClose}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>Sleep Details</h3>
+            <p style={styles.modalText}><strong>Date:</strong> {content.date}</p>
+            <p style={styles.modalText}><strong>Sleep Time:</strong> {content.sleepTime}</p>
+            <p style={styles.modalText}><strong>Wake Time:</strong> {content.wakeTime}</p>
+            <p style={styles.modalText}><strong>Duration:</strong> {content.duration} hours</p>
+            <p style={styles.modalText}><strong>Analysis:</strong> {content.message}</p>
+            <p style={styles.modalQuote}>"Rest is the best investment for a productive tomorrow!"</p>
+            <button
+              style={{
+                ...styles.closeButton,
+                ...(isCloseButtonHovered ? styles.closeButtonHover : {})
+              }}
+              onMouseEnter={() => setIsCloseButtonHovered(true)}
+              onMouseLeave={() => setIsCloseButtonHovered(false)}
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
         </div>
-      </div>
+      </ModalPortal>
     );
   };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../../utils/axios.instance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 
 // Audio from src/assets/breath/ (Vite bundles these and gives correct URLs)
@@ -74,6 +75,7 @@ const TEXTS = {
 const TakeABreath = () => {
   const user = useSelector(selectUser);
   const userId = user?.id;
+  const dispatch = useDispatch();
 
   const [breathingStage, setBreathingStage] = useState(0);
   const [isBreathing, setIsBreathing] = useState(false);
@@ -241,10 +243,14 @@ const TakeABreath = () => {
     };
 
     try {
-      await axiosInstance.post("/activities/save", {
+      const res = await axiosInstance.post("/activities/save", {
         activityType: "breath",
         data: newEntry
       });
+
+      if (res.data?.updatedTokens !== null) {
+        dispatch(updateTokens(res.data.updatedTokens));
+      }
 
       // Refetch history
       await loadHistory();

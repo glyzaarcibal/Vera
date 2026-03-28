@@ -3,6 +3,8 @@ import {
   getProfile,
   resendVerificationLink,
   verifyUserRegistration,
+  createGuardianVerification,
+  verifyGuardianConsentCode
 } from "../../service/Auth/Auth.service.js";
 import {
   isValidPassword,
@@ -120,5 +122,34 @@ export const resendVerification = async (req, res) => {
   } catch (e) {
     console.error("Resend verification error:", e);
     return res.status(500).json({ message: "Failed to send verification code." });
+  }
+};
+export const sendGuardianVerification = async (req, res) => {
+  const { childEmail, guardianEmail, childName } = req.body;
+  if (!childEmail || !guardianEmail || !childName) {
+    return res.status(400).json({ message: "Please fill all required fields for consent." });
+  }
+
+  try {
+    const result = await createGuardianVerification(childEmail, guardianEmail, childName);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Guardian verification error:", e);
+    return res.status(500).json({ message: "Failed to send guardian verification." });
+  }
+};
+
+export const verifyGuardianConsent = async (req, res) => {
+  const { childEmail, verificationCode } = req.body;
+  if (!childEmail || !verificationCode) {
+    return res.status(400).json({ message: "Missing verification details." });
+  }
+
+  try {
+    const result = await verifyGuardianConsentCode(childEmail, verificationCode);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Consent verification error:", e);
+    return res.status(401).json({ message: e.message || "Invalid or expired code." });
   }
 };

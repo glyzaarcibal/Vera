@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../utils/axios.instance";
+import { useDispatch } from "react-redux";
+import { updateTokens } from "../store/slices/authSlice";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -62,6 +64,7 @@ const VoiceAI = () => {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+  const dispatch = useDispatch();
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -144,7 +147,12 @@ const VoiceAI = () => {
         `/sessions/start-session/${"voice"}`,
         { voice: VOICES[selectedVoiceIndex] }
       );
-      const { session } = res.data;
+      const { session, updatedTokens } = res.data;
+      
+      if (updatedTokens !== null) {
+        dispatch(updateTokens(updatedTokens));
+      }
+
       setSessionId(session.id);
       return session;
     } catch (e) {

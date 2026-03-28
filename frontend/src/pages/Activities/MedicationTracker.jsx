@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 
 const MedicationTracker = () => {
     const navigate = useNavigate();
     const user = useSelector(selectUser);
     const userId = user?.id;
+    const dispatch = useDispatch();
 
     const [medicationName, setMedicationName] = useState("");
     const [dosage, setDosage] = useState("");
@@ -56,10 +58,15 @@ const MedicationTracker = () => {
 
         try {
             setIsLoading(true);
-            await axiosInstance.post("/activities/save", {
+            const res = await axiosInstance.post("/activities/save", {
                 activityType: "medication",
                 data: newEntry,
             });
+
+            if (res.data?.updatedTokens !== null) {
+                dispatch(updateTokens(res.data.updatedTokens));
+            }
+
             setMedicationName("");
             setDosage("");
             setTime("");

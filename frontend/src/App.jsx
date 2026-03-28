@@ -25,6 +25,7 @@ import UserManagement from "./pages/Admin/UserManagement";
 import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
 import Resources from "./pages/Admin/Resources";
+import FeedbackManagement from "./pages/Admin/FeedbackManagement";
 import AvatarAI from "./pages/Avatar";
 import PsychologyLayout from "./layouts/PsychologyLayout";
 import PsychologyDashboard from "./pages/Psychology/Dashboard";
@@ -39,6 +40,7 @@ import SleepTracker from "./pages/Activities/SleepTracker";
 import WeeklyWellnessReport from "./pages/Activities/WeeklyWellnessReport";
 import TakeABreath from "./pages/Activities/TakeABreath";
 import MedicationTracker from "./pages/Activities/MedicationTracker";
+import Feedback from "./pages/Feedback";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -87,6 +89,7 @@ const App = () => {
         />
         <Route path="/activities/take-a-breath" element={<TakeABreath />} />
         <Route path="/activities/medication-history" element={<MedicationTracker />} />
+        <Route path="/feedback" element={<Feedback />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
@@ -95,6 +98,7 @@ const App = () => {
         <Route path="/admin/sessions/:userId" element={<UserSessions />} />
         <Route path="/admin/chat/:sessionId" element={<UserChat />} />
         <Route path="/admin/resources" element={<Resources />} />
+        <Route path="/admin/feedback" element={<FeedbackManagement />} />
         {/* <Route path="/admin/activity-graph/:userId" element={<UserActivityGraph />} /> */}
       </Route>
       <Route path="/psychology" element={<PsychologyLayout />}>

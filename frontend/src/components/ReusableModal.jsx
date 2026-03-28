@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { MdClose, MdErrorOutline, MdCheckBox } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -7,26 +8,26 @@ const ReusableModal = ({ isOpen, onClose, title, message, type = "error", childr
     ? "fixed inset-0 z-[9999]" 
     : "absolute inset-0 z-[50]";
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className={`${containerClasses} flex items-center justify-center p-6 lg:p-12 overflow-y-auto`}>
+        <div className={`${containerClasses} flex items-center justify-center p-6 lg:p-12 overflow-y-auto w-full h-full`}>
           {/* Backdrop with sophisticated blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className={`${position === "fixed" ? "fixed" : "absolute"} inset-0 bg-slate-900/40 backdrop-blur-md transition-all duration-300`}
+            className={`${position === "fixed" ? "fixed" : "absolute"} inset-0 bg-slate-900/60 backdrop-blur-md transition-all duration-300`}
           />
 
           {/* Modal Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: -20 }} // Optical center offset
+            animate={{ opacity: 1, scale: 1, y: 0 }} 
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative bg-white/95 backdrop-blur-2xl border border-white/60 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(30,27,75,0.2)] max-w-md w-full overflow-hidden"
+            className="relative bg-white/95 backdrop-blur-2xl border border-white/60 rounded-[2.5rem] shadow-[0_32px_128px_-16px_rgba(30,27,75,0.4)] max-w-md w-full overflow-hidden m-auto"
           >
             {/* Top Gloss Effect */}
             <div className="absolute top-0 inset-x-0 h-32 bg-linear-to-b from-white/80 to-transparent pointer-events-none" />
@@ -80,6 +81,9 @@ const ReusableModal = ({ isOpen, onClose, title, message, type = "error", childr
       )}
     </AnimatePresence>
   );
+
+  // Mount at top level if fixed, otherwise stay in context
+  return position === "fixed" ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default ReusableModal;

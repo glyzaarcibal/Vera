@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import axiosInstance from "../../utils/axios.instance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 
 const generateHourOptions = () =>
@@ -94,6 +95,7 @@ const SimpleDatePicker = ({ selected, onDateChange, options }) => {
 const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
   const user = useSelector(selectUser);
   const userId = user?.id;
+  const dispatch = useDispatch();
 
   const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
   const [selectedDate, setSelectedDate] = useState(today);
@@ -172,10 +174,14 @@ const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
 
       console.log("Saving to Supabase:", newEntry);
 
-      await axiosInstance.post("/activities/save", {
+      const res = await axiosInstance.post("/activities/save", {
         activityType: "sleep",
         data: newEntry
       });
+
+      if (res.data?.updatedTokens !== null) {
+        dispatch(updateTokens(res.data.updatedTokens));
+      }
 
       // Refetch after saving
       await loadSleepData();

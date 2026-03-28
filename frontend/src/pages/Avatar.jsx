@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, PawPrint, MessageSquare, PhoneOff } from 'lucide-react';
+import { User, PawPrint, MessageSquare, PhoneOff, Ghost, Smile } from 'lucide-react';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
 import './AvatarAI.css';
@@ -32,6 +32,20 @@ export default function AvatarAI() {
       icon: PawPrint,
       description: 'Cute animal character AI assistant',
       component: AnimalAI
+    },
+    {
+      id: 'anime',
+      name: 'Anime Character',
+      icon: Ghost,
+      description: 'Interact with your favorite anime-style characters',
+      comingSoon: true
+    },
+    {
+      id: 'cartoon',
+      name: 'Cartoon Character',
+      icon: Smile,
+      description: 'Friendly cartoon companions for a fun experience',
+      comingSoon: true
     }
   ];
 
@@ -70,16 +84,16 @@ export default function AvatarAI() {
             <button
               key={option.id}
               type="button"
-              onClick={() => setSelectedAvatar(option.id)}
-              className={`avatarai-option${isSelected ? ' selected' : ''}`}
+              onClick={() => !option.comingSoon && setSelectedAvatar(option.id)}
+              className={`avatarai-option${isSelected ? ' selected' : ''}${option.comingSoon ? ' coming-soon-card' : ''}`}
             >
               <div className="avatarai-option-icon">
                 <Icon size={22} />
               </div>
               <div className="avatarai-option-name">{option.name}</div>
               <div className="avatarai-option-desc">{option.description}</div>
-              <div className={`avatarai-option-status${isSelected ? ' is-selected' : ''}`}>
-                {isSelected ? '● Active Selection' : 'Click to Select'}
+              <div className={`avatarai-option-status${isSelected ? ' is-selected' : ''}${option.comingSoon ? ' coming-soon' : ''}`}>
+                {option.comingSoon ? '✨ Coming Soon' : (isSelected ? '● Active Selection' : 'Click to Select')}
               </div>
             </button>
           );

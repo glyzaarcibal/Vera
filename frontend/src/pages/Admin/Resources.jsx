@@ -8,6 +8,7 @@ import {
   MdImage,
 } from "react-icons/md";
 import axiosInstance from "../../utils/axios.instance";
+import ModalPortal from "../../components/ModalPortal";
 import "./Resources.css";
 
 const Resources = () => {
@@ -298,6 +299,7 @@ const Resources = () => {
 
       {/* Modal */}
       {showModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto">
           <div className="bg-white rounded-2xl p-0 max-w-lg w-full mx-4 my-8 shadow-xl border border-gray-200">
             <div className="flex justify-between items-center px-8 pt-8 pb-4 border-b border-gray-100">
@@ -405,6 +407,7 @@ const Resources = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

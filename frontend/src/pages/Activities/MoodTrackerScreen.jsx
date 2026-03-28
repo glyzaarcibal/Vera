@@ -264,12 +264,14 @@ const MOOD_LEVELS = [
 const moods = MOOD_LEVELS;
 
 import axiosInstance from "../../utils/axios.instance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 
 const MoodTrackerScreen = ({ navigation }) => {
   const user = useSelector(selectUser);
   const userId = user?.id;
+  const dispatch = useDispatch();
 
   const [selectedMood, setSelectedMood] = useState(null);
   const [reason, setReason] = useState("");
@@ -397,10 +399,14 @@ const MoodTrackerScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      await axiosInstance.post("/activities/save", {
+      const res = await axiosInstance.post("/activities/save", {
         activityType: "mood",
         data: newEntry
       });
+
+      if (res.data?.updatedTokens !== null) {
+        dispatch(updateTokens(res.data.updatedTokens));
+      }
 
       // Refetch history after saving
       await loadMoodHistory();

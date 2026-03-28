@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
+import ModalPortal from "../components/ModalPortal";
 
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
@@ -432,6 +433,7 @@ const Welcome = () => {
 
       {/* Mood Popup Modal */}
       {showMoodPopup && (
+        <ModalPortal>
         <div style={{
           position: "fixed",
           inset: 0,
@@ -574,6 +576,7 @@ const Welcome = () => {
             )}
           </div>
         </div>
+        </ModalPortal>
       )}
 
       <style>
