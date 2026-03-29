@@ -395,7 +395,7 @@ const Welcome = () => {
       )}
 
       {/* ══ ALL RESOURCES ══════════════════════════════════ */}
-      {resourcesList.length > 0 && (
+      {validResources.length > 0 && (
         <div className="v-section">
           <div className="v-section-head">
             <span className="sa sa-up sa-d0 v-label">Library</span>
