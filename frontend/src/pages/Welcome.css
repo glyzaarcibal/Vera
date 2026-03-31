@@ -294,284 +294,138 @@ body {
 /* ═══════════════════════════════════════════════════════════════════
    HERO SECTION
    ═══════════════════════════════════════════════════════════════════ */
-.v-hero {
-  position: relative;
+/* ═══════════════════════════════════════════════════════════════════
+    NEW HERO SECTION — SPLIT LAYOUT
+    ═══════════════════════════════════════════════════════════════════ */
+.v-hero-wrapper {
+  background-color: #f0eeff; /* Soft lavender base */
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 8rem 1rem 6rem;
   overflow: hidden;
-  background: linear-gradient(155deg, #fdfcff 0%, #ede9ff 45%, #e2f9f7 100%);
+  position: relative;
   width: 100%;
 }
 
-/* Subtle dot-grid overlay */
-.v-hero::after {
+/* Decoration background similar to the white wave/cloud in the picture */
+.v-hero-wrapper::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(108, 99, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(108, 99, 255, 0.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 100% 0%, #ffffff 0%, #ffffff 40%, transparent 40.1%);
+  z-index: 0;
 }
 
-/* Eyebrow pill */
-.v-eyebrow {
+.v-hero-content {
+  max-width: 1300px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  gap: 2rem;
+}
+
+.v-hero-left {
+  flex: 1;
+  max-width: 550px;
+  text-align: left;
+}
+
+.v-hero-eyebrow {
+  display: inline-block;
   font-family: 'DM Mono', monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.2em;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  color: var(--acc-a);
-  padding: 0.45rem 1.2rem;
-  border: 1px solid rgba(108, 99, 255, 0.22);
-  border-radius: 100px;
-  background: rgba(108, 99, 255, 0.07);
+  letter-spacing: 0.15em;
+  color: #a78bfa;
   margin-bottom: 2rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  z-index: 1;
 }
 
-/* Animated live dot inside eyebrow */
-.v-eyebrow-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--acc-c);
-  border-radius: 50%;
-  animation: dotPulse 2s ease-in-out infinite;
-}
-
-@keyframes dotPulse {
-
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(0.8);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Main hero heading */
-.v-hero-title {
+.v-hero-title-main {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 800;
-  font-size: clamp(3rem, 8.5vw, 6.5rem);
-  line-height: 1.04;
-  color: var(--ink);
-  letter-spacing: -0.03em;
-  margin-bottom: 1.2rem;
-  max-width: 780px;
-  position: relative;
-  z-index: 1;
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  color: rgba(108, 99, 255, 0.4); /* Faded lavender for "MENTAL" */
+  margin-bottom: 2rem;
 }
 
-/* Italic gradient accent span inside title */
-.v-hero-title-accent {
-  font-family: 'Instrument Serif', serif;
-  font-style: italic;
-  font-weight: 400;
-  background: linear-gradient(135deg, var(--acc-a) 0%, var(--acc-b) 50%, var(--acc-c) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-size: 200% 100%;
-  animation: gradShift 5s ease-in-out infinite alternate;
+.v-hero-title-main span {
+  color: #667eea; /* Bold lavender/blue for "HEALTH" */
+  display: block;
 }
 
-@keyframes gradShift {
-  0% {
-    background-position: 0% 0;
-  }
-
-  100% {
-    background-position: 100% 0;
-  }
+.v-hero-description {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #4a4568;
+  margin-bottom: 3rem;
+  max-width: 440px;
 }
 
-/* Monospace subtitle */
-.v-hero-mono {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 1.6rem;
-  position: relative;
-  z-index: 1;
-}
-
-/* Body description */
-.v-hero-desc {
-  max-width: 490px;
-  font-size: 1.05rem;
-  line-height: 1.82;
-  color: var(--ink2);
-  margin-bottom: 2.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-/* CTA button */
-.v-btn-primary {
+.v-btn-learn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.9rem 2.1rem;
-  border-radius: 100px;
-  background: var(--ink);
-  color: white;
-  font-size: 0.9rem;
+  gap: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  color: #f472b6; /* Coral-pink Learn More */
   text-decoration: none;
-  position: relative;
-  z-index: 1;
-  transition:
-    transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.28s ease,
-    background 0.2s ease;
-  box-shadow: 0 8px 28px rgba(26, 22, 37, 0.2);
+  transition: transform 0.2s;
 }
 
-.v-btn-primary:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 16px 40px rgba(26, 22, 37, 0.28);
-  background: var(--acc-a);
+.v-btn-learn:hover {
+  transform: translateX(8px);
 }
 
-/* ── Floating ambient cards ── */
-.v-hero-floats {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
+.arrow-pink {
+  width: 24px;
+  height: 24px;
+  stroke: #f472b6;
 }
 
-.v-float {
-  position: absolute;
-  background: white;
-  border-radius: 16px;
-  padding: 1rem 1.3rem;
-  box-shadow: var(--sh-md);
-  border: 1px solid var(--border);
+.v-hero-right {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  animation: floatBob 6s ease-in-out infinite alternate;
-}
-
-.v-float-1 {
-  top: 22%;
-  left: 6%;
-  animation-delay: 0s;
-}
-
-.v-float-2 {
-  top: 22%;
-  right: 6%;
-  animation-delay: -2s;
-}
-
-.v-float-3 {
-  bottom: 22%;
-  left: 8%;
-  animation-delay: -4s;
-}
-
-.v-float-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.v-float-title {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.v-float-sub {
-  font-size: 0.64rem;
-  color: var(--muted);
-}
-
-@keyframes floatBob {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-12px);
-  }
-}
-
-/* ── Scroll hint ── */
-.v-scroll-hint {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
-  color: var(--muted);
-  font-size: 0.62rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-family: 'DM Mono', monospace;
-  opacity: 0;
-  animation: hintFade 1s ease forwards;
-  animation-delay: 2s;
 }
 
-.v-scroll-line {
-  width: 1px;
-  height: 38px;
-  background: linear-gradient(to bottom, var(--acc-a), transparent);
-  animation: sPulse 2s ease-in-out infinite;
+.v-hero-illustration-wrap {
+  width: 100%;
+  max-width: 580px;
+  position: relative;
 }
 
-@keyframes sPulse {
-
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scaleY(0.7);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scaleY(1);
-  }
+.v-hero-img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 40px rgba(108, 99, 255, 0.15));
 }
 
-@keyframes hintFade {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(8px);
+@media (max-width: 1024px) {
+  .v-hero-content {
+    flex-direction: column;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
   }
-
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+  .v-hero-left {
+    max-width: 100%;
+    margin-bottom: 3rem;
+  }
+  .v-hero-left .v-hero-description {
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

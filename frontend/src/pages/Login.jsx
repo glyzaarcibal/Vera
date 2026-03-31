@@ -3,8 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { IoArrowBack, IoMail, IoLockClosed } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { motion } from "framer-motion";
 import axiosInstance from "../utils/axios.instance";
 import { setUser } from "../store/slices/authSlice";
+import ReusableModal from "../components/ReusableModal";
 import "./Login.css";
 
 const Login = () => {
@@ -15,6 +17,12 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorModal, setErrorModal] = useState({ 
+    isOpen: false, 
+    title: "", 
+    message: "", 
+    type: "error" 
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,7 +52,12 @@ const Login = () => {
       if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
         navigate("/email-verified", { state: { email: formData.email } });
       } else {
-        alert(message);
+        setErrorModal({
+          isOpen: true,
+          title: "Access Restricted",
+          message,
+          type: "error"
+        });
       }
     } finally {
       setIsLoading(false);
@@ -58,7 +71,12 @@ const Login = () => {
       <div className="log-blob log-blob-2" />
       <div className="log-blob log-blob-3" />
 
-      <div className="log-card">
+      <motion.div 
+        className="log-card"
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
 
         {/* ── LEFT: Branding Panel ── */}
         <div className="log-panel-brand">
@@ -97,10 +115,6 @@ const Login = () => {
             ))}
           </div>
 
-          <div className="log-panel-footer">
-            Don't have an account?{" "}
-            <Link to="/register" className="log-panel-link">Sign Up</Link>
-          </div>
         </div>
 
         {/* ── RIGHT: Form Panel ── */}
@@ -161,7 +175,7 @@ const Login = () => {
               {errors.password && <span className="log-err">{errors.password}</span>}
             </div>
 
-            {/* Options row */}
+            {/* Options row row */}
             <div className="log-options">
               <label className="log-checkbox-row">
                 <input
@@ -198,7 +212,15 @@ const Login = () => {
           </form>
         </div>
 
-      </div>
+      </motion.div>
+
+      <ReusableModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+        type={errorModal.type}
+      />
     </div>
   );
 };

@@ -12,8 +12,10 @@ import {
   IoShieldCheckmark,
 } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../utils/axios.instance";
 import { setUser } from "../store/slices/authSlice";
+import ReusableModal from "../components/ReusableModal";
 import "./Register.css";
 
 const Register = () => {
@@ -37,6 +39,12 @@ const Register = () => {
   const [requiresConsent, setRequiresConsent] = useState(false);
   const [consentStep, setConsentStep] = useState(1);
   const [consentAgreed, setConsentAgreed] = useState(false);
+  const [errorModal, setErrorModal] = useState({ 
+    isOpen: false, 
+    title: "", 
+    message: "", 
+    type: "error" 
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -94,7 +102,12 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (requiresConsent && consentStep !== 3) {
-      alert("Please complete parental consent verification.");
+      setErrorModal({
+        isOpen: true,
+        title: "Consent Required",
+        message: "Please complete parental consent verification before moving forward.",
+        type: "confirm"
+      });
       return;
     }
     const newErrors = validateForm();
@@ -109,7 +122,12 @@ const Register = () => {
         navigate("/email-verified", { state: { email: formData.email } });
       }
     } catch (e) {
-      alert(e.response?.data?.message || "Internal Server Error");
+      setErrorModal({
+        isOpen: true,
+        title: "Registration Failed",
+        message: e.response?.data?.message || "Internal Server Error",
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +149,12 @@ const Register = () => {
       });
       setConsentStep(2);
     } catch (e) {
-      alert(e.response?.data?.message || "Failed to send verification");
+      setErrorModal({
+        isOpen: true,
+        title: "Verification Error",
+        message: e.response?.data?.message || "Failed to send verification",
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +169,12 @@ const Register = () => {
       });
       setConsentStep(3);
     } catch (e) {
-      alert(e.response?.data?.message || "Verification failed");
+      setErrorModal({
+        isOpen: true,
+        title: "Invalid Code",
+        message: e.response?.data?.message || "Verification failed",
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -158,9 +186,51 @@ const Register = () => {
       <div className="reg-blob reg-blob-2" />
       <div className="reg-blob reg-blob-3" />
 
-      <div className="reg-card">
+      <motion.div 
+        className="reg-card"
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        {/* ── LEFT: Branding Panel (Now consistently on the left) ── */}
+        <div className="reg-panel-brand">
+          <button className="reg-back-btn" onClick={() => navigate("/")}>
+            <IoArrowBack />
+            <span>Back</span>
+          </button>
 
-        {/* ── LEFT: Form Panel ── */}
+          <div className="reg-brand">
+            <div className="reg-brand-icon">
+              <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.1)" />
+                <path d="M14 30 Q20 18 26 30 Q32 42 38 30 Q44 18 50 30"
+                  stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
+                <circle cx="30" cy="30" r="4" fill="white" />
+              </svg>
+            </div>
+            <h1 className="reg-brand-title">
+              Join <span className="reg-brand-accent">Vera</span>
+            </h1>
+            <p className="reg-brand-subtitle">
+              Your AI-powered mental wellness companion. Start tracking your emotional journey today.
+            </p>
+          </div>
+
+          <div className="reg-features">
+            {[
+              { icon: "🎙️", label: "Voice Emotion Analysis" },
+              { icon: "📊", label: "Mood & Wellness Tracking" },
+              { icon: "🔒", label: "Private & Secure" },
+            ].map((f, i) => (
+              <div className="reg-feature-chip" key={i}>
+                <span className="reg-feature-emoji">{f.icon}</span>
+                <span>{f.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── RIGHT: Form Panel ── */}
         <div className="reg-panel-form">
           <div className="reg-form-header">
             <h2 className="reg-form-title">Create Account</h2>
@@ -336,50 +406,15 @@ const Register = () => {
           </form>
         </div>
 
-        {/* ── RIGHT: Branding Panel ── */}
-        <div className="reg-panel-brand">
-          <button className="reg-back-btn" onClick={() => navigate("/")}>
-            <IoArrowBack />
-            <span>Back</span>
-          </button>
+      </motion.div>
 
-          <div className="reg-brand">
-            <div className="reg-brand-icon">
-              <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.1)" />
-                <path d="M14 30 Q20 18 26 30 Q32 42 38 30 Q44 18 50 30"
-                  stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-                <circle cx="30" cy="30" r="4" fill="white" />
-              </svg>
-            </div>
-            <h1 className="reg-brand-title">
-              Join <span className="reg-brand-accent">Vera</span>
-            </h1>
-            <p className="reg-brand-subtitle">
-              Your AI-powered mental wellness companion. Start tracking your emotional journey today.
-            </p>
-          </div>
-
-          <div className="reg-features">
-            {[
-              { icon: "🎙️", label: "Voice Emotion Analysis" },
-              { icon: "📊", label: "Mood & Wellness Tracking" },
-              { icon: "🔒", label: "Private & Secure" },
-            ].map((f, i) => (
-              <div className="reg-feature-chip" key={i}>
-                <span className="reg-feature-emoji">{f.icon}</span>
-                <span>{f.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="reg-panel-footer">
-            Already have an account?{" "}
-            <Link to="/login" className="reg-panel-link">Sign In</Link>
-          </div>
-        </div>
-
-      </div>
+      <ReusableModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+        type={errorModal.type}
+      />
     </div>
   );
 };

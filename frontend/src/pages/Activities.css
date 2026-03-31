@@ -6,7 +6,7 @@
 
 /* ── PAGE CONTAINER ─────────────────────────────────────── */
 .activities-container {
-  padding: 2rem;
+  padding: 0.5rem 1.5rem;
   max-width: 1280px;
   margin: 0 auto;
   min-height: 100vh;
@@ -15,8 +15,8 @@
 /* ── HEADER — NOW FLOATING + ROUNDED ────────────────────── */
 .activities-header {
   text-align: center;
-  margin: 0 0 3rem;
-  padding: 2.5rem 2rem;
+  margin: 0 0 0.75rem;
+  padding: 1rem 2rem;
 
   /* Floating card */
   background: rgba(255, 255, 255, 0.75);
@@ -80,7 +80,7 @@
 
 /* ── HEADER TITLE ───────────────────────────────────────── */
 .activities-header h1 {
-  font-size: 3rem;
+  font-size: 2.2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
@@ -99,9 +99,9 @@
 
 /* ── SUBTITLE ───────────────────────────────────────────── */
 .activities-subtitle {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #4a5568;
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
   font-weight: 400;
   max-width: 600px;
   margin-left: auto;
@@ -138,108 +138,200 @@
 }
 
 /* ── ACTIVITIES GRID ────────────────────────────────────── */
-.activities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-  padding: 1rem;
+/* ── ACTIVITIES CAROUSEL ────────────────────────────────── */
+.activities-carousel-wrapper {
+  margin-top: 0;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  padding-bottom: 2rem;
 }
 
-/* ── ACTIVITY CARD ──────────────────────────────────────── */
-.activity-card {
+/* ── CENTERED FOCUS CLASSES ────────────────────────────── */
+.active-focus {
+  z-index: 10;
+  transform: scale(1.05);
+  box-shadow: 
+    0 30px 70px rgba(102, 126, 234, 0.18),
+    0 10px 20px rgba(0, 0, 0, 0.05);
+  filter: none;
+  opacity: 1;
+}
+
+.inactive-blur {
+  opacity: 0.45;
+  transform: scale(0.85);
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+
+/* ── NEW PREMIUM CARD DESIGN ────────────────────────────── */
+.activity-card-new {
   background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 40px;
+  min-width: 320px;
+  max-width: 320px;
+  height: 480px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  padding: 0;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  animation: fadeInUp 0.6s ease-out;
-  animation-fill-mode: both;
+  border: 1px solid rgba(102, 126, 234, 0.08);
+  cursor: pointer;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Top accent bar */
-.activity-card::before {
+@media (max-width: 768px) {
+  .activity-card-new {
+    min-width: 280px;
+    max-width: 280px;
+    height: 420px;
+    border-radius: 30px;
+  }
+
+  .activity-card-image-circle {
+    width: 110px;
+    height: 110px;
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .activity-card-image-circle svg {
+    width: 45px;
+    height: 45px;
+  }
+
+  .activity-card-new h3 {
+    font-size: 1.2rem;
+  }
+
+  .activity-card-new p {
+    font-size: 0.9rem;
+    padding: 0 1.5rem;
+  }
+
+  .activity-more-btn {
+    margin-bottom: 2rem;
+  }
+}
+
+/* Thick colored cap at the top */
+.activity-card-new::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  transform: scaleX(0);
-  transition: transform 0.4s ease;
+  height: 14px;
+  background: #ff8c6b; /* Warm orange accent from picture */
 }
 
-.activity-card:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow:
-    0 24px 50px rgba(102, 126, 234, 0.22),
-    0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: rgba(102, 126, 234, 0.35);
+.activity-card-new:nth-child(even)::before {
+  background: #f093fb; /* Lavender variant for rhythm */
 }
 
-.activity-card:hover::before {
-  transform: scaleX(1);
-}
-
-/* Stagger delays */
-.activity-card:nth-child(1) { animation-delay: 0.1s; }
-.activity-card:nth-child(2) { animation-delay: 0.2s; }
-.activity-card:nth-child(3) { animation-delay: 0.3s; }
-.activity-card:nth-child(4) { animation-delay: 0.4s; }
-.activity-card:nth-child(5) { animation-delay: 0.5s; }
-.activity-card:nth-child(6) { animation-delay: 0.6s; }
-
-/* ── ICON WRAPPER ───────────────────────────────────────── */
-.activity-icon-wrapper {
-  width: 70px;
-  height: 70px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Circular centered icon wrapper */
+.activity-card-image-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: #f8f9ff;
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
+  overflow: hidden;
+  border: 4px solid #f0f2ff;
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.12);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.activity-card:hover .activity-icon-wrapper {
-  transform: scale(1.12) rotate(6deg);
-  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.35);
-}
-
-.activity-icon {
-  font-size: 2rem;
-  color: white;
-}
-
-/* ── CARD TEXT ──────────────────────────────────────────── */
-.activity-card h3 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  color: #2d3748;
-  transition: color 0.3s ease;
-}
-
-.activity-card:hover h3 {
+.activity-card-image-circle svg {
+  width: 65px;
+  height: 65px;
   color: #667eea;
+  stroke-width: 2;
 }
 
-.activity-card p {
-  font-size: 1rem;
+.activity-card-new:hover .activity-card-image-circle {
+  transform: scale(1.08) rotate(5deg);
+}
+
+.activity-card-new h3 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #1a202c;
+  margin-bottom: 1rem;
+  text-align: center;
+  padding: 0 2rem;
+}
+
+.activity-card-new p {
+  padding: 0 2.5rem;
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: #4a5568;
+  margin-bottom: auto;
+  opacity: 0.85;
+}
+
+/* Styled MORE button with bottom underline */
+.activity-more-btn {
+  margin-bottom: 2.5rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: #2d3748;
+  text-decoration: none;
+  position: relative;
+  border-bottom: 2px solid #2d3748;
+  padding-bottom: 6px;
+  transition: all 0.3s ease;
+}
+
+.activity-card-new:hover .activity-more-btn {
+  color: #667eea;
+  border-color: #667eea;
+  transform: scale(1.05);
+}
+
+/* Drag Hint */
+.carousel-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
   color: #718096;
-  margin-bottom: 1.5rem;
-  flex-grow: 1;
-  line-height: 1.6;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.hint-line {
+  width: 60px;
+  height: 1px;
+  background: #e2e8f0;
+  position: relative;
+}
+
+.hint-line::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #667eea;
 }
 
 /* ── META TAGS ──────────────────────────────────────────── */

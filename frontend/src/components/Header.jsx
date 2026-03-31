@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
 import { Menu, X, Bell, LogOut, User, LayoutDashboard, Info, MessageSquare, Mic, UserCircle, Activity, ChevronDown, Sparkles } from "lucide-react";
+import logo from "../assets/logo.png";
 import "./Header.css";
 
 const Header = () => {
@@ -41,8 +42,7 @@ const Header = () => {
     <header className={`header ${isMenuOpen ? 'header--menu-open' : ''}`}>
       <nav className="header-nav">
         <Link to="/" className="header-logo">
-          <img src="/icon.png" alt="V.E.R.A." className="logo-img" />
-          <span className="logo-text">V.E.R.A.</span>
+          <img src={logo} alt="V.E.R.A." className="logo-img" />
         </Link>
 
         {/* Hamburger Menu Button */}

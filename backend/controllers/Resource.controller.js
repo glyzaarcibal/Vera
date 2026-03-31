@@ -48,7 +48,8 @@ export const fetchResources = async (req, res) => {
     const resources = await getAllResources();
     return res.status(200).json({ resources });
   } catch (e) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("Error fetching resources:", e);
+    return res.status(500).json({ message: "Internal Server Error", error: e.message || e });
   }
 };
 
