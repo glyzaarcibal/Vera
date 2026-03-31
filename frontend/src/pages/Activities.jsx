@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart,
@@ -15,15 +15,29 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../utils/axios.instance.js";
 import "./Activities.css";
 
 const Activities = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [selectedActivityIndex, setSelectedActivityIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const carouselRef = useRef(null);
   const [userRecords, setUserRecords] = useState([]);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsError, setRecordsError] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const cardWidth = useMemo(() => (windowWidth <= 768 ? 280 : 320), [windowWidth]);
+  const gap = 48; // Matches 'gap-12' in Tailwind/CSS (12 * 4 = 48)
+  const shiftAmount = cardWidth + gap;
 
   const isReportsMode = useMemo(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -183,6 +197,14 @@ const Activities = () => {
     },
   ];
 
+  const handleCarouselScroll = (direction) => {
+    if (direction === "left") {
+      setSelectedActivityIndex((prev) => Math.max(0, prev - 1));
+    } else {
+      setSelectedActivityIndex((prev) => Math.min(activities.length - 1, prev + 1));
+    }
+  };
+
   return (
     <div className="activities-container">
       <div className="activities-header">
@@ -290,23 +312,83 @@ const Activities = () => {
         </div>
       )}
 
-      <div className="activities-grid">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="activity-card"
-            onClick={() => navigate(activity.path)}
+      <div className="activities-carousel-wrapper">
+        <div className="relative w-full flex items-center justify-center min-h-[600px]">
+          {/* Left Arrow */}
+          <button
+            onClick={() => handleCarouselScroll("left")}
+            disabled={selectedActivityIndex === 0}
+            className={`absolute left-4 z-20 w-14 h-14 rounded-2xl bg-white shadow-xl flex items-center justify-center transition-all border border-gray-100 ${selectedActivityIndex === 0
+              ? "opacity-30 cursor-not-allowed"
+              : "hover:scale-110 hover:shadow-2xl text-purple-600"
+              }`}
           >
-            <div className="activity-icon-wrapper">
-              <div className="activity-icon">{activity.icon}</div>
-            </div>
-            <h3>{activity.name}</h3>
-            <p>{activity.description}</p>
-            <div className="activity-footer">
-              <span className="activity-arrow">→</span>
-            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          {/* Carousel */}
+          <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
+            <motion.div
+              className="absolute flex items-center gap-12"
+              animate={{ x: `calc(50% - ${selectedActivityIndex * shiftAmount + (cardWidth / 2)}px)` }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              {activities.map((activity, index) => {
+                const isActive = index === selectedActivityIndex;
+                return (
+                  <motion.div
+                    key={activity.id}
+                    className={`activity-card-new ${isActive ? "active-focus" : "inactive-blur"}`}
+                    whileHover={isActive ? { scale: 1.02, y: -10 } : {}}
+                    onClick={() => {
+                      if (isActive) navigate(activity.path);
+                      else setSelectedActivityIndex(index);
+                    }}
+                  >
+                    <div className="activity-card-image-circle">
+                      {activity.icon}
+                    </div>
+                    <h3>{activity.name}</h3>
+                    <p>{activity.description}</p>
+                    <div className="activity-more-btn">
+                      MORE
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </div>
-        ))}
+
+          {/* Right Arrow */}
+          <button
+            onClick={() => handleCarouselScroll("right")}
+            disabled={selectedActivityIndex === activities.length - 1}
+            className={`absolute right-4 z-20 w-14 h-14 rounded-2xl bg-white shadow-xl flex items-center justify-center transition-all border border-gray-100 ${selectedActivityIndex === activities.length - 1
+              ? "opacity-30 cursor-not-allowed"
+              : "hover:scale-110 hover:shadow-2xl text-purple-600"
+              }`}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Indicators */}
+        <div className="flex justify-center gap-3 mt-8">
+          {activities.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setSelectedActivityIndex(i)}
+              className={`rounded-full transition-all duration-300 ${i === selectedActivityIndex
+                ? "w-8 h-2.5 bg-purple-500 shadow-md shadow-purple-200"
+                : "w-2.5 h-2.5 bg-gray-200 hover:bg-gray-300"
+                }`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

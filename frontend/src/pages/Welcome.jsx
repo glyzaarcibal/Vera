@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import ModalPortal from "../components/ModalPortal";
-
+import mentalImg from "../assets/mental.png";
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
 const Mic = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>;
@@ -15,6 +15,19 @@ const BookIcon = () => <svg width="32" height="32" viewBox="0 0 24 24" fill="non
 const LinkIcon = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>;
 const StarIcon = () => <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
 const Arrow = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
+
+// New Icons for UI enhancements
+const HeartIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>;
+const ShieldIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+const ClockRingIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M4 4 L8 8 M20 4 L16 8"/></svg>;
+const SmileIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+const FrownIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>;
+const AngryIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/><path d="M6 6 L8 8 M18 6 L16 8"/></svg>;
+const AnxiousIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M12 9v2 M12 13v2"/></svg>;
+const TiredIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 16h8"/><path d="M9 9h.01 M15 9h.01"/><path d="M12 6v2"/></svg>;
+const RelaxedIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01 M15 9h.01"/><path d="M12 4v2"/></svg>;
+const CalmIcon = () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>;
+const XIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
 
 /* ─── ResourceCard ───────────────────────────────────────────────── */
 const ResourceCard = ({ resource, className = "" }) => {
@@ -56,16 +69,14 @@ const Welcome = () => {
   const [isSavingMood, setIsSavingMood] = useState(false);
 
   const moodsList = [
-    { mood: "Happy", emoji: "😊", color: "#FFD700", animation: "/animations/happy.json" },
-    { mood: "Sad", emoji: "😢", color: "#5C6BC0", animation: "/animations/sad.json" },
-    { mood: "Angry", emoji: "😠", color: "#EF5350", animation: "/animations/angry.json" },
-    { mood: "Anxious", emoji: "😰", color: "#FFA726", animation: "/animations/anxious.json" },
-    { mood: "Tired", emoji: "😴", color: "#8D6E63", animation: "/animations/tired.json" },
-    { mood: "Relaxed", emoji: "😌", color: "#66BB6A", animation: "/animations/relax.json" },
-    { mood: "Calm", emoji: "😊", color: "#26A69A", animation: "/animations/content.json" },
+    { mood: "Happy", icon: <SmileIcon />, color: "#FFD700", animation: "/animations/happy.json" },
+    { mood: "Sad", icon: <FrownIcon />, color: "#5C6BC0", animation: "/animations/sad.json" },
+    { mood: "Angry", icon: <AngryIcon />, color: "#EF5350", animation: "/animations/angry.json" },
+    { mood: "Anxious", icon: <AnxiousIcon />, color: "#FFA726", animation: "/animations/anxious.json" },
+    { mood: "Tired", icon: <TiredIcon />, color: "#8D6E63", animation: "/animations/tired.json" },
+    { mood: "Relaxed", icon: <RelaxedIcon />, color: "#66BB6A", animation: "/animations/relax.json" },
+    { mood: "Calm", icon: <CalmIcon />, color: "#26A69A", animation: "/animations/content.json" },
   ];
-
-  // Remove global CSS injection
 
   /* DOM effects */
   useEffect(() => {
@@ -124,8 +135,6 @@ const Welcome = () => {
 
   const checkMoodEntry = async () => {
     if (!user?.id) return;
-
-    // Check if we've already shown it this session
     if (sessionStorage.getItem("moodPopupShown") === "true") return;
 
     try {
@@ -153,7 +162,7 @@ const Welcome = () => {
     setIsSavingMood(true);
     const newEntry = {
       mood: selectedMood.mood,
-      moodEmoji: selectedMood.emoji,
+      moodIcon: selectedMood.mood,
       moodColor: selectedMood.color,
       reason: moodReason,
       timestamp: new Date().toISOString(),
@@ -210,7 +219,6 @@ const Welcome = () => {
 
   if (loading) return (
     <div className="v-loading">
-      {/* No global CSS injected here */}
       <div className="v-spinner" />
       <p className="v-loading-text">Loading your experience</p>
     </div>
@@ -218,47 +226,28 @@ const Welcome = () => {
 
   return (
     <div>
-      {/* No global CSS injected here */}
       {/* ══ HERO ══════════════════════════════════════════ */}
-      <section className="v-hero">
-        <div className="v-hero-floats">
-          <div className="v-float v-float-1">
-            <div className="v-float-icon" style={{ background: "linear-gradient(135deg,#ede9fe,#ddd6fe)" }}>🎙️</div>
-            <div><div className="v-float-title">Voice Analysis</div><div className="v-float-sub">AI-powered</div></div>
+      <section className="v-hero-wrapper">
+        <div className="v-hero-content">
+          <div className="v-hero-left">
+            <h1 className="sa sa-up sa-d1 v-hero-title-main">
+              Voice Emotion <br /> <span>Recognition App</span>
+            </h1>
+            <p className="sa sa-up sa-d2 v-hero-description">
+              Your AI-powered companion for mental well-being. We provide secure,
+              personalized emotional tracking and support at your fingertips.
+            </p>
+            <div className="sa sa-up sa-d3 v-hero-actions">
+              <Link to="/about" className="v-btn-learn">
+                Learn More <Arrow className="arrow-pink" />
+              </Link>
+            </div>
           </div>
-          <div className="v-float v-float-2">
-            <div className="v-float-icon" style={{ background: "linear-gradient(135deg,#d1fae5,#a7f3d0)" }}>✅</div>
-            <div><div className="v-float-title">100% Private</div><div className="v-float-sub">End-to-end secure</div></div>
+          <div className="sa sa-scale sa-d2 v-hero-right">
+            <div className="v-hero-illustration-wrap">
+              <img src={mentalImg} alt="Mental Health Illustration" className="v-hero-img" />
+            </div>
           </div>
-          <div className="v-float v-float-3">
-            <div className="v-float-icon" style={{ background: "linear-gradient(135deg,#fce7f3,#fbcfe8)" }}>💙</div>
-            <div><div className="v-float-title">24 / 7 Support</div><div className="v-float-sub">Always here for you</div></div>
-          </div>
-        </div>
-
-        <span className="sa sa-drop sa-d0 v-eyebrow">
-          <span className="v-eyebrow-dot" />
-          Mental Health Support
-        </span>
-
-        <h1 className="sa sa-up sa-d1 v-hero-title">
-          Welcome to <span className="v-hero-title-accent">V.E.R.A.</span>
-        </h1>
-
-        <p className="sa sa-up sa-d2 v-hero-mono">Voice Emotion Recognition Application</p>
-
-        <p className="sa sa-blr sa-d3 v-hero-desc">
-          Your AI-powered companion for mental well-being, offering support through
-          voice recognition, predictive analytics, and emotional tracking.
-        </p>
-
-        <Link to="/about" className="sa sa-scale sa-d4 v-btn-primary">
-          Discover more <Arrow />
-        </Link>
-
-        <div className="v-scroll-hint">
-          <span>Scroll</span>
-          <div className="v-scroll-line" />
         </div>
       </section>
 
@@ -275,7 +264,7 @@ const Welcome = () => {
             { num: "01", icon: <Mic />, title: "Voice Emotion Recognition", desc: "Express yourself naturally and let our AI understand your emotional state through advanced voice analysis." },
             { num: "02", icon: <Chat />, title: "AI Chatbot Support", desc: "Get immediate emotional support and mental health first aid whenever you need it, day or night." },
             { num: "03", icon: <ChartBar />, title: "Mood Tracking", desc: "Monitor your emotional patterns and gain valuable insights into your mental wellness journey over time." },
-            { num: "04", icon: <ClockIcon />, title: "Predictive Analytics", desc: "Early detection of emotional distress patterns to provide timely, compassionate assistance." },
+            { num: "04", icon: <ClockRingIcon />, title: "Predictive Analytics", desc: "Early detection of emotional distress patterns to provide timely, compassionate assistance." },
           ].map((f, i) => (
             <div key={f.num} className={`sa sa-up sa-d${i} v-feat-card sa-shimmer`}>
               <div className="v-feat-num">{f.num}</div>
@@ -290,83 +279,38 @@ const Welcome = () => {
       <div className="v-divider" />
 
       {/* ══ MOBILE APP PROMO ═══════════════════════════════ */}
-      <div className="v-section" style={{ background: "linear-gradient(135deg, rgba(108, 99, 255, 0.04) 0%, rgba(167, 139, 250, 0.05) 100%)", borderRadius: "32px", padding: "60px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "40px", flexWrap: "wrap", border: "1px solid rgba(108, 99, 255, 0.1)" }}>
-        <div style={{ flex: "1 1 400px" }}>
+      <div className="v-promo-banner">
+        <div className="v-promo-content">
           <span className="sa sa-up sa-d0 v-label">V.E.R.A for Mobile</span>
-          <h2 className="sa sa-up sa-d1 v-heading" style={{ marginBottom: "20px", fontSize: "36px" }}>Take your wellness <em>anywhere</em></h2>
-          <p className="sa sa-up sa-d2 v-sub" style={{ fontSize: "18px", color: "var(--muted)" }}>
+          <h2 className="sa sa-up sa-d1 v-heading" style={{ marginBottom: "20px" }}>Take your wellness <em>anywhere</em></h2>
+          <p className="sa sa-up sa-d2 v-sub" style={{ fontSize: "18px" }}>
             Download the V.E.R.A mobile app to get 24/7 access to AI support, emotion tracking, and customized mental health resources right in your pocket. 
           </p>
         </div>
 
         {/* Mock Mobile Phone Frame */}
-        <div className="sa sa-scale sa-d2" style={{ 
-          position: "relative",
-          width: "280px", 
-          height: "540px", 
-          background: "#2d3748", /* Dark sleek phone body */
-          padding: "50px 14px 60px 14px", /* Thick top and bottom bezels */
-          borderRadius: "40px", 
-          boxShadow: "0 30px 60px rgba(108, 99, 255, 0.2)", 
-          display: "flex", 
-          flexDirection: "column", 
-          alignItems: "center", 
-          flexShrink: 0, 
-          margin: "auto",
-          border: "4px solid #1a202c"
-        }}>
-          {/* Top Speaker/Camera */}
-          <div style={{ position: "absolute", top: "22px", display: "flex", gap: "12px", alignItems: "center" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#4a5568" }} />
-            <div style={{ width: "40px", height: "6px", borderRadius: "3px", background: "#4a5568" }} />
+        <div className="v-phone-frame sa sa-scale sa-d2">
+          <div className="v-phone-top">
+            <div className="v-phone-dot" />
+            <div className="v-phone-speaker" />
           </div>
 
-          {/* Phone Screen */}
-          <div style={{
-            width: "100%",
-            height: "100%",
-            background: "#ffffff",
-            borderRadius: "16px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-            position: "relative",
-            boxShadow: "inset 0 0 10px rgba(0,0,0,0.05)"
-          }}>
-            {/* Top Text inside Screen removed */}
-
-            {/* QR Code container with scanner brackets */}
-            <div style={{ position: "relative", padding: "16px", marginBottom: "30px", background: "#f8fafc", borderRadius: "16px" }}>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=Download+VERA+App&color=25164d" alt="Scan QR Code" style={{ width: "160px", height: "160px", mixBlendMode: "multiply" }} />
-              
-              {/* Animated Scanner Bracket Corners */}
-              <div style={{ position: "absolute", top: "0", left: "0", width: "20px", height: "20px", borderTop: "3px solid #6c63ff", borderLeft: "3px solid #6c63ff", borderRadius: "8px 0 0 0" }} />
-              <div style={{ position: "absolute", top: "0", right: "0", width: "20px", height: "20px", borderTop: "3px solid #6c63ff", borderRight: "3px solid #6c63ff", borderRadius: "0 8px 0 0" }} />
-              <div style={{ position: "absolute", bottom: "0", left: "0", width: "20px", height: "20px", borderBottom: "3px solid #6c63ff", borderLeft: "3px solid #6c63ff", borderRadius: "0 0 0 8px" }} />
-              <div style={{ position: "absolute", bottom: "0", right: "0", width: "20px", height: "20px", borderBottom: "3px solid #6c63ff", borderRight: "3px solid #6c63ff", borderRadius: "0 0 8px 0" }} />
+          <div className="v-phone-screen">
+            <div className="v-qr-container">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=Download+VERA+App&color=25164d" alt="Scan QR Code" className="v-qr-img" />
+              <div className="v-qr-bracket v-qr-tl" />
+              <div className="v-qr-bracket v-qr-tr" />
+              <div className="v-qr-bracket v-qr-bl" />
+              <div className="v-qr-bracket v-qr-br" />
             </div>
 
-            {/* Scan Now button pill */}
-            <div style={{ 
-               background: "#e8e6ff", 
-               color: "#6c63ff", 
-               padding: "12px 32px", 
-               borderRadius: "50px", 
-               fontWeight: "800", 
-               fontSize: "14px", 
-               letterSpacing: "1px",
-               textTransform: "uppercase",
-               boxShadow: "0 4px 15px rgba(108, 99, 255, 0.15)"
-            }}>
-               Scan Now
+            <div className="v-scan-btn">
+              Scan Now
             </div>
           </div>
 
-          {/* Bottom Home Button */}
-          <div style={{ position: "absolute", bottom: "15px", width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #4a5568", display: "flex", justifyContent: "center", alignItems: "center", background: "#323743" }}>
-            <div style={{ width: "12px", height: "12px", borderRadius: "4px", border: "1.5px solid #4a5568" }} />
+          <div className="v-phone-bottom">
+            <div className="v-phone-home" />
           </div>
         </div>
       </div>
@@ -450,148 +394,65 @@ const Welcome = () => {
       {/* Mood Popup Modal */}
       {showMoodPopup && (
         <ModalPortal>
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.6)",
-          backdropFilter: "blur(5px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2000,
-          padding: "20px",
-          animation: "fadeIn 0.3s ease-out"
-        }}>
-          <div style={{
-            background: "white",
-            borderRadius: "32px",
-            padding: "40px",
-            maxWidth: "500px",
-            width: "100%",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.2)",
-            textAlign: "center",
-            position: "relative",
-            overflow: "hidden"
-          }}>
-            <div style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "8px",
-              background: "linear-gradient(90deg, #6c63ff, #a78bfa, #06d6c7)"
-            }} />
+          <div className="v-mood-overlay">
+            <div className="v-mood-modal">
+              <div className="v-mood-modal-header" />
+              
+              <button
+                onClick={() => {
+                  setShowMoodPopup(false);
+                  sessionStorage.setItem("moodPopupShown", "true");
+                }}
+                className="v-mood-close"
+                aria-label="Close"
+              >
+                <XIcon />
+              </button>
 
-            <button
-              onClick={() => {
-                setShowMoodPopup(false);
-                sessionStorage.setItem("moodPopupShown", "true");
-              }}
-              style={{
-                position: "absolute",
-                top: "20px",
-                right: "20px",
-                background: "none",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                color: "#9490a8"
-              }}
-            >
-              ×
-            </button>
+              <h2 className="v-mood-title">
+                How are you feeling, <span className="v-mood-name">{user?.firstName || "there"}</span>?
+              </h2>
+              <p className="v-mood-subtitle">
+                Take a moment to check in with yourself.
+              </p>
 
-            <h2 style={{
-              fontSize: "28px",
-              fontWeight: 800,
-              color: "#1a1625",
-              marginBottom: "12px"
-            }}>
-              How are you feeling, <span className="v-hero-title-accent" style={{ fontStyle: "normal", background: "none", WebkitTextFillColor: "var(--acc-a)" }}>{user?.firstName || "there"}</span>?
-            </h2>
-            <p style={{ color: "#4a4568", marginBottom: "32px", fontSize: "16px" }}>
-              Take a moment to check in with yourself.
-            </p>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "12px",
-              marginBottom: "32px"
-            }}>
-              {moodsList.map((m) => (
-                <button
-                  key={m.mood}
-                  onClick={() => setSelectedMood(m)}
-                  style={{
-                    padding: "16px 8px",
-                    borderRadius: "20px",
-                    border: selectedMood?.mood === m.mood ? `2px solid ${m.color}` : "2px solid #f0f0f5",
-                    background: selectedMood?.mood === m.mood ? `${m.color}15` : "white",
-                    cursor: "pointer",
-                    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "8px"
-                  }}
-                >
-                  <span style={{ fontSize: "28px" }}>{m.emoji}</span>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#1a1625", textTransform: "uppercase", letterSpacing: "0.05em" }}>{m.mood}</span>
-                </button>
-              ))}
-            </div>
-
-            {selectedMood && (
-              <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-                <textarea
-                  placeholder="What's making you feel this way? (Optional)"
-                  value={moodReason}
-                  onChange={(e) => setMoodReason(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: "16px",
-                    border: "1px solid #e2e8f0",
-                    background: "#f8f7fc",
-                    marginBottom: "24px",
-                    fontSize: "14px",
-                    fontFamily: "inherit",
-                    resize: "none",
-                    height: "80px",
-                    outline: "none",
-                    transition: "border-color 0.2s"
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = "#6c63ff"}
-                  onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
-                />
-
-                <button
-                  onClick={handleSaveMood}
-                  disabled={isSavingMood}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: "100px",
-                    background: "var(--acc-a)",
-                    color: "white",
-                    fontWeight: 700,
-                    border: "none",
-                    cursor: "pointer",
-                    boxShadow: "0 10px 20px rgba(108,99,255,0.2)",
-                    transition: "all 0.2s",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px"
-                  }}
-                >
-                  {isSavingMood ? "Saving..." : "Save Entry"}
-                </button>
+              <div className="v-mood-grid">
+                {moodsList.map((m) => (
+                  <button
+                    key={m.mood}
+                    onClick={() => setSelectedMood(m)}
+                    className={`v-mood-option ${selectedMood?.mood === m.mood ? 'selected' : ''}`}
+                    style={selectedMood?.mood === m.mood ? { borderColor: m.color } : {}}
+                  >
+                    <span className="v-mood-icon" style={selectedMood?.mood === m.mood ? { color: m.color } : {}}>
+                      {m.icon}
+                    </span>
+                    <span className="v-mood-label">{m.mood}</span>
+                  </button>
+                ))}
               </div>
-            )}
+
+              {selectedMood && (
+                <div className="v-mood-reason-container">
+                  <textarea
+                    placeholder="What's making you feel this way? (Optional)"
+                    value={moodReason}
+                    onChange={(e) => setMoodReason(e.target.value)}
+                    className="v-mood-textarea"
+                  />
+
+                  <button
+                    onClick={handleSaveMood}
+                    disabled={isSavingMood}
+                    className="v-mood-save-btn"
+                    style={{ background: selectedMood.color }}
+                  >
+                    {isSavingMood ? "Saving..." : "Save Entry"}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </ModalPortal>
       )}
 
@@ -600,6 +461,189 @@ const Welcome = () => {
           @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
+          }
+
+          .v-mood-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          .v-mood-modal {
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .v-mood-modal-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, #6c63ff, #a78bfa, #06d6c7);
+          }
+
+          .v-mood-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9490a8;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background 0.2s;
+          }
+
+          .v-mood-close:hover {
+            background: #f0f0f5;
+          }
+
+          .v-mood-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1a1625;
+            margin-bottom: 12px;
+          }
+
+          .v-mood-name {
+            color: #6c63ff;
+          }
+
+          .v-mood-subtitle {
+            color: #4a4568;
+            margin-bottom: 32px;
+            font-size: 16px;
+          }
+
+          .v-mood-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 32px;
+          }
+
+          .v-mood-option {
+            padding: 16px 8px;
+            border-radius: 20px;
+            border: 2px solid #f0f0f5;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .v-mood-option.selected {
+            background: rgba(108, 99, 255, 0.08);
+          }
+
+          .v-mood-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          }
+
+          .v-mood-icon {
+            font-size: 28px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .v-mood-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a1625;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+
+          .v-mood-reason-container {
+            animation: fadeIn 0.3s ease-out;
+          }
+
+          .v-mood-textarea {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            background: #f8f7fc;
+            margin-bottom: 24px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            height: 80px;
+            outline: none;
+            transition: border-color 0.2s;
+          }
+
+          .v-mood-textarea:focus {
+            border-color: #6c63ff;
+          }
+
+          .v-mood-save-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 100px;
+            color: white;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+          }
+
+          .v-mood-save-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+          }
+
+          .v-mood-save-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+          }
+
+          @media (max-width: 480px) {
+            .v-mood-modal {
+              padding: 32px 24px;
+            }
+            .v-mood-grid {
+              gap: 8px;
+            }
+            .v-mood-option {
+              padding: 12px 4px;
+            }
+            .v-mood-icon {
+              width: 24px;
+              height: 24px;
+            }
           }
         `}
       </style>

@@ -11,6 +11,7 @@ import {
   CartesianGrid,
   Line,
   Bar,
+  ResponsiveContainer,
 } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -18,6 +19,13 @@ import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
 
 const WeeklyWellnessReport = () => {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const sanitizePdfText = (value) =>
     String(value ?? "")
       .normalize("NFKD")
@@ -430,9 +438,11 @@ const WeeklyWellnessReport = () => {
     },
     headerContainer: {
       display: 'flex',
+      flexDirection: window.innerWidth <= 640 ? 'column' : 'row',
       alignItems: 'center',
+      gap: '15px',
       marginBottom: '20px',
-      padding: '20px',
+      padding: window.innerWidth <= 640 ? '15px' : '20px',
       maxWidth: '1200px',
       marginLeft: 'auto',
       marginRight: 'auto',
@@ -469,13 +479,15 @@ const WeeklyWellnessReport = () => {
       backgroundColor: '#667eea',
       color: 'white',
       border: 'none',
-      padding: '10px 16px',
-      borderRadius: '8px',
+      padding: '10px 20px',
+      borderRadius: '12px',
       cursor: 'pointer',
-      fontWeight: '600',
-      marginLeft: 'auto',
+      fontWeight: '700',
+      marginLeft: window.innerWidth <= 640 ? '0' : 'auto',
+      width: window.innerWidth <= 640 ? '100%' : 'auto',
       transition: 'all 0.2s',
-      boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)',
+      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+      fontSize: window.innerWidth <= 640 ? '14px' : '16px',
     },
     cardsContainer: {
       maxWidth: '1200px',
@@ -691,9 +703,13 @@ const WeeklyWellnessReport = () => {
           onMouseLeave={() => setIsBackButtonHovered(false)}
           onClick={() => window.history.back()}
         >
-          ← Back
+          {windowWidth <= 640 ? "←" : "← Back"}
         </button>
-        <h1 style={styles.title}>Weekly Wellness Report</h1>
+        <h1 style={{
+          ...styles.title,
+          fontSize: windowWidth <= 640 ? "1.5rem" : "28px",
+          textAlign: "center"
+        }}>Weekly Wellness Report</h1>
         <button
           onClick={downloadPDF}
           style={{
@@ -724,17 +740,17 @@ const WeeklyWellnessReport = () => {
           <div style={styles.card}>
             <h2 style={styles.sectionTitle}>Mood Distribution (Past 7 Days)</h2>
             {pieData.length > 0 ? (
-              <div style={styles.chartWrapper}>
-                <div style={styles.chartContainer}>
-                  <PieChart width={400} height={300} data={pieData}>
+              <div style={{ ...styles.chartWrapper, height: '300px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
                     <Pie
                       data={pieData}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
-                      label
+                      outerRadius={windowWidth <= 640 ? 60 : 80}
+                      label={windowWidth > 640}
                     >
                       {pieData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -742,7 +758,7 @@ const WeeklyWellnessReport = () => {
                     </Pie>
                     <Tooltip />
                   </PieChart>
-                </div>
+                </ResponsiveContainer>
               </div>
             ) : (
               <p style={styles.noData}>No mood data available for the past week.</p>

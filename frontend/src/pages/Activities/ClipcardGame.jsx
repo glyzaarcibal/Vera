@@ -1,735 +1,541 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import axiosInstance from "../../utils/axios.instance";
+import { motion, AnimatePresence } from "framer-motion";
+import veraIcon from "../../assets/icon.png";
 
-const icons = [
-  { icon: "🐰", name: "bunny", color: "#FFB6C1" },
-  { icon: "🐻", name: "bear", color: "#8B4513" },
-  { icon: "🦊", name: "fox", color: "#FF4500" },
-  { icon: "🐼", name: "panda", color: "#2E2E2E" },
-  { icon: "🐱", name: "cat", color: "#FFA07A" },
-  { icon: "🐶", name: "dog", color: "#D2691E" },
-  { icon: "🐵", name: "monkey", color: "#8B5A2B" },
-  { icon: "🐸", name: "frog", color: "#32CD32" },
-  { icon: "🐯", name: "tiger", color: "#FF6347" },
-  { icon: "🐹", name: "hamster", color: "#DEB887" },
+// ── Emotions Data ────────────────────────────────────────────────
+const EMOTIONS = [
+  { id: 1, icon: "🧘", name: "Calm", color: "#A5B4FC", affirmation: "Peace begins with a deep breath." },
+  { id: 2, icon: "😊", name: "Joy", color: "#FDE68A", affirmation: "Your happiness is a beautiful gift." },
+  { id: 3, icon: "🕊️", name: "Peace", color: "#93C5FD", affirmation: "Everything is unfolding as it should." },
+  { id: 4, icon: "💖", name: "Love", color: "#F9A8D4", affirmation: "You are worthy of love and kindness." },
+  { id: 5, icon: "✨", name: "Hope", color: "#C4B5FD", affirmation: "Better days are always ahead." },
+  { id: 6, icon: "🌈", name: "Grateful", color: "#6EE7B7", affirmation: "Focus on the blessings around you." },
+  { id: 7, icon: "🧸", name: "Secure", color: "#FCA5A5", affirmation: "You are safe and protected." },
+  { id: 8, icon: "🌱", name: "Growth", color: "#86EFAC", affirmation: "Every step forward is a victory." },
+  { id: 9, icon: "🌊", name: "Flow", color: "#7DD3FC", affirmation: "Go with the rhythm of your heart." },
+  { id: 10, icon: "☀️", name: "Radiant", color: "#FDBA74", affirmation: "Your light shines from within." },
+  { id: 11, icon: "🌙", name: "Serene", color: "#818CF8", affirmation: "Night brings rest and renewal." },
+  { id: 12, icon: "🧠", name: "Mindful", color: "#D1D5DB", affirmation: "Be present in this very moment." },
+  { id: 13, icon: "💪", name: "Stong", color: "#94A3B8", affirmation: "Your strength is greater than any challenge." },
+  { id: 14, icon: "🎋", name: "Flexibility", color: "#A7F3D0", affirmation: "Bend, but do not break." },
+  { id: 15, icon: "🐚", name: "Inner Voice", color: "#E9D5FF", affirmation: "Listen to the wisdom inside you." },
 ];
 
-const quotes = [
-  "You're pawsome! 🐾 Keep going! ✨",
-  "Cuteness overload! You're amazing! 💖",
-  "Wow! You have the heart of a panda! 🐼💪",
-  "You're as clever as a fox! 🦊 Keep it up! 🚀",
-  "Great job! You're on fire! 🔥 Keep pushing! 🏆",
-  "Purrfect match! You're on a roll! 🐱",
-  "You're hopping to success! 🐰",
-  "Bear-y good job! 🐻",
-];
+const MODES = {
+  ZEN: { name: "Zen Mode", grid: { rows: 3, cols: 4 }, timer: null, description: "Match to reveal daily affirmations.", color: "#6c63ff" },
+  FOCUS: { name: "Focus Mode", grid: { rows: 4, cols: 4 }, timer: 60, description: "Match all cards before time runs out.", color: "#3b82f6" },
+  CHALLENGE: { name: "Vera's Challenge", grid: { rows: 5, cols: 6 }, timer: 90, description: "Cards may shuffle if you take too long!", color: "#f43f5e" }
+};
 
-let winnerAudio;
+// ── Helpers ─────────────────────────────────────────────────────
+const shuffle = (array) => [...array].sort(() => Math.random() - 0.5);
 
-const generateCards = (level) => {
-  const numPairs = 2 + (level - 1) * 2;
-  const selectedIcons = icons.slice(0, numPairs);
-  const cards = [...selectedIcons, ...selectedIcons].map((content, index) => ({
-    id: index + 1,
-    content,
+const generateCards = (mode) => {
+  const { rows, cols } = mode.grid;
+  const numPairs = (rows * cols) / 2;
+  const selectedEmotions = EMOTIONS.slice(0, numPairs);
+  const cards = [...selectedEmotions, ...selectedEmotions].map((emotion, index) => ({
+    uniqueId: index,
+    ...emotion,
     matched: false,
     flipped: false,
   }));
-  return shuffleCards(cards);
+  return shuffle(cards);
 };
 
-const shuffleCards = (cards) => [...cards].sort(() => Math.random() - 0.5);
-
-const playSound = (soundFile) => {
-  const audio = new Audio(soundFile);
-  audio.volume = 0.5;
-  audio.play().catch(e => console.log("Audio play failed:", e));
-  return audio;
-};
-
-const Card = ({ card, onClick, isDisabled }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <button
-      onClick={() => onClick(card)}
-      disabled={card.matched || isDisabled}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        width: "100px",
-        height: "100px",
-        background: card.matched 
-          ? `linear-gradient(135deg, ${card.content.color}40, ${card.content.color}20)`
-          : card.flipped
-          ? `linear-gradient(135deg, ${card.content.color}, ${card.content.color}dd)`
-          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        justifyContent: "center",
-        alignItems: "center",
-        margin: "8px",
-        borderRadius: "20px",
-        border: card.matched ? "3px solid #FFD700" : "none",
-        cursor: (card.matched || isDisabled) ? "default" : "pointer",
-        opacity: isDisabled && !card.flipped && !card.matched ? 0.7 : 1,
-        boxShadow: isHovered && !card.matched && !card.flipped && !isDisabled
-          ? "0 10px 20px rgba(102, 126, 234, 0.4)"
-          : card.matched
-          ? "0 5px 15px rgba(255, 215, 0, 0.3)"
-          : card.flipped
-          ? `0 10px 20px ${card.content.color}80`
-          : "0 5px 15px rgba(0,0,0,0.2)",
-        display: "flex",
-        fontSize: card.matched || card.flipped ? "36px" : "24px",
-        color: "#fff",
-        transform: isHovered && !card.matched && !card.flipped && !isDisabled
-          ? "scale(1.05) translateY(-5px)" 
-          : card.flipped
-          ? "scale(1.02)"
-          : "scale(1)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        position: "relative",
-        overflow: "hidden",
-        animation: card.matched ? "pulse 1.5s infinite" : "none",
-      }}
-    >
-      {/* Shine effect on hover */}
-      {isHovered && !card.matched && !card.flipped && !isDisabled && (
-        <div
-          style={{
-            position: "absolute",
-            top: "-50%",
-            left: "-50%",
-            width: "200%",
-            height: "200%",
-            background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)",
-            transform: "rotate(45deg)",
-            animation: "shine 1.5s infinite",
-            pointerEvents: "none",
-          }}
-        />
+// ── Components ──────────────────────────────────────────────────
+const Card = ({ card, onClick, isActive }) => (
+  <motion.button
+    layout
+    onClick={() => onClick(card)}
+    disabled={card.matched || !isActive}
+    className="emotion-card"
+    initial={{ scale: 0.8, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    whileHover={!card.matched && isActive ? { scale: 1.05 } : {}}
+    whileTap={!card.matched && isActive ? { scale: 0.95 } : {}}
+    style={{
+      backgroundColor: card.matched || card.flipped ? card.color : "#fff",
+      borderColor: card.matched ? "#fbbf24" : "rgba(108, 99, 255, 0.1)",
+    }}
+  >
+    <AnimatePresence mode="wait">
+      {card.matched || card.flipped ? (
+        <motion.div
+          key="front"
+          initial={{ rotateY: 180, opacity: 0 }}
+          animate={{ rotateY: 0, opacity: 1 }}
+          exit={{ rotateY: 180, opacity: 0 }}
+          className="card-content"
+        >
+          <span className="card-icon">{card.icon}</span>
+          <span className="card-name">{card.name}</span>
+        </motion.div>
+      ) : (
+        <motion.div
+           key="back"
+           initial={{ rotateY: -180, opacity: 0 }}
+           animate={{ rotateY: 0, opacity: 1 }}
+           exit={{ rotateY: -180, opacity: 0 }}
+           className="card-back"
+        >
+           <img src={veraIcon} alt="Vera" className="card-back-icon" />
+        </motion.div>
       )}
-      
-      {card.matched || card.flipped ? card.content.icon : "❓"}
-      
-      {/* Floating particles for matched cards */}
-      {card.matched && (
-        <>
-          <span style={styles.particle1}>✨</span>
-          <span style={styles.particle2}>⭐</span>
-          <span style={styles.particle3}>💫</span>
-        </>
-      )}
-    </button>
-  );
-};
+    </AnimatePresence>
+  </motion.button>
+);
 
 const ClipCardGame = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
-  const [level, setLevel] = useState(1);
-  const [cards, setCards] = useState(generateCards(level));
-  const [selectedCards, setSelectedCards] = useState([]);
-  const [gameOver, setGameOver] = useState(false);
-  const [motivationQuote, setMotivationQuote] = useState("");
-  const [moves, setMoves] = useState(0);
+
+  // State
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [mode, setMode] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  const [cards, setCards] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [timer, setTimer] = useState(0);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [isTimerActive, setIsTimerActive] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
+  const [gameStatus, setGameStatus] = useState("menu"); // menu, playing, won, lost
+  const [currentAffirmation, setCurrentAffirmation] = useState("");
+  const [lastShuffleTime, setLastShuffleTime] = useState(Date.now());
 
+  // Initialization
+  const startGame = (selectedMode) => {
+    const newCards = generateCards(selectedMode);
+    setMode(selectedMode);
+    setCards(newCards);
+    setSelected([]);
+    setScore(0);
+    setTimer(selectedMode.timer || 0);
+    setGameStatus("playing");
+    setCurrentAffirmation("");
+    setLastShuffleTime(Date.now());
+  };
+
+  // Logic: Timer
   useEffect(() => {
-    if (selectedCards.length === 2) {
-      setIsChecking(true);
-      setMoves(prev => prev + 1);
-      const [first, second] = selectedCards;
-      
-      if (first.content.icon === second.content.icon) {
-        // Match found
-        setCards((prevCards) =>
-          prevCards.map((card) =>
-            card.content.icon === first.content.icon 
-              ? { ...card, matched: true } 
-              : card
-          )
-        );
-        setScore(prev => prev + 10 * level);
-        playSound("/audio/ting.mp3");
-        setSelectedCards([]);
-        setIsChecking(false);
-      } else {
-        // No match - flip back after delay
-        setTimeout(() => {
-          setCards((prevCards) =>
-            prevCards.map((card) =>
-              card.id === first.id || card.id === second.id
-                ? { ...card, flipped: false }
-                : card
-            )
-          );
-          setSelectedCards([]);
-          setIsChecking(false);
-        }, 800); // 800ms delay before flipping back
-      }
-    }
-  }, [selectedCards, level]);
-
-  useEffect(() => {
-    if (cards.every((card) => card.matched)) {
-      setGameOver(true);
-      setShowConfetti(true);
-      setMotivationQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-      const audio = playSound("/audio/winner.mp3");
-      winnerAudio = audio;
-      setIsTimerActive(false);
-      
-      // Save activity and earn tokens
-      const saveGameActivity = async () => {
-        try {
-          const res = await axiosInstance.post("/activities/save", {
-            activityType: "clipcard",
-            data: { score, level, moves, timestamp: new Date().toISOString() }
-          });
-          if (res.data?.updatedTokens !== null) {
-            dispatch(updateTokens(res.data.updatedTokens));
-          }
-        } catch (error) {
-          console.error("Failed to save clipcard activity:", error);
-        }
-      };
-      saveGameActivity();
-
-      // Add bonus time score
-      setScore(prev => prev + timeLeft * 5);
-      
-      // Hide confetti after 3 seconds
-      setTimeout(() => setShowConfetti(false), 3000);
-    }
-  }, [cards, timeLeft]);
-
-  useEffect(() => {
-    let timer;
-    if (isTimerActive && timeLeft > 0 && !gameOver) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            setGameOver(true);
-            setIsTimerActive(false);
+    let interval;
+    if (gameStatus === "playing" && mode?.timer) {
+      interval = setInterval(() => {
+        setTimer((t) => {
+          if (t <= 1) {
+            setGameStatus("lost");
             return 0;
           }
-          return prev - 1;
+          return t - 1;
         });
       }, 1000);
     }
-    return () => clearInterval(timer);
-  }, [isTimerActive, gameOver]);
+    return () => clearInterval(interval);
+  }, [gameStatus, mode]);
 
+  // Logic: Challenge Mode Shuffle
+  useEffect(() => {
+    if (gameStatus === "playing" && mode?.name === "Vera's Challenge") {
+      const interval = setInterval(() => {
+        const now = Date.now();
+        if (now - lastShuffleTime > 8000) { // Every 8 seconds
+          setCards(prev => {
+            const unmatched = prev.filter(c => !c.matched);
+            const matched = prev.filter(c => c.matched);
+            const shuffledUnmatched = shuffle(unmatched);
+            return [...matched, ...shuffledUnmatched];
+          });
+          setLastShuffleTime(now);
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gameStatus, mode, lastShuffleTime]);
+
+  // Logic: Matching
   const handleCardClick = (card) => {
-    if (
-      !gameOver &&
-      !isChecking &&
-      selectedCards.length < 2 &&
-      !card.flipped &&
-      !card.matched
-    ) {
-      if (!isTimerActive) setIsTimerActive(true);
-      
-      setCards((prevCards) =>
-        prevCards.map((c) => (c.id === card.id ? { ...c, flipped: true } : c))
-      );
-      setSelectedCards([...selectedCards, card]);
-      playSound("/audio/tap2.mp3");
+    if (selected.length === 2 || card.flipped || card.matched) return;
+
+    const newCards = cards.map(c => 
+      c.uniqueId === card.uniqueId ? { ...c, flipped: true } : c
+    );
+    setCards(newCards);
+
+    const newSelected = [...selected, card];
+    setSelected(newSelected);
+
+    if (newSelected.length === 2) {
+      setTimeout(() => checkMatch(newSelected), 600);
     }
   };
 
-  const nextLevel = () => {
-    if (winnerAudio) {
-      winnerAudio.pause();
-      winnerAudio.currentTime = 0;
-    }
-    if (level < 5) {
-      setLevel(level + 1);
-      setCards(generateCards(level + 1));
-      setSelectedCards([]);
-      setGameOver(false);
-      setMotivationQuote("");
-      setMoves(0);
-      setTimeLeft(60 + (level * 10));
-      setIsTimerActive(false);
-      setIsChecking(false);
+  const checkMatch = (selection) => {
+    const [c1, c2] = selection;
+    if (c1.id === c2.id) {
+      // Success!
+      setCards(prev => prev.map(c => 
+        c.id === c1.id ? { ...c, matched: true, flipped: true } : c
+      ));
+      setScore(s => s + 50);
+      setCurrentAffirmation(c1.affirmation);
+      speakText(c1.name); // Say the emotion name
+      setSelected([]);
     } else {
-      resetGame();
+      // Fail
+      setCards(prev => prev.map(c => 
+        (c.uniqueId === c1.uniqueId || c.uniqueId === c2.uniqueId) 
+          ? { ...c, flipped: false } : c
+      ));
+      setSelected([]);
     }
   };
 
-  const resetGame = () => {
-    if (winnerAudio) {
-      winnerAudio.pause();
-      winnerAudio.currentTime = 0;
+  // Check for Win
+  useEffect(() => {
+    if (cards.length > 0 && cards.every(c => c.matched)) {
+      setGameStatus("won");
+      saveGameActivity();
     }
-    setLevel(1);
-    setCards(generateCards(1));
-    setSelectedCards([]);
-    setGameOver(false);
-    setMotivationQuote("");
-    setMoves(0);
-    setScore(0);
-    setTimeLeft(60);
-    setIsTimerActive(false);
-    setShowConfetti(false);
-    setIsChecking(false);
+  }, [cards]);
+
+  const speakText = (text) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.2;
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
-  const progress = (cards.filter(c => c.matched).length / cards.length) * 100;
-
-  const getLevelEmoji = (level) => {
-    const emojis = ["🌱", "🌿", "🍃", "🌳", "🌟"];
-    return emojis[level - 1] || "🎯";
-  };
-
-  const handleGoBack = () => {
-    navigate(-1);
+  const saveGameActivity = async () => {
+    try {
+      const res = await axiosInstance.post("/activities/save", {
+        activityType: "clipcard",
+        data: { score, mode: mode.name, timestamp: new Date().toISOString() }
+      });
+      if (res.data?.updatedTokens) {
+        dispatch(updateTokens(res.data.updatedTokens));
+      }
+    } catch (e) {
+      console.error("Save failed", e);
+    }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
-        padding: "20px",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* CSS Animations */}
-      <style>
-        {`
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); box-shadow: 0 0 20px #FFD700; }
-            100% { transform: scale(1); }
-          }
-          
-          @keyframes shine {
-            0% { transform: rotate(45deg) translateX(-100%); }
-            100% { transform: rotate(45deg) translateX(100%); }
-          }
-          
-          @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-          }
-          
-          @keyframes confetti {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-          }
-        `}
-      </style>
+    <div className="emotion-game-container">
+      <style>{`
+        .emotion-game-container {
+          min-height: 100vh;
+          background: #f8f9ff;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2rem;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
-      {/* Animated background particles */}
-      <div style={{
-        position: "absolute",
-        top: "10%",
-        left: "5%",
-        width: "300px",
-        height: "300px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 8s ease-in-out infinite",
-      }} />
-      <div style={{
-        position: "absolute",
-        bottom: "10%",
-        right: "5%",
-        width: "400px",
-        height: "400px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 12s ease-in-out infinite reverse",
-      }} />
-      <div style={{
-        position: "absolute",
-        top: "50%",
-        right: "10%",
-        width: "200px",
-        height: "200px",
-        background: "radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 6s ease-in-out infinite",
-      }} />
-      
-      {/* Confetti effect */}
-      {showConfetti && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          zIndex: 1000,
-        }}>
-          {[...Array(50)].map((_, i) => (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                width: "10px",
-                height: "10px",
-                backgroundColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                animation: "confetti 3s ease-out forwards",
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
+        .game-header {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2rem;
+          gap: 1rem;
+        }
 
-      <div
-        style={{
-          maxWidth: "800px",
-          margin: "0 auto",
-          backgroundColor: "rgba(255, 255, 255, 0.85)",
-          borderRadius: "40px",
-          padding: "30px",
-          boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
-          backdropFilter: "blur(10px)",
-          position: "relative",
-          zIndex: 10,
-        }}
-      >
-        {/* Header with back button */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-          }}
-        >
-          <button
-            onClick={handleGoBack}
-            style={{
-              background: "white",
-              border: "none",
-              width: "45px",
-              height: "45px",
-              borderRadius: "50%",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "scale(1.1)";
-              e.target.style.boxShadow = "0 10px 25px rgba(0,0,0,0.2)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "scale(1)";
-              e.target.style.boxShadow = "0 5px 15px rgba(0,0,0,0.1)";
-            }}
+        .header-spacer { width: 80px; }
+        @media (max-width: 640px) { .header-spacer { width: 45px; } }
+
+        .game-title {
+          font-size: 2rem;
+          font-weight: 800;
+          color: #1e293b;
+          margin: 0;
+          text-align: center;
+          flex: 1;
+        }
+
+        .game-title em { color: #6c63ff; font-style: normal; }
+
+        .game-menu {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+          width: 100%;
+          max-width: 1000px;
+          margin-top: 4rem;
+        }
+
+        .mode-card {
+          background: white;
+          padding: 2.5rem;
+          border-radius: 32px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+          text-align: center;
+          cursor: pointer;
+          border: 2px solid transparent;
+          transition: all 0.3s ease;
+        }
+
+        .mode-card:hover { transform: translateY(-10px); border-color: #6c63ff; }
+
+        .mode-card h2 { margin-bottom: 0.5rem; color: #1e293b; }
+        .mode-card p { color: #64748b; font-size: 0.9rem; }
+
+        .game-field-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+        }
+
+        .game-stats-bar {
+          display: flex;
+          gap: 3rem;
+          background: white;
+          padding: 1rem 3rem;
+          border-radius: 100px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+          margin-bottom: 2rem;
+        }
+
+        .stat-box { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+        .stat-value { font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+
+        .cards-grid {
+          display: grid;
+          gap: 1rem;
+          margin-bottom: 2rem;
+          justify-items: center;
+        }
+
+        @media (max-width: 640px) {
+          .emotion-game-container { padding: 0.75rem 0.5rem; overflow-x: hidden; }
+          .game-title { font-size: 1.25rem; }
+          .emotion-card { 
+            width: auto; 
+            aspect-ratio: 1 / 1; 
+            max-width: calc((100vw - 2rem) / ${mode?.grid?.cols || 4} - 4px);
+            min-width: 0;
+            border-radius: 10px; 
+            border-width: 1px; 
+            height: auto;
+          }
+          .card-icon { font-size: 1.25rem; }
+          .card-name { display: none; } /* Hide names on mobile to save height space */
+          .game-stats-bar { gap: 0.5rem; padding: 0.5rem; margin-bottom: 1rem; width: 100%; justify-content: space-around; }
+          .stat-value { font-size: 0.85rem; }
+          .stat-label { font-size: 0.5rem; }
+          .cards-grid { gap: 0.25rem; padding: 0.25rem; width: 100%; max-width: 100%; justify-content: center; }
+          .card-back-icon { width: 100%; height: 100%; }
+        }
+
+        .emotion-card {
+          width: 100px;
+          height: 100px;
+          border-radius: 20px;
+          border: 2px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background-color 0.3s;
+          padding: 0;
+          overflow: hidden;
+        }
+
+        .card-content { display: flex; flex-direction: column; align-items: center; }
+        .card-icon { font-size: 2rem; }
+        .card-name { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+
+        .card-back {
+          background: #6c63ff;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          overflow: hidden;
+        }
+
+        .card-back-icon {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 1;
+        }
+
+        .affirmation-toast {
+          position: fixed;
+          bottom: 4rem;
+          background: #1e293b;
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 100px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+          font-weight: 600;
+          z-index: 100;
+        }
+
+        .win-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(255,255,255,0.9);
+          backdrop-filter: blur(10px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+
+        .back-btn {
+          border: none;
+          background: white;
+          padding: 0.75rem 1.5rem;
+          border-radius: 12px;
+          font-weight: 700;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+          cursor: pointer;
+        }
+      `}</style>
+
+      <div className="game-header">
+        <button className="back-btn" onClick={() => navigate("/activities")}>
+          {windowWidth <= 640 ? "←" : "← Back"}
+        </button>
+        <h1 className="game-title">Emotion <em>Match</em></h1>
+        <div className="header-spacer" />
+      </div>
+
+      <AnimatePresence mode="wait">
+        {gameStatus === "menu" && (
+          <motion.div 
+            key="menu"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="game-menu"
           >
-            ←
-          </button>
-          
-          <h1
-            style={{
-              fontSize: "36px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              margin: 0,
-              fontWeight: "bold",
-            }}
+            {Object.values(MODES).map(m => (
+              <div key={m.name} className="mode-card" onClick={() => startGame(m)}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                  {m.name === "Zen Mode" ? "🧘" : m.name === "Focus Mode" ? "⚡" : "🔥"}
+                </div>
+                <h2>{m.name}</h2>
+                <p>{m.description}</p>
+                <div style={{ marginTop: '1.5rem', fontWeight: 700, color: m.color }}>
+                  {m.grid.rows}x{m.grid.cols} Grid
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        )}
+
+        {gameStatus === "playing" && (
+          <motion.div 
+            key="playing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="game-field-wrapper"
           >
-            🎴 Clip Card Game
-          </h1>
-          
-          <div style={{ width: "45px" }} />
-        </div>
+            <div className="game-stats-bar">
+              <div className="stat-box">
+                <span className="stat-label">Mode</span>
+                <span className="stat-value">{mode.name}</span>
+              </div>
+              <div className="stat-box">
+                <span className="stat-label">Score</span>
+                <span className="stat-value">{score}</span>
+              </div>
+              {mode.timer && (
+                <div className="stat-box">
+                  <span className="stat-label">Time</span>
+                  <span className="stat-value" style={{ color: timer < 10 ? '#ef4444' : 'inherit' }}>
+                    {timer}s
+                  </span>
+                </div>
+              )}
+            </div>
 
-        {/* Game Stats */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "15px",
-            marginBottom: "30px",
-          }}
-        >
-          <div style={{
-            background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)",
-            padding: "15px",
-            borderRadius: "15px",
-            textAlign: "center",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-          }}>
-            <span style={{
-              fontSize: "14px",
-              color: "#666",
-              display: "block",
-              marginBottom: "5px",
-            }}>Level</span>
-            <span style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#333",
+            <div className="cards-grid" style={{ 
+              gridTemplateColumns: `repeat(${mode.grid.cols}, 1fr)`,
+              width: '100%',
+              maxWidth: '500px'
             }}>
-              {level} <span style={{ fontSize: "20px" }}>🔥</span>
-            </span>
-          </div>
-          <div style={{
-            background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)",
-            padding: "15px",
-            borderRadius: "15px",
-            textAlign: "center",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-          }}>
-            <span style={{
-              fontSize: "14px",
-              color: "#666",
-              display: "block",
-              marginBottom: "5px",
-            }}>Score</span>
-            <span style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#333",
-            }}>{score}</span>
-          </div>
-          <div style={{
-            background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)",
-            padding: "15px",
-            borderRadius: "15px",
-            textAlign: "center",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-          }}>
-            <span style={{
-              fontSize: "14px",
-              color: "#666",
-              display: "block",
-              marginBottom: "5px",
-            }}>Moves</span>
-            <span style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#333",
-            }}>{moves}</span>
-          </div>
-          <div style={{
-            background: "linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)",
-            padding: "15px",
-            borderRadius: "15px",
-            textAlign: "center",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-            transition: "transform 0.2s",
-          }}>
-            <span style={{
-              fontSize: "14px",
-              color: "#666",
-              display: "block",
-              marginBottom: "5px",
-            }}>Time</span>
-            <span style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: timeLeft < 10 ? "#f44336" : "#333",
-            }}>
-              {timeLeft}s
-            </span>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={{
-          background: "#e9ecef",
-          borderRadius: "30px",
-          height: "30px",
-          marginBottom: "30px",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "inset 0 2px 5px rgba(0,0,0,0.1)",
-        }}>
-          <div
-            style={{
-              background: "linear-gradient(90deg, #4CAF50, #8BC34A)",
-              height: "100%",
-              borderRadius: "30px",
-              transition: "width 0.5s ease",
-              width: `${progress}%`,
-            }}
-          />
-          <span style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            color: "white",
-            fontSize: "14px",
-            fontWeight: "bold",
-            textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-          }}>
-            {cards.filter(c => c.matched).length}/{cards.length} Cards Matched
-          </span>
-        </div>
-
-        {/* Game Title */}
-        <h2
-          style={{
-            fontSize: "24px",
-            color: "#ff4500",
-            marginBottom: "20px",
-            textAlign: "center",
-            fontWeight: "600",
-          }}
-        >
-          Level {level} {getLevelEmoji(level)}
-        </h2>
-
-        {gameOver ? (
-          <div style={{
-            textAlign: "center",
-            padding: "40px 20px",
-            background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-            borderRadius: "30px",
-            marginBottom: "20px",
-          }}>
-            <div style={{
-              fontSize: "80px",
-              marginBottom: "20px",
-              animation: "float 3s ease-in-out infinite",
-            }}>🏆</div>
-            <p style={{
-              fontSize: "24px",
-              color: "#333",
-              marginBottom: "20px",
-              fontWeight: "600",
-              lineHeight: "1.4",
-            }}>{motivationQuote}</p>
-            <p style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "#4CAF50",
-              marginBottom: "10px",
-            }}>Final Score: {score}</p>
-            <p style={{
-              fontSize: "18px",
-              color: "#666",
-              marginBottom: "30px",
-            }}>Moves: {moves}</p>
-            
-            <button
-              onClick={nextLevel}
-              style={{
-                padding: "15px 40px",
-                background: "linear-gradient(135deg, #ff4500 0%, #ff6b6b 100%)",
-                border: "none",
-                borderRadius: "50px",
-                fontSize: "20px",
-                color: "#fff",
-                fontWeight: "bold",
-                cursor: "pointer",
-                boxShadow: "0 5px 15px rgba(255, 69, 0, 0.3)",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = "scale(1.05)";
-                e.target.style.boxShadow = "0 10px 30px rgba(255, 69, 0, 0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = "scale(1)";
-                e.target.style.boxShadow = "0 5px 15px rgba(255, 69, 0, 0.3)";
-              }}
-            >
-              {level < 5 ? "Next Level 🚀" : "Play Again 🔄"}
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Cards Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-                gap: "10px",
-                justifyContent: "center",
-                marginBottom: "30px",
-              }}
-            >
-              {cards.map((card) => (
+              {cards.map(card => (
                 <Card 
-                  key={card.id} 
+                  key={card.uniqueId} 
                   card={card} 
                   onClick={handleCardClick}
-                  isDisabled={isChecking}
+                  isActive={selected.length < 2 && gameStatus === "playing"}
                 />
               ))}
             </div>
 
-            {/* Game Tips */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "15px",
-              background: "rgba(102, 126, 234, 0.1)",
-              borderRadius: "15px",
-              border: "1px dashed #667eea",
-            }}>
-              <span style={{ fontSize: "24px" }}>💡</span>
-              <span style={{
-                fontSize: "16px",
-                color: "#667eea",
-                fontWeight: "500",
-              }}>
-                Match pairs of cute animals to score points!
-              </span>
-            </div>
-          </>
+            <AnimatePresence>
+              {currentAffirmation && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="affirmation-toast"
+                >
+                  {currentAffirmation}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
-      </div>
+
+        {gameStatus === "won" && (
+          <motion.div 
+            key="win"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="win-overlay"
+          >
+            <div style={{ fontSize: '5rem' }}>🏆</div>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.5rem' }}>Splendid Work!</h1>
+            <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '2rem' }}>
+              You matched them all and earned <strong>{score}</strong> Mindfulness Points.
+            </p>
+            <button className="mode-card" style={{ padding: '1rem 3rem' }} onClick={() => setGameStatus("menu")}>
+              Play Again
+            </button>
+          </motion.div>
+        )}
+
+        {gameStatus === "lost" && (
+          <motion.div 
+            key="lost"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="win-overlay"
+          >
+            <div style={{ fontSize: '5rem' }}>⏰</div>
+            <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '0.5rem' }}>Time's Up!</h1>
+            <p style={{ fontSize: '1.25rem', color: '#64748b', marginBottom: '2rem' }}>
+              Don't worry, every journey has its own pace.
+            </p>
+            <button className="mode-card" style={{ padding: '1rem 3rem' }} onClick={() => setGameStatus("menu")}>
+              Try Again
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
-
-// Styles object for particle animations
-const styles = {
-  particle1: {
-    position: "absolute",
-    top: "-10px",
-    right: "0",
-    fontSize: "16px",
-    animation: "float 1s ease-in-out infinite",
-  },
-  particle2: {
-    position: "absolute",
-    bottom: "-10px",
-    left: "0",
-    fontSize: "16px",
-    animation: "float 1.5s ease-in-out infinite reverse",
-  },
-  particle3: {
-    position: "absolute",
-    top: "50%",
-    right: "-10px",
-    fontSize: "16px",
-    animation: "float 1.2s ease-in-out infinite",
-  },
 };
 
 export default ClipCardGame;

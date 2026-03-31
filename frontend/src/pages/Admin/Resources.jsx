@@ -9,6 +9,7 @@ import {
 } from "react-icons/md";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
+import ReusableModal from "../../components/ReusableModal";
 import "./Resources.css";
 
 const Resources = () => {
@@ -26,6 +27,12 @@ const Resources = () => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [errorModal, setErrorModal] = useState({ 
+    isOpen: false, 
+    title: "", 
+    message: "", 
+    type: "error" 
+  });
 
   // Debounce search term
   useEffect(() => {
@@ -49,7 +56,12 @@ const Resources = () => {
       setResources(res.data.resources || res.data || []);
     } catch (e) {
       console.error("Error fetching resources:", e);
-      alert(e.response?.data?.message || "Failed to fetch resources");
+      setErrorModal({
+        isOpen: true,
+        title: "Communication Failure",
+        message: e.response?.data?.message || "Failed to fetch resources from the database.",
+        type: "error"
+      });
     }
   };
 
@@ -83,11 +95,21 @@ const Resources = () => {
 
     try {
       await axiosInstance.delete(`/resources/${resourceId}`);
-      alert("Resource deleted successfully");
+      setErrorModal({
+        isOpen: true,
+        title: "Success",
+        message: "Resource deleted successfully",
+        type: "confirm"
+      });
       fetchResources();
     } catch (e) {
       console.error("Error deleting resource:", e);
-      alert(e.response?.data?.message || "Failed to delete resource");
+      setErrorModal({
+        isOpen: true,
+        title: "Deletion Failure",
+        message: e.response?.data?.message || "Internal Server Error occurred while trying to delete this resource.",
+        type: "error"
+      });
     }
   };
 
@@ -100,10 +122,20 @@ const Resources = () => {
       if (modalMode === "create") {
         const res = await axiosInstance.post("/resources", formData);
         resourceId = res.data.resource?.id || res.data.id;
-        alert("Resource created successfully");
+        setErrorModal({
+          isOpen: true,
+          title: "Resource Created",
+          message: "The resource has been successfully created.",
+          type: "confirm"
+        });
       } else {
         await axiosInstance.put(`/resources/${resourceId}`, formData);
-        alert("Resource updated successfully");
+        setErrorModal({
+          isOpen: true,
+          title: "Resource Updated",
+          message: "The resource data has been successfully synchronized with the server.",
+          type: "confirm"
+        });
       }
 
       // Upload image if selected
@@ -115,7 +147,12 @@ const Resources = () => {
       fetchResources();
     } catch (e) {
       console.error("Error saving resource:", e);
-      alert(e.response?.data?.message || "Failed to save resource");
+      setErrorModal({
+        isOpen: true,
+        title: "Save Failure",
+        message: e.response?.data?.message || "Failed to save resource",
+        type: "error"
+      });
     }
   };
 
@@ -133,10 +170,20 @@ const Resources = () => {
           },
         }
       );
-      alert("Image uploaded successfully");
+      setErrorModal({
+        isOpen: true,
+        title: "Success",
+        message: "Image uploaded successfully",
+        type: "confirm"
+      });
     } catch (e) {
       console.error("Error uploading image:", e);
-      alert(e.response?.data?.message || "Failed to upload image");
+      setErrorModal({
+        isOpen: true,
+        title: "Upload Failure",
+        message: e.response?.data?.message || "Failed to upload image",
+        type: "error"
+      });
     }
   };
 
@@ -409,6 +456,14 @@ const Resources = () => {
         </div>
         </ModalPortal>
       )}
+
+      <ReusableModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+        type={errorModal.type}
+      />
     </div>
   );
 };

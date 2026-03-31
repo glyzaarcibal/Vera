@@ -168,21 +168,21 @@ const About = () => {
             <div className="team-grid">
               <div className="team-member">
                 <div className="member-image-wrapper">
-                  <img src="/src/assets/team/glyza.png" alt="Glyza Marie Parcibal" className="member-image" />
+                  <img src="/src/assets/team/arcibal.jpg" alt="Glyza Marie Parcibal" className="member-image" />
                 </div>
                 <p className="member-name">Glyza Marie Parcibal</p>
                 <p className="member-role">Full Stack Developer</p>
               </div>
               <div className="team-member">
                 <div className="member-image-wrapper">
-                  <img src="/src/assets/team/glyza.png" alt="Glyza Marie Parcibal" className="member-image" />
+                  <img src="/src/assets/team/cervantes.jpg" alt="bhea marie cervantes" className="member-image" />
                 </div>
                 <p className="member-name">Bhea Marie Cervantes</p>
                 <p className="member-role">Full Stack Developer</p>
               </div>
               <div className="team-member">
                 <div className="member-image-wrapper">
-                  <img src="/src/assets/team/dev2.png" alt="Glyza Marie Parcibal" className="member-image" />
+                  <img src="/src/assets/team/mendoza.png" alt="shan norwin mendoza" className="member-image" />
 
                 </div>
                 <p className="member-name">Shane Norwin Mendoza</p>

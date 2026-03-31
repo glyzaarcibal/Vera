@@ -67,7 +67,7 @@
   width: min(100%, 1060px);
   min-height: 620px;
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 380px 1fr;
   border-radius: 28px;
   overflow: hidden;
   box-shadow:
