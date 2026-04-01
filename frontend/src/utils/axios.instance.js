@@ -10,10 +10,10 @@ const normalizeApiBaseUrl = (url) => {
 const baseApiUrl = normalizeApiBaseUrl(configuredApiUrl || "http://localhost:5000/api");
 
 const axiosInstance = axios.create({
-  
-//baseURL: "http://localhost:5000/api",
- baseURL: import.meta.env.VITE_API_URL ,
-  
+
+  //baseURL: "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL ,
+
   timeout: 30000,
   withCredentials: true,
   headers: {
