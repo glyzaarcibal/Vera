@@ -4,6 +4,7 @@ import "./About.css";
 import arcibalPhoto from "../assets/team/arcibal.jpg";
 import cervantesPhoto from "../assets/team/cervantes.jpg";
 import mendozaPhoto from "../assets/team/mendoza.png";
+import baloloyPhoto from "../assets/baloloy.jpg";
 
 
 const slideLeft = {
@@ -200,7 +201,7 @@ const About = () => {
             <div className="team-grid">
               <div className="team-member">
                 <div className="member-image-wrapper">
-                  <div className="member-placeholder">👨‍🏫</div>
+                  <img src={baloloyPhoto} alt="Prof Maria Christina Baloloy" className="member-image" />
                 </div>
                 <p className="member-name">Prof Maria Christina Baloloy</p>
                 <p className="member-role">Technical Advisor</p>
