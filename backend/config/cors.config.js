@@ -2,14 +2,19 @@ import dotenv from "dotenv";
 dotenv.config();
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
+// backend/config/cors.config.js
 const allowedOrigins = [
   FRONTEND_URL,
   "https://vera-7nnk.vercel.app",
   "https://vera-builder.vercel.app",
+  "https://localhost",          // Idagdag ito para sa Secure Mobile Origin
+  "http://localhost",           // Idagdag ito para sa Normal Mobile Origin
+  "capacitor://localhost",      // Idagdag ito para sa Capacitor
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
 ].filter(Boolean);
+
 
 const corsConfig = {
   credentials: true,
