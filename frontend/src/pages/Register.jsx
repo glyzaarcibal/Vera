@@ -393,7 +393,11 @@ const Register = () => {
 
             <label className="reg-checkbox-row reg-terms">
               <input type="checkbox" required id="terms" />
-              <span>I agree to the <Link to="/terms" className="reg-link">Terms of Service</Link> and <Link to="/privacy" className="reg-link">Privacy Policy</Link></span>
+              <span>
+                I agree to the <Link to="/terms" className="reg-link">Terms of Service</Link> (including Youth Usage permission) 
+                and <Link to="/privacy" className="reg-link">Privacy Policy</Link>. 
+                <span className="reg-evidence-note">Checking this serves as binding evidence of consent for youth usage.</span>
+              </span>
             </label>
 
             <button type="submit" id="register-submit" className={`reg-submit ${isLoading ? "reg-submit-loading" : ""}`} disabled={isLoading}>

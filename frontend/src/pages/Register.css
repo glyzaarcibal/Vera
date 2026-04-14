@@ -542,6 +542,15 @@
 .reg-link:hover { color: #4f46e5; text-decoration: underline; }
 .reg-link-bold  { font-weight: 700; }
 
+.reg-evidence-note {
+  display: block;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  font-weight: 500;
+  margin-top: 0.2rem;
+  line-height: normal;
+}
+
 /* ── Submit button ── */
 .reg-submit {
   width: 100%;
