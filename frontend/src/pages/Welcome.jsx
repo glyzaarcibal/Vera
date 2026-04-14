@@ -5,6 +5,8 @@ import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import ModalPortal from "../components/ModalPortal";
 import mentalImg from "../assets/mental.png";
+import mobileScanImg from "../assets/mobile-scan.jpg";
+
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
 const Mic = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>;
@@ -288,30 +290,13 @@ const Welcome = () => {
           </p>
         </div>
 
-        {/* Mock Mobile Phone Frame */}
-        <div className="v-phone-frame sa sa-scale sa-d2">
-          <div className="v-phone-top">
-            <div className="v-phone-dot" />
-            <div className="v-phone-speaker" />
-          </div>
-
-          <div className="v-phone-screen">
-            <div className="v-qr-container">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=Download+VERA+App&color=25164d" alt="Scan QR Code" className="v-qr-img" />
-              <div className="v-qr-bracket v-qr-tl" />
-              <div className="v-qr-bracket v-qr-tr" />
-              <div className="v-qr-bracket v-qr-bl" />
-              <div className="v-qr-bracket v-qr-br" />
-            </div>
-
-            <div className="v-scan-btn">
-              Scan Now
-            </div>
-          </div>
-
-          <div className="v-phone-bottom">
-            <div className="v-phone-home" />
-          </div>
+        {/* Mobile Scan Image */}
+        <div className="v-mobile-img-wrap sa sa-scale sa-d2">
+          <img 
+            src={mobileScanImg} 
+            alt="V.E.R.A Mobile App" 
+            className="v-promo-mobile-img" 
+          />
         </div>
       </div>
 

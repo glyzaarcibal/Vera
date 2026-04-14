@@ -18,11 +18,16 @@ const Terms = () => {
         </section>
 
         <section>
-          <h2>2. Eligibility</h2>
+          <h2>2. Eligibility and Youth Usage</h2>
           <p>
-            You must be at least 13 years old to use Vera. If you are under 18,
-            you confirm you have permission from a parent or legal guardian.
+            Vera is designed for users of all ages, including teenagers and youth. 
+            <strong> By registering and checking the agreement box during sign-up, you explicitly confirm that:</strong>
           </p>
+          <ul>
+            <li>You are at least 13 years old.</li>
+            <li>If you are under 18 (a minor), you have obtained full permission from your parent or legal guardian to use this service.</li>
+            <li>Checking the agreement box constitutes binding evidence that parental consent has been granted for youth usage.</li>
+          </ul>
         </section>
 
         <section>
