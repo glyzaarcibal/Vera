@@ -1,55 +1,85 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
+import { selectUser } from "../../store/slices/authSelectors";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
 import jarImage from "../../assets/jar.png";
 
 const Diary = () => {
+  const user = useSelector(selectUser);
+  const userId = user?.id;
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   
   const [entry, setEntry] = useState("");
   const [entries, setEntries] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadEntries();
-  }, []);
+    if (userId) {
+      loadEntries();
+    } else {
+      setLoading(false);
+    }
+  }, [userId]);
 
   const loadEntries = async () => {
+    if (!userId) return;
     try {
-      const savedEntries = localStorage.getItem("diaryEntries");
-      if (savedEntries) {
-        setEntries(JSON.parse(savedEntries));
-      }
+      setLoading(true);
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+      
+      const diaryEntries = activities
+        .filter(act => act.activity_type === "diary")
+        .map(act => ({
+          id: act.id,
+          ...act.data
+        }))
+        .sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date));
+
+      setEntries(diaryEntries);
     } catch (error) {
       console.error("Failed to load entries", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveEntries = async (updatedEntries) => {
+  const saveEntryToDB = async (newEntry) => {
+    if (!userId) return;
     try {
-      localStorage.setItem("diaryEntries", JSON.stringify(updatedEntries));
+      const res = await axiosInstance.post("/activities/save", {
+        activityType: "diary",
+        data: newEntry
+      });
+      
+      if (res.data?.updatedTokens !== null) {
+        dispatch(updateTokens(res.data.updatedTokens));
+      }
+      
+      // Refresh list
+      loadEntries();
     } catch (error) {
-      console.error("Failed to save entries", error);
+      console.error("Failed to save entry", error);
+      alert("Failed to save your memory to the cloud.");
     }
   };
 
   const handleSave = () => {
-    if (entry.trim() !== "") {
-      const newEntries = [
-        {
-          id: Date.now(),
-          text: entry,
-          date: new Date().toLocaleString(),
-          type: getRandomEntryType(),
-        },
-        ...entries,
-      ];
-      setEntries(newEntries);
-      saveEntries(newEntries);
+    if (entry.trim() !== "" && userId) {
+      const newEntry = {
+        text: entry,
+        date: new Date().toLocaleString(),
+        type: getRandomEntryType(),
+        timestamp: new Date().toISOString()
+      };
+      
+      saveEntryToDB(newEntry);
       setEntry("");
     }
   };
@@ -72,11 +102,10 @@ const Diary = () => {
     navigate(-1); // Go back to previous page
   };
 
-  const deleteEntry = (id) => {
-    if (window.confirm("Are you sure you want to delete this entry?")) {
+  const deleteEntry = async (id) => {
+    if (window.confirm("Backend deletion not yet fully implemented for general activities. Hide it for now?")) {
       const updatedEntries = entries.filter(entry => entry.id !== id);
       setEntries(updatedEntries);
-      saveEntries(updatedEntries);
       setModalVisible(false);
     }
   };
@@ -84,9 +113,48 @@ const Diary = () => {
   const clearAllEntries = () => {
     if (window.confirm("Are you sure you want to clear all diary entries?")) {
       setEntries([]);
-      saveEntries([]);
     }
   };
+
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px"
+      }}>
+        <div style={{
+          background: "white",
+          padding: "40px",
+          borderRadius: "30px",
+          textAlign: "center",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.1)",
+          maxWidth: "400px"
+        }}>
+          <span style={{ fontSize: "60px", display: "block", marginBottom: "20px" }}>🔒</span>
+          <h2 style={{ color: "#764ba2", marginBottom: "15px" }}>Identification Needed</h2>
+          <p style={{ color: "#666", marginBottom: "25px" }}>Your jar of memories is a private place. Please log in to view or add new memories.</p>
+          <button 
+            onClick={() => navigate("/login")}
+            style={{
+              padding: "12px 30px",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "15px",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
+          >
+            Log In Now
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -290,7 +358,9 @@ const Diary = () => {
             pointerEvents: "none",
           }}
         >
-          {entries.map((entry, index) => (
+          {loading ? (
+             <p style={{ color: '#667eea', fontWeight: 'bold' }}>Looking inside the jar...</p>
+          ) : entries.map((entry, index) => (
             <button
               key={entry.id || index}
               onClick={() => handleEntryPress(entry)}

@@ -61,16 +61,21 @@ export async function createUsers(user) {
   } catch (emailError) {
     console.error("Failed to send verification code email:", emailError);
 
-    // If it's a Resend Trial restriction, don't crash the whole registration.
+    // If it's a SendGrid/Resend restriction (e.g., 403 Forbidden), don't crash the whole registration.
     // Just allow them to proceed and tell them to check the server logs.
-    if (emailError.statusCode === 403) {
+    const statusCode = emailError.code || emailError.statusCode || emailError.response?.status;
+    console.log(`[AUTH] Debug: Email error detected. Code: ${emailError.code}, StatusCode: ${emailError.statusCode}, ResponseStatus: ${emailError.response?.status}`);
+
+    if (statusCode === 403 || statusCode === "403") {
       return {
-        message: "Registration successful! (Email sent skipped in Trial Mode. Check server logs for code.)",
+        message: "Registration successful! (Email sent skipped due to provider restriction. Check server logs for your verification code.)",
         devMode: true
       };
     }
 
     throw new Error("Failed to send verification email. Please try again later.");
+
+
   }
 }
 

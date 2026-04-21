@@ -12,6 +12,7 @@ import {
   IoShieldCheckmark,
 } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { Mic, BarChart2, ShieldCheck, Mail, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../utils/axios.instance";
 import { setUser } from "../store/slices/authSlice";
@@ -200,14 +201,6 @@ const Register = () => {
           </button>
 
           <div className="reg-brand">
-            <div className="reg-brand-icon">
-              <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.1)" />
-                <path d="M14 30 Q20 18 26 30 Q32 42 38 30 Q44 18 50 30"
-                  stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-                <circle cx="30" cy="30" r="4" fill="white" />
-              </svg>
-            </div>
             <h1 className="reg-brand-title">
               Join <span className="reg-brand-accent">Vera</span>
             </h1>
@@ -218,12 +211,12 @@ const Register = () => {
 
           <div className="reg-features">
             {[
-              { icon: "🎙️", label: "Voice Emotion Analysis" },
-              { icon: "📊", label: "Mood & Wellness Tracking" },
-              { icon: "🔒", label: "Private & Secure" },
+              { icon: <Mic size={18} />, label: "Voice Emotion Analysis" },
+              { icon: <BarChart2 size={18} />, label: "Mood & Wellness Tracking" },
+              { icon: <ShieldCheck size={18} />, label: "Private & Secure" },
             ].map((f, i) => (
               <div className="reg-feature-chip" key={i}>
-                <span className="reg-feature-emoji">{f.icon}</span>
+                <span className="reg-feature-icon">{f.icon}</span>
                 <span>{f.label}</span>
               </div>
             ))}
@@ -374,7 +367,7 @@ const Register = () => {
                 )}
                 {consentStep === 2 && (
                   <div className="reg-consent-status">
-                    <div className="reg-status-icon">📧</div>
+                    <div className="reg-status-icon"><Mail size={32} /></div>
                     <h4>Verification Sent</h4>
                     <p>A code was sent to your guardian's email: <strong>{formData.guardianEmail}</strong>. Ask your guardian to enter it below.</p>
                     <GuardianVerificationForm onVerify={handleVerifyConsent} isLoading={isLoading} />
@@ -383,7 +376,7 @@ const Register = () => {
                 )}
                 {consentStep === 3 && (
                   <div className="reg-consent-status reg-consent-approved">
-                    <div className="reg-status-icon">✅</div>
+                    <div className="reg-status-icon"><CheckCircle size={32} /></div>
                     <h4>Consent Approved!</h4>
                     <p>Your guardian has approved. You can now complete registration.</p>
                   </div>
