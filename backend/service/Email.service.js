@@ -1,6 +1,5 @@
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -9,48 +8,50 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
 
-// Configure SendGrid API Key
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("SendGrid: API Key configured.");
-} else {
-  console.warn("SendGrid: SENDGRID_API_KEY is missing in .env");
-}
+// Configure Nodemailer with Gmail SMTP
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // 16-digit App Password
+  },
+});
+
+// Verify connection configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.warn("Nodemailer: Configuration error. Check your EMAIL_USER and EMAIL_PASS (App Password).", error.message);
+  } else {
+    console.log("Nodemailer: Server is ready to take our messages.");
+  }
+});
 
 // Helper to get synced email config
 const getEmailConfig = () => {
-  const fromEmail = (process.env.EMAIL_FROM || process.env.SENDGRID_FROM_EMAIL || "").trim();
+  const fromEmail = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "").trim();
   const fromName = (process.env.EMAIL_FROM_NAME || "Vera").trim();
   return { fromEmail, fromName };
 };
 
 /**
- * Common SendGrid error handler
+ * Common Email error handler
  */
-const handleSendGridError = (emailType, error) => {
+const handleEmailError = (emailType, error) => {
   console.error(`Error sending ${emailType} email:`, error);
-  if (error.response) {
-    console.error(error.response.body);
-  }
   throw error;
 };
 
 export const sendVerificationCodeEmail = async (email, code) => {
-  // Always log the code for development debugging
   console.log("-----------------------------------------");
   console.log(`[AUTH] Verification Code for ${email}: ${code}`);
   console.log("-----------------------------------------");
 
   const { fromEmail, fromName } = getEmailConfig();
-  console.log(`[SendGrid] Attempting to send using: ${fromEmail}`);
 
   try {
-    const msg = {
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
       subject: "Your Verification Code - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px; border: 1px solid #ddd;">
@@ -70,11 +71,11 @@ export const sendVerificationCodeEmail = async (email, code) => {
       `,
     };
 
-    const response = await sgMail.send(msg);
-    console.log("Verification code email sent via SendGrid");
-    return response;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Verification code email sent via Nodemailer:", info.messageId);
+    return info;
   } catch (error) {
-    handleSendGridError("verification code", error);
+    handleEmailError("verification code", error);
   }
 };
 
@@ -82,12 +83,9 @@ export const sendVerificationEmail = async (email, link) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const msg = {
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
       subject: "Verify Your Email Address - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -103,11 +101,11 @@ export const sendVerificationEmail = async (email, link) => {
       `,
     };
 
-    const response = await sgMail.send(msg);
-    console.log("Verification email sent via SendGrid");
-    return response;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Verification email sent via Nodemailer:", info.messageId);
+    return info;
   } catch (error) {
-    handleSendGridError("verification", error);
+    handleEmailError("verification", error);
   }
 };
 
@@ -115,12 +113,9 @@ export const sendPasswordResetEmail = async (email, link) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const msg = {
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
       subject: "Reset Your Password - Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
@@ -136,15 +131,15 @@ export const sendPasswordResetEmail = async (email, link) => {
       `,
     };
 
-    const response = await sgMail.send(msg);
-    console.log("Password reset email sent via SendGrid");
-    return response;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent via Nodemailer:", info.messageId);
+    return info;
   } catch (error) {
-    handleSendGridError("password reset", error);
+    handleEmailError("password reset", error);
   }
 };
+
 export const sendGuardianVerificationEmail = async (email, code, childName) => {
-  // Always log the code for development debugging
   console.log("-----------------------------------------");
   console.log(`[GUARDIAN] Verification Code for ${email}: ${code}`);
   console.log("-----------------------------------------");
@@ -152,12 +147,9 @@ export const sendGuardianVerificationEmail = async (email, code, childName) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const msg = {
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
       subject: "Action Required: Guardian Consent for Vera",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #f4f7f6; border-radius: 12px; border: 1px solid #e0e0e0;">
@@ -179,10 +171,11 @@ export const sendGuardianVerificationEmail = async (email, code, childName) => {
       `,
     };
 
-    const response = await sgMail.send(msg);
-    console.log("Guardian verification email sent via SendGrid");
-    return response;
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Guardian verification email sent via Nodemailer:", info.messageId);
+    return info;
   } catch (error) {
-    handleSendGridError("guardian verification", error);
+    handleEmailError("guardian verification", error);
   }
 };
+

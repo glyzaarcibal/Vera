@@ -270,6 +270,22 @@ const Profile = () => {
           />
         </div>
       </div>
+
+      {/* Emergency & Detection Services Reminder */}
+      <div className="privacy-card-new reminder">
+        <div className="privacy-card-header">Safety & Emergency Reminder</div>
+        <div className="privacy-card-body">
+          <p>
+            <strong>Privacy and Consent:</strong> V.E.R.A. is equipped with advanced emotional detection 
+            and emergency response protocols. Please be reminded that these safety features 
+            are <strong>not optional</strong> and serve as a mandatory safeguard for all users. 
+            This section serves as a permanent reminder of our commitment to your immediate safety.
+          </p>
+          <div style={{ marginTop: "12px", fontSize: "11px", color: "#EF4444", fontWeight: "600" }}>
+            * Detection and emergency services are mandatory for user safety.
+          </div>
+        </div>
+      </div>
     </div>
   );
 
@@ -559,6 +575,14 @@ const Profile = () => {
               <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>Cancel</button>
             </div>
           )}
+
+          {/* Safety Notice per User Request */}
+          <div className="sidebar-safety-note" style={{marginTop: "24px", padding: "16px", background: "rgba(239, 68, 68, 0.05)", borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.1)"}}>
+            <h4 style={{fontSize: "12px", fontWeight: "700", color: "#EF4444", marginBottom: "4px"}}>Privacy & Consent Reminder</h4>
+            <p style={{fontSize: "11px", color: "#6B7280", lineHeight: "1.4"}}>
+              Early detection and emergency services are active and mandatory. This is for your safety and protection.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -575,6 +599,7 @@ const Profile = () => {
             <div className="ps-toggles">
               <span>STORE: {profile.permit_store ? "ON" : "OFF"}</span>
               <span>ANALYZE: {profile.permit_analyze ? "ON" : "OFF"}</span>
+              <span style={{ color: "var(--text-gray)", opacity: 0.8 }}>DETECTION: ALWAYS ON</span>
             </div>
           </div>
         </div>

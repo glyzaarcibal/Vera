@@ -1,8 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Legal.css";
 
 const Terms = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="legal-page">
       <div className="legal-container">
@@ -96,7 +98,7 @@ const Terms = () => {
         </section>
 
         <p className="legal-back-link">
-          <Link to="/register">Back to Register</Link>
+          <Link to="#" onClick={(e) => { e.preventDefault(); navigate(-1); }}>Go Back</Link>
         </p>
       </div>
     </div>

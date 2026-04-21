@@ -41,6 +41,7 @@ import WeeklyWellnessReport from "./pages/Activities/WeeklyWellnessReport";
 import TakeABreath from "./pages/Activities/TakeABreath";
 import MedicationTracker from "./pages/Activities/MedicationTracker";
 import Feedback from "./pages/Feedback";
+import UserDashboard from "./pages/UserDashboard";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -71,7 +72,8 @@ const App = () => {
   return (
     <Routes>
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Welcome />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Welcome />} />
+        <Route path="/dashboard" element={user ? <UserDashboard /> : <Navigate to="/login" />} />
         <Route path="/about" element={<About />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />

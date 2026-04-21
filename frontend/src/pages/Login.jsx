@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { IoArrowBack, IoMail, IoLockClosed } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { Mic, BarChart2, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import axiosInstance from "../utils/axios.instance";
 import { setUser } from "../store/slices/authSlice";
@@ -46,7 +47,7 @@ const Login = () => {
     try {
       const res = await axiosInstance.post("/auth/login", formData);
       dispatch(setUser(res.data.profile));
-      navigate("/");
+      navigate("/dashboard");
     } catch (e) {
       const message = e.response?.data?.message || "Internal Server Error";
       if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
@@ -86,14 +87,6 @@ const Login = () => {
           </button>
 
           <div className="log-brand">
-            <div className="log-brand-icon">
-              <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.1)" />
-                <path d="M14 30 Q20 18 26 30 Q32 42 38 30 Q44 18 50 30"
-                  stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-                <circle cx="30" cy="30" r="4" fill="white" />
-              </svg>
-            </div>
             <h1 className="log-brand-title">
               Welcome to <span className="log-brand-accent">Vera</span>
             </h1>
@@ -104,12 +97,12 @@ const Login = () => {
 
           <div className="log-features">
             {[
-              { icon: "🎙️", label: "Voice Emotion Analysis" },
-              { icon: "📊", label: "Mood & Wellness Tracking" },
-              { icon: "🔒", label: "Private & Secure" },
+              { icon: <Mic size={18} />, label: "Voice Emotion Analysis" },
+              { icon: <BarChart2 size={18} />, label: "Mood & Wellness Tracking" },
+              { icon: <ShieldCheck size={18} />, label: "Private & Secure" },
             ].map((f, i) => (
               <div className="log-feature-chip" key={i}>
-                <span className="log-feature-emoji">{f.icon}</span>
+                <span className="log-feature-icon">{f.icon}</span>
                 <span>{f.label}</span>
               </div>
             ))}

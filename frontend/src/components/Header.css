@@ -4,34 +4,32 @@
 ═══════════════════════════════════════════════════════ */
 
 .header {
-  /* Floating: detached from edges with margin + rounded corners */
+  /* Full width: no detached edges, no rounded corners at top/sides */
   position: sticky;
-  top: 16px;
+  top: 0;
   z-index: 100;
-  margin: 16px 24px 0;
-  border-radius: 20px;
-  width: calc(100% - 48px);
+  margin: 0;
+  border-radius: 0;
+  width: 100%;
 
   /* Glass look */
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(102, 126, 234, 0.12);
+  border-bottom: 1px solid rgba(102, 126, 234, 0.12);
 
-  /* Elevated floating shadow */
-  box-shadow:
-    0 8px 32px rgba(102, 126, 234, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  /* Solid shadow for full-width look */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 
   /* Smooth scroll-state transitions */
-  transition: box-shadow 0.35s ease,
-    background 0.35s ease,
-    top 0.35s ease,
-    margin 0.35s ease;
+  transition: box-shadow 0.35s ease, background 0.35s ease;
+  
+  animation: headerFadeIn 0.5s ease both;
+}
 
-  /* Slide in from top on load */
-  animation: headerFloat 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+@keyframes headerFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes headerFloat {
@@ -58,12 +56,39 @@
 
 /* ── NAV WRAPPER ─────────────────────────────────────── */
 .header-nav {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 8px 32px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-between; /* Space between Left, Center, Right */
+  height: 72px;
+}
+
+/* Base Desktop Layout Containers */
+.header-left {
+  flex: 0 0 200px; /* Fixed width to balance center */
+  display: flex;
+  align-items: center;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.header-right {
+  flex: 0 0 200px; /* Fixed width to balance center */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .header-left, .header-right { flex: 1; }
 }
 
 /* ── LOGO ────────────────────────────────────────────── */
@@ -113,7 +138,7 @@
 .header-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .header-link {
@@ -244,6 +269,14 @@
   }
 }
 
+/* ── AUTH GROUP ────────────────────────────────────────── */
+.header-auth-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: 20px;
+}
+
 /* ── BUTTON ──────────────────────────────────────────── */
 .header-button,
 .header-button-link {
@@ -326,21 +359,66 @@
   align-items: center;
 }
 
-.desktop-ai-dropdown .dropdown-trigger {
+.dropdown-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
 }
 
-.dropdown-arrow {
+.dropdown-arrow-icon {
+  opacity: 0.6;
   transition: transform 0.3s ease;
-  opacity: 0.7;
 }
 
-.desktop-ai-dropdown:hover .dropdown-arrow {
+.desktop-ai-dropdown:hover .dropdown-arrow-icon {
   transform: rotate(180deg);
+}
+
+.desktop-ai-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: white;
+  min-width: 180px;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+}
+
+.desktop-ai-dropdown:hover .desktop-ai-menu {
   opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ai-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.ai-menu-item:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+  transform: translateX(4px);
+}
+
+.ai-menu-item svg {
+  color: #667eea;
 }
 
 /* AI Dropdown Styles moved after base dropdown for specificity */
