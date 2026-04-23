@@ -50,7 +50,7 @@ export async function createUsers(user) {
     }]);
 
   if (insertError) {
-    console.error("Error saving pending user:", insertError);
+    console.error("Supabase Insert Error (pending_users):", JSON.stringify(insertError, null, 2));
     throw insertError;
   }
 
