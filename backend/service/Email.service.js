@@ -38,6 +38,9 @@ const getEmailConfig = () => {
  */
 const handleEmailError = (emailType, error) => {
   console.error(`Error sending ${emailType} email:`, error);
+  if (error && typeof error === 'object') {
+    console.error(`Detailed ${emailType} email error:`, JSON.stringify(error, null, 2));
+  }
   throw error;
 };
 

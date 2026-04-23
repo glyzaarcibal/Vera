@@ -103,9 +103,15 @@ export const registerUser = async (req, res) => {
     });
   } catch (e) {
     console.error("Detailed Registration Error:", e);
+    // stringify the error if it's an object to see more details in logs
+    if (typeof e === 'object') {
+      console.error("Registration Error Body:", JSON.stringify(e, null, 2));
+    }
+    
     return res.status(500).json({
       message: "Internal Server Error during registration",
-      details: e.message
+      details: e.message || "Unknown error",
+      error: e // Sending the full error for debugging
     });
   }
 };

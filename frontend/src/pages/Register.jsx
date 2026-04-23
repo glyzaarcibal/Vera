@@ -123,10 +123,13 @@ const Register = () => {
         navigate("/email-verified", { state: { email: formData.email } });
       }
     } catch (e) {
+      const errorMsg = e.response?.data?.message || "Internal Server Error";
+      const errorDetail = e.response?.data?.details || "";
+      
       setErrorModal({
         isOpen: true,
         title: "Registration Failed",
-        message: e.response?.data?.message || "Internal Server Error",
+        message: errorDetail ? `${errorMsg}: ${errorDetail}` : errorMsg,
         type: "error"
       });
     } finally {
