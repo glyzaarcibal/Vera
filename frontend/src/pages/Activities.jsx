@@ -10,6 +10,10 @@ import axiosInstance from "../utils/axios.instance.js";
 import clipcardImg from "../assets/images/clipcard_new.png";
 import diaryImg from "../assets/images/diary.png";
 import sleepImg from "../assets/images/sleep.png";
+import breatheImg from "../assets/images/breathe_deeply.png";
+import moodImg from "../assets/images/mood_tracker.png";
+import medicationImg from "../assets/images/medication_tracker.png";
+import reportImg from "../assets/images/wellness_report.png";
 
 import "./Activities.css";
 
@@ -100,9 +104,7 @@ const Activities = () => {
       path: "/activities/take-a-breath",
       color: "#7C3AED",
       buttonText: "Start Breathwork",
-      isIcon: true,
-      iconColor: "#A78BFA",
-      mainIcon: <Wind size={28} color="white" />
+      image: breatheImg
     },
     {
       id: 3,
@@ -135,9 +137,7 @@ const Activities = () => {
       path: "/activities/mood-tracker",
       color: "#10B981", 
       buttonText: "Log Mood",
-      isIcon: true,
-      iconColor: "#34D399",
-      mainIcon: <Smile size={28} color="white" />
+      image: moodImg
     },
     {
       id: 6,
@@ -148,9 +148,7 @@ const Activities = () => {
       path: "/activities/medication-history",
       color: "#EF4444", 
       buttonText: "View Schedule",
-      isIcon: true,
-      iconColor: "#FCA5A5",
-      mainIcon: <Pill size={28} color="white" />
+      image: medicationImg
     },
     {
       id: 7,
@@ -161,9 +159,7 @@ const Activities = () => {
       path: "/activities/weekly-wellness-report",
       color: "#F59E0B", 
       buttonText: "View Report",
-      isIcon: true,
-      iconColor: "#FCD34D",
-      mainIcon: <BarChart size={28} color="white" />
+      image: reportImg
     }
   ];
 
@@ -280,15 +276,7 @@ const Activities = () => {
             onClick={() => navigate(activity.path)}
           >
             <div className="card-image-section">
-              {activity.isIcon ? (
-                <div className="card-icon-placeholder" style={{ backgroundColor: '#f3f0ff' }}>
-                   <div className="icon-circle" style={{ backgroundColor: activity.iconColor }}>
-                     {activity.mainIcon}
-                   </div>
-                </div>
-              ) : (
-                <img src={activity.image} alt={activity.name} className="card-img" />
-              )}
+              <img src={activity.image} alt={activity.name} className="card-img" />
             </div>
             <div className="card-body">
               <div className="card-meta">
@@ -302,7 +290,7 @@ const Activities = () => {
               <p className="card-description">{activity.description}</p>
               <button 
                 className="card-action-btn"
-                style={{ backgroundColor: activity.isIcon ? activity.color : '#F3F4F6', color: activity.isIcon ? 'white' : '#1F2937' }}
+                style={{ backgroundColor: activity.color, color: 'white' }}
                 onClick={() => navigate(activity.path)}
               >
                 {activity.buttonText}

@@ -1,15 +1,18 @@
 .admin-layout {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   background: #f8fafc;
+  overflow: hidden;
 }
 
 .admin-content {
   flex: 1;
   padding: 32px 28px;
   overflow-y: auto;
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .admin-mobile-header {

@@ -1,0 +1,367 @@
+/* Diary / Serenity Jar Styles */
+
+.diary-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%);
+  padding: 40px;
+  font-family: 'Poppins', sans-serif;
+  color: #1f2937;
+  overflow-x: hidden;
+}
+
+.diary-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 120px; /* Increased gap for more space in the middle */
+  align-items: center;
+}
+
+/* ── LEFT PANEL: INPUT ── */
+.diary-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.diary-header h1 {
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  color: #111827;
+}
+
+.diary-header .accent-text {
+  color: #7c3aed;
+}
+
+.diary-header p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  max-width: 450px;
+  line-height: 1.6;
+}
+
+.diary-input-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 32px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.diary-textarea {
+  width: 100%;
+  min-height: 240px;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: #374151;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.diary-textarea::placeholder {
+  color: #d1d5db;
+}
+
+.diary-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diary-options {
+  display: flex;
+  gap: 12px;
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.option-btn:hover {
+  background: #e5e7eb;
+}
+
+.picker-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  background: white;
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+  min-width: 160px;
+  border: 1px solid rgba(0,0,0,0.05);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.picker-popover button {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.picker-popover button:hover {
+  background: #f3f4f6;
+  color: #7c3aed;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.drop-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.drop-btn:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(124, 58, 237, 0.4);
+}
+
+.drop-btn:disabled {
+  background: #d1d5db;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ── RIGHT PANEL: THE JAR ── */
+.diary-right-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 80px; /* Increased gap to prevent jar from covering the stats */
+  position: relative;
+  margin-top: 60px;
+  margin-left: 40px;
+}
+
+.jar-visual-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The Glass Jar Background - Simplified */
+.jar-glass {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  z-index: 0;
+}
+
+.jar-image-main {
+  position: relative;
+  z-index: 1;
+  width: 95%;
+  height: auto;
+  filter: drop-shadow(0 15px 25px rgba(0,0,0,0.08));
+}
+
+.orbs-container {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  filter: blur(8px);
+  opacity: 0.6;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.orb:hover {
+  filter: blur(0);
+  opacity: 1;
+  transform: scale(1.3);
+  z-index: 10;
+}
+
+.jar-label {
+  position: absolute;
+  bottom: 15%;
+  background: white;
+  padding: 8px 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+  text-align: center;
+  z-index: 5;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.jar-label span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.jar-label h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #7c3aed;
+  margin: 0;
+}
+
+/* ── STATS ── */
+.diary-stats {
+  display: flex;
+  gap: 40px;
+  margin-top: 40px; /* Added more space above stats */
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.stat-label-text {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── BOTTOM CATEGORIES ── */
+.diary-categories {
+  display: flex;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.category-card {
+  background: white;
+  border-radius: 24px;
+  padding: 20px;
+  width: 180px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.02);
+  border: 1px solid rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.06);
+}
+
+.cat-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.cat-info h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+}
+
+.cat-info span {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -15px); }
+  50% { transform: translate(-5px, -25px); }
+  75% { transform: translate(-15px, -10px); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .diary-content {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .diary-header h1 {
+    font-size: 3rem;
+  }
+}

@@ -1,136 +1,30 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import axiosInstance from "../../utils/axios.instance";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
+import { motion, AnimatePresence } from "framer-motion";
+import { Moon, Sun, Plus, ChevronLeft, ChevronRight, Clock, Trash2, ArrowLeft } from "lucide-react";
+import axiosInstance from "../../utils/axios.instance";
+import ModalPortal from "../../components/ModalPortal";
 
-const generateHourOptions = () =>
-  Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-const generateMinuteOptions = () => ["00", "15", "30", "45"];
+import "./SleepTracker.css";
 
-// Simple date picker component for web
-const SimpleDatePicker = ({ selected, onDateChange, options }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(selected || new Date().toISOString().split('T')[0].replace(/-/g, '/'));
-
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-
-  const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const handleDateSelect = (day) => {
-    const dateStr = `${currentMonth.getFullYear()}/${String(currentMonth.getMonth() + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
-    setSelectedDate(dateStr);
-    onDateChange(dateStr);
-  };
-
-  const changeMonth = (increment) => {
-    const newMonth = new Date(currentMonth);
-    newMonth.setMonth(newMonth.getMonth() + increment);
-    setCurrentMonth(newMonth);
-  };
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    const firstDay = getFirstDayOfMonth(currentMonth);
-    const days = [];
-
-    // Empty cells for days before the first day of month
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} style={styles.calendarEmptyCell} />);
-    }
-
-    // Fill in the days
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${currentMonth.getFullYear()}/${String(currentMonth.getMonth() + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
-      const isSelected = dateStr === selectedDate;
-
-      days.push(
-        <button
-          key={day}
-          onClick={() => handleDateSelect(day)}
-          style={{
-            ...styles.calendarCell,
-            backgroundColor: isSelected ? options?.mainColor || "#66BB6A" : "transparent",
-            color: isSelected ? (options?.selectedTextColor || "#fff") : (options?.textDefaultColor || "#000"),
-          }}
-        >
-          {day}
-        </button>
-      );
-    }
-
-    return days;
-  };
-
-  return (
-    <div style={styles.calendarContainer}>
-      <div style={styles.calendarHeader}>
-        <button onClick={() => changeMonth(-1)} style={styles.calendarNavButton}>←</button>
-        <span style={{ color: options?.textHeaderColor || "#66BB6A" }}>
-          {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </span>
-        <button onClick={() => changeMonth(1)} style={styles.calendarNavButton}>→</button>
-      </div>
-      <div style={styles.calendarWeekdays}>
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(day => (
-          <div key={day} style={styles.calendarWeekday}>{day}</div>
-        ))}
-      </div>
-      <div style={styles.calendarGrid}>
-        {renderCalendar()}
-      </div>
-    </div>
-  );
-};
-
-const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
+const SleepTracker = () => {
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const today = new Date().toISOString().split('T')[0].replace(/-/g, '/');
-  const [selectedDate, setSelectedDate] = useState(today);
-
-  const [sleepHour, setSleepHour] = useState("10");
-  const [sleepMinute, setSleepMinute] = useState("00");
-  const [sleepPeriod, setSleepPeriod] = useState("PM");
-  const [wakeHour, setWakeHour] = useState("06");
-  const [wakeMinute, setWakeMinute] = useState("00");
-  const [wakePeriod, setWakePeriod] = useState("AM");
-
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  
+  const [sleepTime, setSleepTime] = useState({ hour: "10", minute: "30", period: "PM" });
+  const [wakeTime, setWakeTime] = useState({ hour: "06", minute: "45", period: "AM" });
+  
+  const [showPicker, setShowPicker] = useState(null); // 'sleep' or 'wake'
   const [sleepData, setSleepData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const loadSleepData = async () => {
-    if (!userId) return;
-    try {
-      const response = await axiosInstance.get("/activities");
-      const activities = response.data.activities || [];
-
-      const history = activities
-        .filter(act => act.activity_type === "sleep")
-        .map(act => ({
-          id: act.id,
-          ...act.data
-        }))
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      setSleepData(history);
-    } catch (error) {
-      console.error("Error loading sleep history:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (userId) {
@@ -140,39 +34,103 @@ const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
     }
   }, [userId]);
 
+  const weeklyInsight = useMemo(() => {
+    if (sleepData.length === 0) return "Start logging your sleep to see your weekly performance trends here.";
+    
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    
+    const thisWeekLogs = sleepData.filter(log => new Date(log.date) >= oneWeekAgo);
+    
+    if (thisWeekLogs.length === 0) return "You haven't logged any sleep this week. Regular tracking helps identify healthy patterns.";
+    
+    const avgMinutes = thisWeekLogs.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0) / thisWeekLogs.length;
+    const hours = Math.floor(avgMinutes / 60);
+    
+    if (avgMinutes >= 420) {
+      return `Amazing! You're averaging ${hours}h of sleep this week. Your REM recovery is likely in the optimal zone.`;
+    } else {
+      return `You're averaging ${hours}h of sleep. Try to hit the 7-hour mark to boost your cognitive focus tomorrow.`;
+    }
+  }, [sleepData]);
+
+  const loadSleepData = async () => {
+    if (!userId) return;
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get("/activities");
+      const activities = response.data.activities || [];
+
+      const history = activities
+        .filter(act => act.activity_type === "sleep")
+        .map(act => {
+          const data = act.data;
+          let totalMinutes = data.totalMinutes;
+          
+          // Parse old duration string if totalMinutes is missing
+          if (!totalMinutes && data.duration) {
+            const match = data.duration.match(/(\d+)h\s*(\d*)m/);
+            if (match) {
+              totalMinutes = parseInt(match[1], 10) * 60 + (parseInt(match[2], 10) || 0);
+            }
+          }
+          
+          return {
+            id: act.id,
+            ...data,
+            totalMinutes
+          };
+        })
+        .sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
+
+      setSleepData(history);
+    } catch (error) {
+      console.error("Error loading sleep history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calculateDuration = () => {
-    const parseTime = (hour, minute, period) => {
-      let h = parseInt(hour, 10);
-      let m = parseInt(minute, 10);
-      if (period === "PM" && h !== 12) h += 12;
-      if (period === "AM" && h === 12) h = 0;
+    const parseTime = (time) => {
+      let h = parseInt(time.hour, 10);
+      let m = parseInt(time.minute, 10);
+      if (time.period === "PM" && h !== 12) h += 12;
+      if (time.period === "AM" && h === 12) h = 0;
       return h * 60 + m;
     };
-    let sleepMinutes = parseTime(sleepHour, sleepMinute, sleepPeriod);
-    let wakeMinutes = parseTime(wakeHour, wakeMinute, wakePeriod);
+    
+    let sleepMinutes = parseTime(sleepTime);
+    let wakeMinutes = parseTime(wakeTime);
     if (wakeMinutes < sleepMinutes) wakeMinutes += 24 * 60;
+    
     const durationMinutes = wakeMinutes - sleepMinutes;
     const hours = Math.floor(durationMinutes / 60);
     const minutes = durationMinutes % 60;
-    return `${hours}h ${minutes}m`;
+    
+    return { hours, minutes, totalMinutes: durationMinutes };
+  };
+
+  const { hours, minutes } = calculateDuration();
+
+  const getStatusBadge = (totalMinutes) => {
+    if (totalMinutes >= 420 && totalMinutes <= 540) return "OPTIMAL";
+    if (totalMinutes < 420) return "LOW";
+    return "EXCESSIVE";
   };
 
   const saveSleepData = async () => {
     if (!userId) return;
     try {
-      console.log("Starting to save sleep data...");
-
-      const formattedDate = selectedDate.replace(/\//g, "-");
-
+      const duration = calculateDuration();
       const newEntry = {
-        date: formattedDate,
-        sleep_time: `${sleepHour}:${sleepMinute} ${sleepPeriod}`,
-        wake_time: `${wakeHour}:${wakeMinute} ${wakePeriod}`,
-        duration: calculateDuration(),
+        date: selectedDate.toISOString().split('T')[0],
+        sleep_time: `${sleepTime.hour}:${sleepTime.minute} ${sleepTime.period}`,
+        wake_time: `${wakeTime.hour}:${wakeTime.minute} ${wakeTime.period}`,
+        duration: `${duration.hours}h ${duration.minutes}m`,
+        totalMinutes: duration.totalMinutes,
         timestamp: new Date().toISOString(),
       };
-
-      console.log("Saving to Supabase:", newEntry);
 
       const res = await axiosInstance.post("/activities/save", {
         activityType: "sleep",
@@ -183,425 +141,273 @@ const SleepTracker = ({ onUpdateReport = () => { }, navigation }) => {
         dispatch(updateTokens(res.data.updatedTokens));
       }
 
-      // Refetch after saving
-      await loadSleepData();
-
-      if (onUpdateReport) onUpdateReport();
-      alert("Sleep data saved successfully!");
+      loadSleepData();
     } catch (error) {
       console.error("Error saving sleep data:", error);
-      alert("Failed to save sleep data.");
     }
   };
 
   const deleteEntry = async (id) => {
-    if (window.confirm("Delete this entry from view? (Backend deletion not yet supported by activities API)")) {
-      const updatedHistory = sleepData.filter((entry) => entry.id !== id);
-      setSleepData(updatedHistory);
-      if (onUpdateReport) onUpdateReport(updatedHistory);
+    if (window.confirm("Are you sure you want to delete this sleep record?")) {
+      setSleepData(sleepData.filter(e => e.id !== id));
     }
   };
 
-  const handleBack = () => {
-    if (navigation && typeof navigation.goBack === "function") {
-      navigation.goBack();
-      return;
+  // ── CALENDAR LOGIC ──
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  
+  const calendarDays = useMemo(() => {
+    const days = [];
+    const prevMonthDays = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0).getDate();
+    
+    // Fill previous month days (grayed out usually, but here we just leave empty for clean look)
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push({ day: null });
     }
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({ 
+        day: i, 
+        date: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i) 
+      });
+    }
+    return days;
+  }, [currentMonth, daysInMonth, firstDayOfMonth]);
 
-    window.history.back();
+  const isSelected = (date) => {
+    if (!date) return false;
+    return date.toDateString() === selectedDate.toDateString();
   };
+
+  const isToday = (date) => {
+    if (!date) return false;
+    return date.toDateString() === new Date().toDateString();
+  };
+
+  if (!user) {
+    return (
+      <div className="sleep-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+         <div className="log-session-card" style={{ textAlign: 'center', maxWidth: '400px' }}>
+           <Moon size={48} color="#7c3aed" style={{ marginBottom: '20px' }} />
+           <h2>Login Required</h2>
+           <p style={{ color: '#6b7280', margin: '15px 0 25px' }}>Please log in to track your nocturnal recovery and wake up restored.</p>
+           <button className="save-btn" onClick={() => navigate("/login")}>Go to Login</button>
+         </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
-        padding: "20px",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Decorative elements */}
-      <div style={{
-        position: "absolute",
-        top: "10%",
-        left: "5%",
-        width: "300px",
-        height: "300px",
-        background: "radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 8s ease-in-out infinite",
-      }} />
-      <div style={{
-        position: "absolute",
-        bottom: "10%",
-        right: "5%",
-        width: "400px",
-        height: "400px",
-        background: "radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 12s ease-in-out infinite reverse",
-      }} />
-
-      {/* CSS Animations */}
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-          }
-        `}
-      </style>
-
-      <div style={styles.pageContainer}>
-        <div style={styles.topBar}>
-          <button
-            onClick={handleBack}
-            style={styles.backButton}
-          >
-            ←
+    <div className="sleep-container">
+      <div className="sleep-content">
+        
+        <header className="sleep-header">
+          <button className="nav-btn" onClick={() => navigate(-1)} style={{ marginBottom: '20px' }}>
+            <ArrowLeft size={20} /> Back
           </button>
-        </div>
+          <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>Sleep Tracker</motion.h1>
+          <motion.p initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+            Monitor your nocturnal recovery and wake up restored.
+          </motion.p>
+        </header>
 
-        <h1 style={styles.pageTitle}>
-          Sleep Tracker 😴
-        </h1>
-
-        <div style={styles.formCard}>
-          <p style={styles.selectedDateText}>
-            Selected Date: {selectedDate}
-          </p>
-
-          {/* Date Picker */}
-          <SimpleDatePicker
-            selected={selectedDate}
-            onDateChange={(date) => setSelectedDate(date)}
-            options={{
-              backgroundColor: "#fff",
-              textHeaderColor: "#66BB6A",
-              textDefaultColor: "#000",
-              selectedTextColor: "#fff",
-              mainColor: "#66BB6A",
-              textSecondaryColor: "#aaa",
-            }}
-          />
-
-          <p style={styles.text}>Sleep Time:</p>
-          <div style={styles.pickerContainer}>
-            <select
-              value={sleepHour}
-              onChange={(e) => setSleepHour(e.target.value)}
-              style={styles.select}
-            >
-              {generateHourOptions().map((hour) => (
-                <option key={hour} value={hour}>{hour}</option>
-              ))}
-            </select>
-            <select
-              value={sleepMinute}
-              onChange={(e) => setSleepMinute(e.target.value)}
-              style={styles.select}
-            >
-              {generateMinuteOptions().map((minute) => (
-                <option key={minute} value={minute}>{minute}</option>
-              ))}
-            </select>
-            <select
-              value={sleepPeriod}
-              onChange={(e) => setSleepPeriod(e.target.value)}
-              style={styles.select}
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-
-          <p style={styles.text}>Wake Time:</p>
-          <div style={styles.pickerContainer}>
-            <select
-              value={wakeHour}
-              onChange={(e) => setWakeHour(e.target.value)}
-              style={styles.select}
-            >
-              {generateHourOptions().map((hour) => (
-                <option key={hour} value={hour}>{hour}</option>
-              ))}
-            </select>
-            <select
-              value={wakeMinute}
-              onChange={(e) => setWakeMinute(e.target.value)}
-              style={styles.select}
-            >
-              {generateMinuteOptions().map((minute) => (
-                <option key={minute} value={minute}>{minute}</option>
-              ))}
-            </select>
-            <select
-              value={wakePeriod}
-              onChange={(e) => setWakePeriod(e.target.value)}
-              style={styles.select}
-            >
-              <option value="AM">AM</option>
-              <option value="PM">PM</option>
-            </select>
-          </div>
-
-          <p style={styles.text}>Sleep Duration: {calculateDuration()}</p>
-
-          <button
-            onClick={saveSleepData}
-            style={styles.saveButton}
+        <div className="sleep-grid">
+          
+          {/* ── LEFT: LOG SESSION ── */}
+          <motion.div 
+            className="log-session-card"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            Save Sleep Data ✨
-          </button>
-        </div>
+            <div className="card-title">
+              <div className="add-icon"><Plus size={16} strokeWidth={3} /></div>
+              Log New Session
+            </div>
 
-        <div style={styles.historyCard}>
-          <h2 style={styles.historyTitle}>Sleep History</h2>
+            <div className="calendar-section">
+              <label>Select Date</label>
+              <div className="calendar-nav">
+                <button className="nav-btn" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}>
+                  <ChevronLeft size={20} />
+                </button>
+                <span>{currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                <button className="nav-btn" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))}>
+                  <ChevronRight size={20} />
+                </button>
+              </div>
 
-          {loading ? (
-            <p style={styles.emptyState}>Loading...</p>
-          ) : (
-            <div style={styles.tableWrapper}>
-              <div style={styles.table}>
-                <div style={styles.row}>
-                  <div style={styles.headerCell}>Date</div>
-                  <div style={styles.headerCell}>Sleep Time</div>
-                  <div style={styles.headerCell}>Wake Time</div>
-                  <div style={styles.headerCell}>Duration</div>
-                  <div style={styles.headerCell}>Actions</div>
-                </div>
-                {sleepData.length > 0 ? (
-                  sleepData.map((entry) => (
-                    <div key={entry.id} style={styles.row}>
-                      <div style={styles.cell}>{entry.date}</div>
-                      <div style={styles.cell}>{entry.sleep_time}</div>
-                      <div style={styles.cell}>{entry.wake_time}</div>
-                      <div style={styles.cell}>{entry.duration}</div>
-                      <div style={styles.cell}>
-                        <button
-                          onClick={() => deleteEntry(entry.id)}
-                          style={styles.deleteButton}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={{ padding: "20px", textAlign: "center" }}>
-                    <span style={{ fontSize: "48px", display: "block", marginBottom: "10px" }}>😴</span>
-                    <p style={styles.emptyState}>No sleep history found.</p>
-                  </div>
-                )}
+              <div className="calendar-grid">
+                {["M", "T", "W", "T", "F", "S", "S"].map(d => (
+                  <div key={d} className="weekday-label">{d}</div>
+                ))}
+                {calendarDays.map((d, i) => (
+                  d.day ? (
+                    <button 
+                      key={i} 
+                      className={`calendar-day ${isSelected(d.date) ? 'selected' : ''} ${isToday(d.date) ? 'today' : ''}`}
+                      onClick={() => setSelectedDate(d.date)}
+                    >
+                      {d.day}
+                    </button>
+                  ) : <div key={i} />
+                ))}
               </div>
             </div>
-          )}
+
+            <div className="time-inputs">
+              <div className="input-group">
+                <label>Sleep Time</label>
+                <div className="time-box" onClick={() => setShowPicker('sleep')}>
+                  <Moon size={18} color="#9ca3af" />
+                  <div className="time-value">{sleepTime.hour}:{sleepTime.minute} {sleepTime.period}</div>
+                  <Clock size={16} color="#9ca3af" />
+                </div>
+              </div>
+              <div className="input-group">
+                <label>Wake Time</label>
+                <div className="time-box" onClick={() => setShowPicker('wake')}>
+                  <Sun size={18} color="#9ca3af" />
+                  <div className="time-value">{wakeTime.hour}:{wakeTime.minute} {wakeTime.period}</div>
+                  <Clock size={16} color="#9ca3af" />
+                </div>
+              </div>
+            </div>
+
+            <div className="duration-card">
+              <div className="duration-icon"><Clock size={24} /></div>
+              <div className="duration-info">
+                <div className="duration-label">Sleep Duration</div>
+                <div className="duration-value">{hours}h {minutes}m</div>
+              </div>
+              <div className="status-badge">{getStatusBadge(hours * 60 + minutes)}</div>
+            </div>
+
+            <button className="save-btn" onClick={saveSleepData}>Save Sleep Data</button>
+          </motion.div>
+
+          {/* ── RIGHT: HISTORY & INSIGHTS ── */}
+          <div className="history-section">
+            <h2>
+              Sleep History
+              <span className="view-all">View All</span>
+            </h2>
+
+            <div className="history-list">
+              {sleepData.length > 0 ? sleepData.slice(0, 3).map((log, i) => (
+                <motion.div 
+                  key={log.id || i} 
+                  className="history-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + (i * 0.1) }}
+                >
+                  <div className="mood-icon">😴</div>
+                  <div className="log-details">
+                    <div className="log-date">{new Date(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    <div className="log-duration">{log.duration} Duration</div>
+                  </div>
+                  <div className="log-time-range">
+                    <span className="time-range">{log.sleep_time} — {log.wake_time}</span>
+                    <span className={`sleep-quality ${log.totalMinutes > 420 ? 'quality-deep' : 'quality-restless'}`}>
+                      {log.totalMinutes > 420 ? 'DEEP SLEEP' : 'RESTLESS'}
+                    </span>
+                  </div>
+                </motion.div>
+              )) : (
+                <div className="history-item" style={{ justifyContent: 'center', color: '#9ca3af' }}>No logs yet</div>
+              )}
+            </div>
+
+            <motion.div 
+              className="insight-card"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <div className="insight-label">WEEKLY INSIGHT</div>
+              <div className="insight-text">
+                {weeklyInsight}
+              </div>
+            </motion.div>
+          </div>
+
         </div>
       </div>
+
+      {/* Time Picker Modal */}
+      <AnimatePresence>
+        {showPicker && (
+          <ModalPortal>
+            <motion.div 
+              className="time-picker-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPicker(null)}
+            >
+              <motion.div 
+                className="time-picker-modal"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="picker-header">
+                  <div className="picker-title">Set {showPicker === 'sleep' ? 'Sleep' : 'Wake'} Time</div>
+                  <button className="picker-close" onClick={() => setShowPicker(null)}>×</button>
+                </div>
+
+                <div className="picker-controls">
+                  <select 
+                    className="picker-select" 
+                    value={showPicker === 'sleep' ? sleepTime.hour : wakeTime.hour}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (showPicker === 'sleep') setSleepTime({...sleepTime, hour: val});
+                      else setWakeTime({...wakeTime, hour: val});
+                    }}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <select 
+                    className="picker-select"
+                    value={showPicker === 'sleep' ? sleepTime.minute : wakeTime.minute}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (showPicker === 'sleep') setSleepTime({...sleepTime, minute: val});
+                      else setWakeTime({...wakeTime, minute: val});
+                    }}
+                  >
+                    {["00", "15", "30", "45"].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select 
+                    className="picker-select"
+                    value={showPicker === 'sleep' ? sleepTime.period : wakeTime.period}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (showPicker === 'sleep') setSleepTime({...sleepTime, period: val});
+                      else setWakeTime({...wakeTime, period: val});
+                    }}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+
+                <button className="picker-confirm" onClick={() => setShowPicker(null)}>Confirm Time</button>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
-
-const styles = {
-  pageContainer: {
-    maxWidth: "920px",
-    margin: "0 auto",
-    position: "relative",
-    zIndex: 10,
-  },
-  topBar: {
-    marginBottom: "8px",
-  },
-  backButton: {
-    background: "#ffffff",
-    border: "none",
-    width: "42px",
-    height: "42px",
-    borderRadius: "999px",
-    fontSize: "22px",
-    cursor: "pointer",
-    color: "#667eea",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-    transition: "all 0.2s",
-  },
-  pageTitle: {
-    fontSize: "32px",
-    textAlign: "center",
-    marginBottom: "24px",
-    fontWeight: "700",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  },
-  formCard: {
-    background: "rgba(255, 255, 255, 0.85)",
-    borderRadius: "20px",
-    padding: "24px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-    backdropFilter: "blur(10px)",
-    marginBottom: "24px",
-  },
-  selectedDateText: {
-    fontSize: "16px",
-    marginBottom: "16px",
-    fontWeight: "600",
-    color: "#667eea",
-  },
-  pickerContainer: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "16px",
-    flexWrap: "wrap",
-  },
-  select: {
-    flex: 1,
-    minWidth: "90px",
-    padding: "10px",
-    borderRadius: "10px",
-    border: "1px solid #e0e0e0",
-    fontSize: "14px",
-    background: "white",
-    cursor: "pointer",
-    transition: "all 0.2s",
-  },
-  saveButton: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-    border: "none",
-    padding: "14px 20px",
-    borderRadius: "12px",
-    fontSize: "16px",
-    cursor: "pointer",
-    width: "100%",
-    marginBottom: "4px",
-    fontWeight: "600",
-    boxShadow: "0 5px 15px rgba(102, 126, 234, 0.3)",
-    transition: "all 0.3s",
-  },
-  historyCard: {
-    background: "rgba(255, 255, 255, 0.85)",
-    borderRadius: "20px",
-    padding: "24px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-    backdropFilter: "blur(10px)",
-  },
-  tableWrapper: {
-    overflowX: "auto",
-    borderRadius: "12px",
-  },
-  table: {
-    marginTop: "10px",
-    border: "1px solid rgba(0,0,0,0.05)",
-    marginBottom: "20px",
-    borderRadius: "12px",
-    overflow: "hidden",
-    minWidth: "640px",
-    background: "white",
-  },
-  row: {
-    display: "flex",
-    borderBottom: "1px solid rgba(0,0,0,0.05)",
-    padding: "12px",
-    transition: "background 0.2s",
-  },
-  cell: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#2f2f2f",
-  },
-  headerCell: {
-    flex: 1,
-    fontWeight: "bold",
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#667eea",
-  },
-  deleteButton: {
-    backgroundColor: "#ef5350",
-    color: "white",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: "600",
-    transition: "all 0.2s",
-  },
-  emptyState: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: "16px",
-  },
-  text: {
-    marginTop: "16px",
-    marginBottom: "8px",
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#2f2f2f",
-  },
-  historyTitle: {
-    fontSize: "24px",
-    fontWeight: "bold",
-    marginTop: "0px",
-    marginBottom: "16px",
-    color: "#333",
-  },
-  // Calendar styles
-  calendarContainer: {
-    background: "rgba(255, 255, 255, 0.9)",
-    borderRadius: "16px",
-    padding: "20px",
-    marginBottom: "20px",
-    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  },
-  calendarHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "15px",
-  },
-  calendarNavButton: {
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    border: "none",
-    fontSize: "18px",
-    cursor: "pointer",
-    padding: "8px 15px",
-    borderRadius: "25px",
-    color: "white",
-    transition: "all 0.2s",
-  },
-  calendarWeekdays: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    textAlign: "center",
-    marginBottom: "10px",
-  },
-  calendarWeekday: {
-    fontSize: "12px",
-    color: "#aaa",
-    padding: "5px",
-  },
-  calendarGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    gap: "5px",
-  },
-  calendarCell: {
-    border: "none",
-    padding: "10px",
-    textAlign: "center",
-    cursor: "pointer",
-    borderRadius: "8px",
-    fontSize: "14px",
-    transition: "all 0.2s",
-  },
-  calendarEmptyCell: {
-    padding: "10px",
-  },
 };
 
 export default SleepTracker;
