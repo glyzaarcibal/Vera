@@ -1,0 +1,370 @@
+.breath-container {
+  min-height: 100vh;
+  background: #f8f9fc;
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #1f2937;
+}
+
+/* ── SIDEBAR ── */
+.breath-sidebar {
+  background: white;
+  padding: 40px 30px;
+  border-right: 1px solid #f1f5f9;
+  height: 100vh;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-section {
+  margin-bottom: 40px;
+}
+
+.sidebar-section h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+.technique-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.technique-card {
+  background: white;
+  border: 1px solid #f1f5f9;
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.technique-card:hover {
+  border-color: #7c3aed;
+  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.05);
+  transform: translateY(-2px);
+}
+
+.technique-card.active {
+  border-color: #7c3aed;
+  background: #fdfaff;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+.card-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.card-content p {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* ── RECENT JOURNEYS ── */
+.journey-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journey-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border-radius: 16px;
+  transition: background 0.2s;
+}
+
+.journey-item:hover {
+  background: #f9fafb;
+}
+
+.journey-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.journey-info {
+  flex: 1;
+}
+
+.journey-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.journey-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.journey-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #111827;
+  color: white;
+}
+
+/* ── MAIN CONTENT ── */
+.breath-main {
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.main-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.main-header h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 12px;
+}
+
+.main-header p {
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.circle-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 60px;
+}
+
+.outer-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+}
+
+.breathing-circle {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 5rem;
+  font-weight: 700;
+  box-shadow: 0 20px 50px rgba(124, 58, 237, 0.3);
+  z-index: 2;
+  position: relative;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #111827;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.start-btn {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  padding: 18px 60px;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.25);
+}
+
+.start-btn:hover {
+  background: #6d28d9;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(124, 58, 237, 0.35);
+}
+
+.customize-link {
+  margin-top: 25px;
+  color: #7c3aed;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.customize-link:hover {
+  color: #6d28d9;
+}
+
+/* ── LANGUAGE TOGGLE ── */
+.language-toggle {
+  display: flex;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.lang-btn {
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-btn.active {
+  background: white;
+  color: #7c3aed;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* ── HISTORY MODAL ── */
+.history-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.history-modal-content {
+  background: white;
+  border-radius: 30px;
+  padding: 40px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.close-modal {
+  background: #f3f4f6;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.history-table-wrapper {
+  overflow-y: auto;
+  border-radius: 20px;
+  border: 1px solid #f1f5f9;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background: #f9fafb;
+  padding: 15px 20px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.history-table td {
+  padding: 15px 20px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .breath-container {
+    grid-template-columns: 1fr;
+  }
+  .breath-sidebar {
+    height: auto;
+    position: relative;
+    padding: 20px;
+  }
+}

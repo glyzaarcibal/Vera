@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import axiosInstance from "../../utils/axios.instance";
-import { useSelector, useDispatch } from "react-redux";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
+import { motion, AnimatePresence } from "framer-motion";
+import { LayoutGrid, Wind, Moon, Sun, Heart, Timer, ArrowLeft, Settings2, Sparkles, Cloud } from "lucide-react";
+import axiosInstance from "../../utils/axios.instance";
 
-// Audio from src/assets/breath/ (Vite bundles these and gives correct URLs)
+import "./TakeABreath.css";
+
+// Audio imports
 import getReadyEn from "../../assets/breath/get-ready-in.mp3";
 import getReadyTl from "../../assets/breath/humandakasabilang.mp3";
 import inhaleEn from "../../assets/breath/inhale.mp3";
@@ -30,707 +35,415 @@ const AUDIO_SOURCES = {
   countdown1: { english: countdown1En, tagalog: countdown1Tl },
 };
 
-const BREATHING_TYPES = [
-  { id: "relaxing", name: "Relaxing (6-7-8)", nameTl: "Relaks (6-7-8)", inhaleMs: 6000, holdMs: 7000, exhaleMs: 8000 },
-  { id: "box", name: "Box (4-4-4)", nameTl: "Box (4-4-4)", inhaleMs: 4000, holdMs: 4000, exhaleMs: 4000 },
-  { id: "478", name: "4-7-8 Calm", nameTl: "4-7-8 Kalmado", inhaleMs: 4000, holdMs: 7000, exhaleMs: 8000 },
-  { id: "calm", name: "Calm (4-2-6)", nameTl: "Kalmado (4-2-6)", inhaleMs: 4000, holdMs: 2000, exhaleMs: 6000 },
+const TECHNIQUES = [
+  { 
+    id: "box", 
+    name: "Box Breathing", 
+    nameTl: "Paghingang Box",
+    desc: "Equal duration inhale, hold, exhale, and hold for deep tactical calm.", 
+    descTl: "Parehong tagal ng paghinga, pigil, at pagbuga para sa matinding kalmado.",
+    pattern: "4-4-4-4",
+    inhale: 4000, hold: 4000, exhale: 4000, holdAfter: 4000,
+    icon: <LayoutGrid size={20} />,
+    color: "#8b5cf6"
+  },
+  { 
+    id: "478", 
+    name: "4-7-8 Relaxation", 
+    nameTl: "4-7-8 Relaksasyon",
+    desc: "The 'Natural Tranquilizer' for the nervous system. Ideal for sleep prep.", 
+    descTl: "Ang 'Natural na Pampakalma' para sa sistemang nerbyos. Mainam sa pagtulog.",
+    pattern: "4-7-8",
+    inhale: 4000, hold: 7000, exhale: 8000, holdAfter: 0,
+    icon: <Wind size={20} />,
+    color: "#7c3aed"
+  },
+  { 
+    id: "deep-rest", 
+    name: "Deep Rest", 
+    nameTl: "Malalim na Pahinga",
+    desc: "Extended exhales to signal your body to enter a parasympathetic state.", 
+    descTl: "Mahabang pagbuga para senyasan ang katawan na pumasok sa malalim na pahinga.",
+    pattern: "5-0-10",
+    inhale: 5000, hold: 0, exhale: 10000, holdAfter: 0,
+    icon: <Moon size={20} />,
+    color: "#f472b6"
+  }
 ];
 
 const TEXTS = {
   English: {
-    getReady: "Get ready...",
-    inhale: "Inhale...",
-    hold: "Hold...",
-    exhale: "Exhale...",
-    startBreathing: "Start Breathing",
-    showHistory: "Show History",
-    hideHistory: "Hide History",
-    breathingHistory: "Breathing History",
-    clearAll: "Clear All",
-    noHistory: "No history yet",
-    date: "Date",
-    time: "Time",
-    type: "Type",
-    chooseType: "Choose breathing type",
+    title: "Focus on your breath",
+    subtitle: "Inhale as the circle expands, exhale as it contracts.",
+    start: "Start Session",
+    stop: "Stop Session",
+    inhale: "Inhale",
+    hold: "Hold",
+    exhale: "Exhale",
+    techniques: "Techniques",
+    recent: "Recent Journeys",
+    back: "Back",
+    history: "Full History",
+    noSessions: "No sessions yet."
   },
   Tagalog: {
-    getReady: "Handa na...",
-    inhale: "Huminga papasok...",
-    hold: "Pigil...",
-    exhale: "Huminga palabas...",
-    startBreathing: "Magsimula ng Paghinga",
-    showHistory: "Ipakita ang Kasaysayan",
-    hideHistory: "Itago ang Kasaysayan",
-    breathingHistory: "Kasaysayan ng Paghinga",
-    clearAll: "Burahin Lahat",
-    noHistory: "Wala pang kasaysayan",
-    date: "Petsa",
-    time: "Oras",
-    type: "Uri",
-    chooseType: "Pumili ng uri ng paghinga",
-  },
+    title: "Tumutok sa iyong paghinga",
+    subtitle: "Huminga habang lumalaki ang bilog, ibuga habang lumiliit ito.",
+    start: "Magsimula",
+    stop: "Itigil",
+    inhale: "Huminga",
+    hold: "Pigil",
+    exhale: "Ibuga",
+    techniques: "Mga Teknik",
+    recent: "Mga Nakaraang Session",
+    back: "Bumalik",
+    history: "Buong Kasaysayan",
+    noSessions: "Wala pang session."
+  }
 };
 
 const TakeABreath = () => {
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [breathingStage, setBreathingStage] = useState(0);
+  const [activeTechnique, setActiveTechnique] = useState(TECHNIQUES[1]); // 4-7-8 default
   const [isBreathing, setIsBreathing] = useState(false);
-  const [repeatCount, setRepeatCount] = useState(0);
+  const [stage, setStage] = useState("idle"); // idle, getReady, inhale, hold, exhale, holdAfter
   const [countdown, setCountdown] = useState(0);
-  const [history, setHistory] = useState([]);
   const [scale, setScale] = useState(1);
-  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const [language, setLanguage] = useState("English");
-  const [breathType, setBreathType] = useState(BREATHING_TYPES[0].id);
-  const animationRef = useRef(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  
   const audioRefs = useRef({});
-  const audioContextRef = useRef(null);
+  const animationRef = useRef(null);
+  const isBreathingRef = useRef(false);
+  const timerRef = useRef(null);
+
+  const t = TEXTS[language];
+
+  useEffect(() => {
+    isBreathingRef.current = isBreathing;
+  }, [isBreathing]);
 
   useEffect(() => {
     loadHistory();
-  }, []);
-
-  useEffect(() => {
     preloadAudio();
     return () => {
-      Object.values(audioRefs.current).forEach((audio) => {
-        if (audio && audio.pause) {
-          audio.pause();
-          audio.src = "";
-        }
-      });
+      stopSession();
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [language]);
-
-  useEffect(() => {
-    if (!isBreathing || countdown > 0) return;
-
-    const preset = BREATHING_TYPES.find((p) => p.id === breathType) || BREATHING_TYPES[0];
-    let timing = 0;
-
-    if (breathingStage === 0) {
-      playAudio("inhale");
-      animateBreath(1.5, preset.inhaleMs);
-      timing = preset.inhaleMs;
-    } else if (breathingStage === 1) {
-      playAudio("hold");
-      timing = preset.holdMs;
-    } else if (breathingStage === 2) {
-      playAudio("exhale");
-      animateBreath(1, preset.exhaleMs);
-      timing = preset.exhaleMs;
-    }
-
-    const timer = setTimeout(() => {
-      if (breathingStage === 2) {
-        if (repeatCount < 1) {
-          setRepeatCount(repeatCount + 1);
-          setBreathingStage(0);
-        } else {
-          setIsBreathing(false);
-          setBreathingStage(0);
-          setRepeatCount(0);
-          addHistory();
-        }
-      } else {
-        setBreathingStage((prevStage) => prevStage + 1);
-      }
-    }, timing);
-
-    return () => clearTimeout(timer);
-  }, [
-    breathingStage,
-    isBreathing,
-    countdown,
-    repeatCount,
-    language,
-    breathType,
-  ]);
-
-  const animateBreath = (targetScale, duration) => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-
-    const startScale = scale;
-    const startTime = performance.now();
-
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Easing function for smooth animation
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const newScale = startScale + (targetScale - startScale) * easeProgress;
-
-      setScale(newScale);
-
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
-
-  const preloadAudio = () => {
-    const isTagalog = language === "Tagalog";
-    Object.entries(AUDIO_SOURCES).forEach(([key, urls]) => {
-      const src = isTagalog ? urls.tagalog : urls.english;
-      const audio = new Audio(src);
-      audio.preload = "auto";
-      audioRefs.current[key] = audio;
-    });
-  };
-
-  const playFallbackSound = (type = "tone") => {
-    try {
-      const ctx = audioContextRef.current || new (window.AudioContext || window.webkitAudioContext)();
-      audioContextRef.current = ctx;
-      if (ctx.state === "suspended") ctx.resume();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(type === "inhale" ? 220 : type === "exhale" ? 180 : 440, ctx.currentTime);
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.08, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
-    } catch (e) {
-      console.log("Fallback sound skipped:", e);
-    }
-  };
-
-  const playAudio = (audioKey) => {
-    try {
-      const audio = audioRefs.current[audioKey];
-      if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch((e) => {
-          console.warn("Audio play failed, using fallback:", e);
-          playFallbackSound(audioKey === "inhale" ? "inhale" : audioKey === "exhale" ? "exhale" : "tone");
-        });
-      } else {
-        playFallbackSound();
-      }
-    } catch (error) {
-      console.warn("playAudio error:", error);
-      playFallbackSound();
-    }
-  };
-
-  const addHistory = async () => {
-    if (!userId) return;
-
-    const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
-    const preset = BREATHING_TYPES.find((p) => p.id === breathType) || BREATHING_TYPES[0];
-    const typeLabel = language === "Tagalog" ? preset.nameTl : preset.name;
-
-    const newEntry = {
-      date,
-      time,
-      type: breathType,
-      typeLabel,
-      timestamp: now.toISOString(),
-    };
-
-    try {
-      const res = await axiosInstance.post("/activities/save", {
-        activityType: "breath",
-        data: newEntry
-      });
-
-      if (res.data?.updatedTokens !== null) {
-        dispatch(updateTokens(res.data.updatedTokens));
-      }
-
-      // Refetch history
-      await loadHistory();
-    } catch (error) {
-      console.error("Error saving breath history:", error);
-    }
-  };
+  }, []);
 
   const loadHistory = async () => {
     if (!userId) return;
     try {
       const response = await axiosInstance.get("/activities");
-      const activities = response.data.activities || [];
-
-      const historyItems = activities
+      const historyItems = (response.data.activities || [])
         .filter(act => act.activity_type === "breath")
-        .map(act => ({
-          ...act.data
-        }))
+        .map(act => ({ id: act.id, ...act.data }))
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
       setHistory(historyItems);
     } catch (error) {
       console.error("Error loading breath history:", error);
     }
   };
 
-  const startBreathing = async () => {
-    setIsBreathing(true);
-    setBreathingStage(0);
-    setCountdown(3);
-
-    playAudio('getReady');
-
-    setTimeout(() => {
-      setCountdown(3);
-      playAudio('countdown3');
-    }, 1000);
-
-    setTimeout(() => {
-      setCountdown(2);
-      playAudio('countdown2');
-    }, 2000);
-
-    setTimeout(() => {
-      setCountdown(1);
-      playAudio('countdown1');
-    }, 3000);
-
-    setTimeout(() => {
-      setCountdown(0);
-    }, 4000);
+  const preloadAudio = () => {
+    Object.entries(AUDIO_SOURCES).forEach(([key, urls]) => {
+      audioRefs.current[key] = new Audio(urls.english);
+    });
   };
 
-  const t = TEXTS[language] || TEXTS.English;
-  const stageText = () => {
-    if (!isBreathing) return "";
-    if (countdown > 0) return `${t.getReady} ${countdown}`;
-    return [t.inhale, t.hold, t.exhale][breathingStage] || "";
-  };
-
-  const handleBack = () => {
-    window.history.back();
-  };
-
-  const clearHistory = async () => {
-    setHistory([]);
-    try {
-      localStorage.removeItem("breathingHistory");
-    } catch (error) {
-      console.error("Error clearing history:", error);
+  const playAudio = (key) => {
+    const audio = audioRefs.current[key];
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(e => console.warn("Audio fail:", e));
     }
   };
 
-  // Function to handle hover effects
-  const [isBackButtonHovered, setIsBackButtonHovered] = useState(false);
-  const [isStartButtonHovered, setIsStartButtonHovered] = useState(false);
-  const [isHistoryToggleHovered, setIsHistoryToggleHovered] = useState(false);
-  const [isClearHistoryHovered, setIsClearHistoryHovered] = useState(false);
+  const startSession = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setIsBreathing(true);
+    setStage("getReady");
+    setCountdown(3);
+    setSessionStartTime(new Date());
+    
+    playAudio('getReady');
+    
+    timerRef.current = setTimeout(() => {
+      setCountdown(2);
+      playAudio('countdown2');
+      timerRef.current = setTimeout(() => {
+        setCountdown(1);
+        playAudio('countdown1');
+        timerRef.current = setTimeout(() => {
+          setCountdown(0);
+          runBreathingCycle();
+        }, 1000);
+      }, 1000);
+    }, 1000);
+  };
+
+  const stopSession = () => {
+    if (isBreathing && sessionStartTime) {
+      saveHistory();
+    }
+    setIsBreathing(false);
+    setStage("idle");
+    setScale(1);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  };
+
+  const runBreathingCycle = () => {
+    let currentStage = "inhale";
+    
+    const nextStep = () => {
+      if (!isBreathingRef.current) return;
+      
+      setStage(currentStage);
+      let duration = 0;
+      
+      if (currentStage === "inhale") {
+        playAudio("inhale");
+        duration = activeTechnique.inhale;
+        animateScale(1.5, duration);
+        currentStage = activeTechnique.hold > 0 ? "hold" : "exhale";
+      } else if (currentStage === "hold") {
+        playAudio("hold");
+        duration = activeTechnique.hold;
+        currentStage = "exhale";
+      } else if (currentStage === "exhale") {
+        playAudio("exhale");
+        duration = activeTechnique.exhale;
+        animateScale(1, duration);
+        currentStage = activeTechnique.holdAfter > 0 ? "holdAfter" : "inhale";
+      } else if (currentStage === "holdAfter") {
+        playAudio("hold");
+        duration = activeTechnique.holdAfter;
+        currentStage = "inhale";
+      }
+      
+      timerRef.current = setTimeout(nextStep, duration);
+    };
+    
+    nextStep();
+  };
+
+  const animateScale = (target, duration) => {
+    const start = scale;
+    const startTime = performance.now();
+    
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      const currentScale = start + (target - start) * ease;
+      setScale(currentScale);
+      
+      if (progress < 1) animationRef.current = requestAnimationFrame(animate);
+    };
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  const saveHistory = async () => {
+    if (!userId || !sessionStartTime) return;
+    const durationMins = Math.round((new Date() - sessionStartTime) / 60000);
+    const newEntry = {
+      technique: activeTechnique.name,
+      duration: `${durationMins} mins`,
+      timestamp: new Date().toISOString(),
+      date: "Today"
+    };
+    
+    try {
+      const res = await axiosInstance.post("/activities/save", {
+        activityType: "breath",
+        data: newEntry
+      });
+      if (res.data?.updatedTokens) dispatch(updateTokens(res.data.updatedTokens));
+      loadHistory();
+    } catch (e) { console.error(e); }
+  };
+
+  const getStageDisplay = () => {
+    if (stage === "getReady") return countdown;
+    if (stage === "inhale") return t.inhale;
+    if (stage === "hold" || stage === "holdAfter") return t.hold;
+    if (stage === "exhale") return t.exhale;
+    return "";
+  };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
-        padding: "20px",
-        fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Decorative elements */}
-      <div style={{
-        position: "absolute",
-        top: "10%",
-        left: "5%",
-        width: "300px",
-        height: "300px",
-        background: "radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 8s ease-in-out infinite",
-      }} />
-      <div style={{
-        position: "absolute",
-        bottom: "10%",
-        right: "5%",
-        width: "400px",
-        height: "400px",
-        background: "radial-gradient(circle, rgba(118, 75, 162, 0.1) 0%, transparent 70%)",
-        borderRadius: "50%",
-        animation: "float 12s ease-in-out infinite reverse",
-      }} />
+    <div className="breath-container">
+      
+      {/* ── SIDEBAR ── */}
+      <aside className="breath-sidebar">
+        <header style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button className="nav-btn" onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', fontWeight: '600' }}>
+            <ArrowLeft size={18} /> {t.back}
+          </button>
+          <div className="language-toggle">
+            <button 
+              className={`lang-btn ${language === 'English' ? 'active' : ''}`}
+              onClick={() => setLanguage('English')}
+            >
+              EN
+            </button>
+            <button 
+              className={`lang-btn ${language === 'Tagalog' ? 'active' : ''}`}
+              onClick={() => setLanguage('Tagalog')}
+            >
+              TL
+            </button>
+          </div>
+        </header>
 
-      {/* CSS Animations */}
-      <style>
-        {`
-          @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-          }
-          
-          .table-container::-webkit-scrollbar {
-            width: 8px;
-          }
-          .table-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-          }
-          .table-container::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 4px;
-          }
-          .table-container::-webkit-scrollbar-thumb:hover {
-            background: #5a67d8;
-          }
-        `}
-      </style>
-
-      <button
-        style={{
-          position: 'absolute',
-          top: '30px',
-          left: '30px',
-          background: 'white',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '10px',
-          borderRadius: '50%',
-          transition: 'all 0.3s',
-          width: '45px',
-          height: '45px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '24px',
-          color: '#667eea',
-          boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
-          transform: isBackButtonHovered ? 'scale(1.1)' : 'scale(1)',
-          zIndex: 20,
-        }}
-        onMouseEnter={() => setIsBackButtonHovered(true)}
-        onMouseLeave={() => setIsBackButtonHovered(false)}
-        onClick={handleBack}
-      >
-        ←
-      </button>
-
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 40px)',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.85)',
-          borderRadius: '30px',
-          padding: '30px',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-          backdropFilter: 'blur(10px)',
-          width: '100%',
-        }}>
-          {!isBreathing && (
-            <div style={{
-              display: "flex",
-              gap: "8px",
-              marginBottom: "16px",
-              justifyContent: "center",
-            }}>
-              <button
-                type="button"
-                onClick={() => setLanguage("English")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "20px",
-                  border: language === "English" ? "2px solid #667eea" : "1px solid #ccc",
-                  background: language === "English" ? "#667eea" : "#fff",
-                  color: language === "English" ? "#fff" : "#333",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  transition: 'all 0.2s',
-                }}
+        <section className="sidebar-section">
+          <h2>{t.techniques}</h2>
+          <div className="technique-list">
+            {TECHNIQUES.map(tech => (
+              <div 
+                key={tech.id} 
+                className={`technique-card ${activeTechnique.id === tech.id ? 'active' : ''}`}
+                onClick={() => setActiveTechnique(tech)}
               >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => setLanguage("Tagalog")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "20px",
-                  border: language === "Tagalog" ? "2px solid #667eea" : "1px solid #ccc",
-                  background: language === "Tagalog" ? "#667eea" : "#fff",
-                  color: language === "Tagalog" ? "#fff" : "#333",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  transition: 'all 0.2s',
-                }}
-              >
-                Tagalog
-              </button>
-            </div>
-          )}
-
-          <h1 style={{
-            fontSize: "32px",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            margin: "0 0 30px 0",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}>
-            Take a Breath 🧘
-          </h1>
-
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '100%',
-          }}>
-            <div style={{
-              width: '200px',
-              height: '200px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              margin: '20px auto',
-              boxShadow: isBreathing ? `0 20px 40px rgba(102, 126, 234, 0.4)` : '0 10px 30px rgba(0,0,0,0.1)',
-              transition: isBreathing ? 'none' : 'transform 0.3s ease, box-shadow 0.3s ease',
-              transform: `scale(${scale})`,
-            }} />
-
-            <p style={{
-              fontSize: '28px',
-              color: '#667eea',
-              fontWeight: 'bold',
-              margin: '20px 0',
-              textAlign: 'center',
-              minHeight: '60px',
-            }}>
-              {stageText()}
-            </p>
-
-            {!isBreathing && (
-              <>
-                <p style={{
-                  marginBottom: 8,
-                  fontWeight: 600,
-                  color: "#667eea",
-                  fontSize: 14
-                }}>
-                  {t.chooseType}
-                </p>
-                <div style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  justifyContent: "center",
-                  marginBottom: 12
-                }}>
-                  {BREATHING_TYPES.map((preset) => (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => setBreathType(preset.id)}
-                      style={{
-                        padding: "8px 14px",
-                        borderRadius: 20,
-                        border: breathType === preset.id ? "2px solid #667eea" : "1px solid #ccc",
-                        background: breathType === preset.id ? "#667eea" : "#fff",
-                        color: breathType === preset.id ? "#fff" : "#333",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        fontSize: 13,
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      {language === "Tagalog" ? preset.nameTl : preset.name}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '14px 28px',
-                    borderRadius: '30px',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    boxShadow: isStartButtonHovered
-                      ? '0 15px 30px rgba(102, 126, 234, 0.4)'
-                      : '0 10px 20px rgba(102, 126, 234, 0.3)',
-                    transition: 'all 0.3s ease',
-                    margin: '10px 0',
-                    transform: isStartButtonHovered ? 'translateY(-2px)' : 'translateY(0)',
-                  }}
-                  onMouseEnter={() => setIsStartButtonHovered(true)}
-                  onMouseLeave={() => setIsStartButtonHovered(false)}
-                  onClick={startBreathing}
-                >
-                  {t.startBreathing}
-                </button>
-
-                <button
-                  style={{
-                    background: isHistoryToggleHovered
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      : 'transparent',
-                    color: isHistoryToggleHovered ? 'white' : '#667eea',
-                    border: '2px solid #667eea',
-                    padding: '10px 20px',
-                    borderRadius: '25px',
-                    fontSize: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    marginTop: '10px',
-                  }}
-                  onMouseEnter={() => setIsHistoryToggleHovered(true)}
-                  onMouseLeave={() => setIsHistoryToggleHovered(false)}
-                  onClick={() => setShowHistory(!showHistory)}
-                >
-                  {showHistory ? t.hideHistory : t.showHistory}
-                </button>
-              </>
-            )}
-
-            {showHistory && (
-              <div style={{
-                marginTop: '30px',
-                width: '100%',
-                background: 'rgba(241, 248, 233, 0.3)',
-                borderRadius: '20px',
-                padding: '20px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '15px',
-                }}>
-                  <h3 style={{
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    color: '#667eea',
-                    margin: 0,
-                  }}>
-                    {t.breathingHistory}
-                  </h3>
-                  {history.length > 0 && (
-                    <button
-                      style={{
-                        background: isClearHistoryHovered ? '#ff5252' : '#ff6b6b',
-                        color: 'white',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={() => setIsClearHistoryHovered(true)}
-                      onMouseLeave={() => setIsClearHistoryHovered(false)}
-                      onClick={clearHistory}
-                    >
-                      {t.clearAll}
-                    </button>
-                  )}
-                </div>
-
-                <div className="table-container" style={{
-                  maxHeight: '300px',
-                  overflowY: 'auto',
-                  border: '1px solid #667eea',
-                  borderRadius: '5px',
-                  background: 'white',
-                }}>
-                  <div style={{
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      background: '#667eea',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      position: 'sticky',
-                      top: 0,
-                    }}>
-                      <div style={styles.tableHeaderCell}>{t.date}</div>
-                      <div style={styles.tableHeaderCell}>{t.time}</div>
-                      <div style={styles.tableHeaderCell}>{t.type}</div>
-                    </div>
-
-                    {history.length > 0 ? (
-                      history.map((item, index) => {
-                        const typeLabel = item.typeLabel || (() => {
-                          const p = BREATHING_TYPES.find((x) => x.id === (item.type || "relaxing"));
-                          return p ? (language === "Tagalog" ? p.nameTl : p.name) : (item.type || "—");
-                        })();
-                        return (
-                          <div key={index} style={{
-                            display: 'flex',
-                            borderBottom: '1px solid #667eea',
-                          }}>
-                            <div style={styles.tableCell}>{item.date}</div>
-                            <div style={styles.tableCell}>{item.time}</div>
-                            <div style={styles.tableCell}>{typeLabel}</div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div style={styles.emptyState}>
-                        <p>{t.noHistory}</p>
-                      </div>
-                    )}
+                <div className="card-header">
+                  <div className="icon-box" style={{ background: `${tech.color}15`, color: tech.color }}>
+                    {tech.icon}
                   </div>
+                  <span className="badge" style={{ background: '#f3f4f6', color: '#6b7280' }}>{tech.pattern}</span>
                 </div>
+                <div className="card-content">
+                  <h3>{language === 'Tagalog' ? tech.nameTl : tech.name}</h3>
+                  <p>{language === 'Tagalog' ? tech.descTl : tech.desc}</p>
+                </div>
+                {activeTechnique.id === tech.id && (
+                  <span className="badge" style={{ position: 'absolute', top: '20px', right: '20px', background: '#7c3aed', color: 'white' }}>ACTIVE</span>
+                )}
               </div>
-            )}
+            ))}
+          </div>
+        </section>
+
+        <section className="sidebar-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ margin: 0 }}>{t.recent}</h2>
+            <button onClick={() => setShowHistoryModal(true)} className="view-all-btn">{t.history}</button>
+          </div>
+          <div className="journey-list">
+            {history.length > 0 ? history.slice(0, 3).map((item, i) => (
+              <div key={i} className="journey-item">
+                <div className="journey-icon" style={{ background: '#ecfdf5', color: '#10b981' }}>
+                  {item.technique?.includes('Sleep') || item.technique?.includes('Rest') ? <Moon size={18} /> : <Cloud size={18} />}
+                </div>
+                <div className="journey-info">
+                  <span className="journey-name">{item.technique}</span>
+                  <span className="journey-meta">{item.date} • {item.duration}</span>
+                </div>
+                <span className="journey-badge">DEEP</span>
+              </div>
+            )) : <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{t.noSessions}</p>}
+          </div>
+        </section>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main className="breath-main">
+        <header className="main-header">
+          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>{t.title}</motion.h1>
+          <motion.p initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            {t.subtitle}
+          </motion.p>
+        </header>
+
+        <div className="circle-container">
+          <div className="outer-glow" />
+          <motion.div 
+            className="breathing-circle"
+            style={{ transform: `scale(${scale})` }}
+          >
+            {getStageDisplay()}
+          </motion.div>
+        </div>
+
+        <div className="stats-bar">
+          <div className="stat-item">
+            <Timer size={18} color="#9ca3af" /> 10:00
+          </div>
+          <div className="stat-item">
+            <Heart size={18} color="#ef4444" /> 72 BPM
           </div>
         </div>
-      </div>
+
+        <button 
+          className="start-btn" 
+          onClick={isBreathing ? stopSession : startSession}
+        >
+          {isBreathing ? t.stop : t.start}
+        </button>
+
+        <div className="customize-link">
+          <Settings2 size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+          Customize Technique
+        </div>
+      </main>
+
+      {/* ── HISTORY MODAL ── */}
+      <AnimatePresence>
+        {showHistoryModal && (
+          <ModalPortal>
+            <motion.div 
+              className="history-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistoryModal(false)}
+            >
+              <motion.div 
+                className="history-modal-content"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="modal-header">
+                  <h2>{t.history}</h2>
+                  <button className="close-modal" onClick={() => setShowHistoryModal(false)}>×</button>
+                </div>
+                <div className="history-table-wrapper">
+                  <table className="history-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Technique</th>
+                        <th>Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((log, i) => (
+                        <tr key={i}>
+                          <td>{new Date(log.timestamp).toLocaleDateString()}</td>
+                          <td>{log.technique}</td>
+                          <td>{log.duration}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
 
-const styles = {
-  tableHeaderCell: {
-    flex: 1,
-    padding: '12px',
-    textAlign: 'center',
-    fontSize: '16px',
-    color: 'white',
-  },
-  tableCell: {
-    flex: 1,
-    padding: '12px',
-    textAlign: 'center',
-    fontSize: '16px',
-  },
-  emptyState: {
-    padding: '30px',
-    textAlign: 'center',
-    color: '#999',
-    fontSize: '16px',
-  },
-};
-
-export default TakeABreath;
+export default TakeABreath;
