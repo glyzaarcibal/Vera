@@ -59,8 +59,9 @@ const Activities = () => {
       const avgSleepMinutes = recentSleep.length > 0 ? totalMinutes / recentSleep.length : 0;
       const avgSleepHours = parseFloat((avgSleepMinutes / 60).toFixed(1));
       
-      // Calculate Vitality Score (Mock logic for diversity/engagement)
-      const uniqueTypes = new Set(logs.map(a => a.activity_type)).size;
+      // Calculate Vitality Score (Robust logic for diversity/engagement)
+      const activityTypes = logs.map(a => (a.activity_type || a.activityType || "").toLowerCase()).filter(t => t !== "");
+      const uniqueTypes = new Set(activityTypes).size;
       const diversityScore = Math.min((uniqueTypes / 6) * 50, 50);
       const engagementScore = Math.min((logs.length / 10) * 50, 50);
       const vitality = Math.round(diversityScore + engagementScore);

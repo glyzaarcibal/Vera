@@ -39,7 +39,7 @@ axiosInstance.interceptors.response.use(
       store.dispatch(clearUser());
 
       // Redirect to login page
-      window.location.href = "/login";
+      window.location.href = "/";
     }
 
     return Promise.reject(error);

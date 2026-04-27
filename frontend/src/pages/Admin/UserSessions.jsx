@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./UserSessions.css";
-import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter } from "react-icons/md";
+import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter, MdAccountCircle } from "react-icons/md";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, PieChart, Pie } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -13,6 +13,7 @@ import SessionTable from "../../components/SessionTable";
 import ViewToggle from "../../components/ViewToggle";
 import FilterChips from "../../components/FilterChips";
 import ReusableModal from "../../components/ReusableModal";
+import Loader from "../../components/Loader";
 
 const UserSessions = () => {
   const { userId } = useParams();
@@ -483,10 +484,14 @@ const UserSessions = () => {
         }));
 
         const medList = activities.filter(a => a.activity_type === 'medication').map(a => ({
-          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: new Date(a.created_at).toLocaleDateString(), 
+          time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           name: a.data?.medicationName || a.data?.name || "Unknown Med",
           dosage: a.data?.dosage || "N/A",
-          status: a.data?.status || (a.data?.taken ? "Taken" : "Missed")
+          frequency: a.data?.frequency,
+          isMaintenance: a.data?.isMaintenance,
+          notes: a.data?.notes,
+          status: a.data?.status || (a.data?.taken === false ? "Missed" : "Taken")
         }));
 
         setDetailedActivities({ mood: moodList, sleep: sleepList, diary: diaryList, breath: breathList, medication: medList });
@@ -794,10 +799,7 @@ const UserSessions = () => {
               </button>
             )}
             {reportsLoading && (
-              <div className="flex items-center gap-3 text-indigo-600 font-black text-[11px] animate-pulse bg-indigo-50/50 px-6 py-4 rounded-2xl border border-indigo-100/50 shadow-sm">
-                <div className="w-2 h-2 bg-indigo-600 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)]"></div>
-                SYSTEM ANALYZING DATA...
-              </div>
+              <Loader text="SYSTEM ANALYZING DATA..." />
             )}
           </div>
         </div>
@@ -832,11 +834,17 @@ const UserSessions = () => {
             </div>
           ) : userInfo ? (
             <div className="flex items-center gap-6">
-              <img
-                src={userInfo.avatar_url || "https://via.placeholder.com/80"}
-                alt={userInfo.username}
-                className="w-20 h-20 rounded-full object-cover border-[3px] border-indigo-50 shadow-sm"
-              />
+              {userInfo.avatar_url ? (
+                <img
+                  src={userInfo.avatar_url}
+                  alt={userInfo.username}
+                  className="w-20 h-20 rounded-full object-cover border-[3px] border-indigo-50 shadow-sm"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center border-[3px] border-white shadow-sm text-indigo-200">
+                  <MdAccountCircle size={60} />
+                </div>
+              )}
               <div className="flex-1">
                 <h2 className="section-title mb-1">
                   {userInfo.username || userInfo.email}
@@ -1252,12 +1260,46 @@ const UserSessions = () => {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {detailedActivities.medication.map((med, idx) => (
-                          <div key={idx} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center shadow-sm hover:shadow-md transition-all">
-                            <div>
-                              <h5 className="font-bold text-gray-800 text-lg mb-1">{med.name}</h5>
-                              <p className="text-xs text-gray-500 font-medium">Dosage: {med.dosage} â€¢ Time: <span className="text-blue-600">{med.time}</span> â€¢ {med.date}</p>
+                          <div key={idx} className="p-5 border-2 border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center">
+                                  <span className="text-xl">💊</span>
+                                </div>
+                                <div>
+                                  <h5 className="font-bold text-gray-800 text-lg">{med.name}</h5>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">{med.dosage}</span>
+                                    {med.isMaintenance && (
+                                      <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded-full border border-green-100">MAINTENANCE</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-full shadow-sm ${med.status.toLowerCase() === 'taken' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>{med.status}</span>
                             </div>
-                            <span className={`px-4 py-1.5 text-xs font-bold rounded-full ${med.status.toLowerCase() === 'taken' ? 'bg-green-100 text-green-700 ring-1 ring-green-300' : 'bg-red-100 text-red-700 ring-1 ring-red-300'}`}>{med.status}</span>
+                            
+                            <div className="space-y-3 mt-4 pt-4 border-t border-gray-50">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Time Logged</span>
+                                  <span className="text-sm font-semibold text-gray-700">{med.time} • {med.date}</span>
+                                </div>
+                                {med.frequency && (
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Frequency</span>
+                                    <span className="text-sm font-semibold text-gray-700">{med.frequency}</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {med.notes && (
+                                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Notes for Psychiatrist</span>
+                                  <p className="text-xs text-slate-600 leading-relaxed italic">"{med.notes}"</p>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

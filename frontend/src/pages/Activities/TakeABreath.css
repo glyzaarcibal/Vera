@@ -1,21 +1,21 @@
 .breath-container {
-  min-height: 100vh;
+  height: calc(100vh - 72px);
   background: #f8f9fc;
   display: grid;
   grid-template-columns: 350px 1fr;
   font-family: 'Inter', -apple-system, sans-serif;
   color: #1f2937;
+  overflow: hidden;
 }
 
 /* ── SIDEBAR ── */
 .breath-sidebar {
   background: white;
-  padding: 40px 30px;
+  padding: 30px;
   border-right: 1px solid #f1f5f9;
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
-  position: sticky;
-  top: 0;
+  position: relative;
 }
 
 .sidebar-section {
@@ -147,17 +147,19 @@
 
 /* ── MAIN CONTENT ── */
 .breath-main {
-  padding: 60px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .main-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
 }
 
 .main-header h1 {
@@ -174,12 +176,12 @@
 
 .circle-container {
   position: relative;
-  width: 400px;
-  height: 400px;
+  width: 320px;
+  height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
 }
 
 .outer-glow {
@@ -191,8 +193,8 @@
 }
 
 .breathing-circle {
-  width: 280px;
-  height: 280px;
+  width: 240px;
+  height: 240px;
   border-radius: 50%;
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   display: flex;
@@ -357,6 +359,8 @@
   font-size: 0.85rem;
   cursor: pointer;
 }
+
+
 
 @media (max-width: 1100px) {
   .breath-container {
