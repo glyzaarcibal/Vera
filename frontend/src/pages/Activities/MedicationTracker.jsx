@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance";
 import { useSelector, useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
+import { 
+  Pill, Clock, Calendar, Star, Download, Plus, Trash2, 
+  Heart, History, MessageSquare, CheckCircle, ArrowLeft, X 
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import ModalPortal from "../../components/ModalPortal";
+import "./MedicationTracker.css";
 
 const MedicationTracker = () => {
     const navigate = useNavigate();
@@ -13,9 +22,16 @@ const MedicationTracker = () => {
 
     const [medicationName, setMedicationName] = useState("");
     const [dosage, setDosage] = useState("");
-    const [time, setTime] = useState("");
+    const [frequency, setFrequency] = useState("Once daily");
+    const [isMaintenance, setIsMaintenance] = useState(false);
+    const [notes, setNotes] = useState("");
+    const [category, setCategory] = useState("Psychiatric Medication");
     const [history, setHistory] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [reason, setReason] = useState("Course Complete");
+    const [efficacy, setEfficacy] = useState(3);
+    const [showLogModal, setShowLogModal] = useState(false);
+    const [showAllMaintenance, setShowAllMaintenance] = useState(false);
 
     useEffect(() => {
         if (userId) {
@@ -51,9 +67,15 @@ const MedicationTracker = () => {
         const newEntry = {
             name: medicationName,
             dosage,
-            time,
+            frequency,
+            isMaintenance,
+            notes,
+            category,
+            startedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             timestamp: new Date().toISOString(),
-            date: new Date().toLocaleDateString(),
+            status: isMaintenance ? "Taken" : "Completed",
+            reason: isMaintenance ? null : reason,
+            efficacy: isMaintenance ? null : efficacy
         };
 
         try {
@@ -69,11 +91,15 @@ const MedicationTracker = () => {
 
             setMedicationName("");
             setDosage("");
-            setTime("");
+            setFrequency("Once daily");
+            setIsMaintenance(false);
+            setNotes("");
+            setShowLogModal(false);
+            setReason("Course Complete");
+            setEfficacy(3);
             loadHistory();
         } catch (error) {
             console.error("Failed to save medication", error);
-            alert("Failed to save medication entry.");
         } finally {
             setIsLoading(false);
         }
@@ -81,177 +107,356 @@ const MedicationTracker = () => {
 
     const deleteEntry = async (id) => {
         if (window.confirm("Are you sure you want to delete this entry?")) {
-            // Logic for deleting activity would go here if backend supports it
-            // For now we just filter locally to provide feedback
             setHistory(history.filter(item => item.id !== id));
         }
     };
 
+    const handleExportPDF = () => {
+        const doc = new jsPDF();
+        const timestamp = new Date().toLocaleString();
+
+        // Title & Header
+        doc.setFontSize(22);
+        doc.setTextColor(124, 58, 237); // Purple theme
+        doc.text("V.E.R.A. Medication Report", 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Patient: ${user?.username || user?.email}`, 14, 30);
+        doc.text(`Generated on: ${timestamp}`, 14, 35);
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(241, 245, 249);
+        doc.line(14, 40, 196, 40);
+
+        // Maintenance Section
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Current Maintenance Medications", 14, 50);
+
+        const maintenanceData = maintenance.map(m => [
+            m.name,
+            m.dosage,
+            m.frequency,
+            m.category || "General",
+            m.startedDate || "N/A"
+        ]);
+
+        autoTable(doc, {
+            startY: 55,
+            head: [['Medication', 'Dosage', 'Frequency', 'Category', 'Started']],
+            body: maintenanceData.length > 0 ? maintenanceData : [['No active maintenance medications', '', '', '', '']],
+            headStyles: { fillStyle: 'fill', fillColor: [124, 58, 237], textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [250, 250, 255] },
+            margin: { left: 14, right: 14 }
+        });
+
+        // Historical Records Section
+        const finalY = doc.lastAutoTable.finalY || 100;
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Historical Records", 14, finalY + 15);
+
+        const historicalData = pastRecords.map(m => [
+            m.name,
+            m.dosage,
+            m.frequency || "N/A",
+            m.reason || "Course Complete",
+            `${m.efficacy || 3}/5 Stars`
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 20,
+            head: [['Medication', 'Dosage', 'Frequency', 'Reason for Stopping', 'Efficacy']],
+            body: historicalData.length > 0 ? historicalData : [['No historical records found', '', '', '', '']],
+            headStyles: { fillStyle: 'fill', fillColor: [100, 116, 139], textColor: [255, 255, 255] },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            margin: { left: 14, right: 14 }
+        });
+
+        // Footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text(`Page ${i} of ${pageCount} - V.E.R.A. Digital Sanctuary`, 105, 285, { align: "center" });
+        }
+
+        doc.save(`VERA_Medication_Report_${user?.username || 'User'}.pdf`);
+    };
+
+    const maintenance = history.filter(item => item.isMaintenance);
+    const pastRecords = history.filter(item => !item.isMaintenance);
+
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: "linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)",
-                padding: "20px",
-                fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
-            }}
-        >
-            <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-                {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "30px" }}>
-                    <button
-                        onClick={() => navigate(-1)}
-                        style={{
-                            background: "white",
-                            border: "none",
-                            width: "45px",
-                            height: "45px",
-                            borderRadius: "50%",
-                            cursor: "pointer",
-                            fontSize: "24px",
-                            boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
-                        }}
-                    >
-                        ←
-                    </button>
-                    <h1 style={{
-                        fontSize: "32px",
-                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        margin: 0,
-                        fontWeight: "bold",
-                    }}>
-                        Medication History 💊
-                    </h1>
-                </div>
+        <div className="med-container">
+            <div className="med-content">
+                
+                {/* ── HEADER ── */}
+                <header className="med-header">
+                    <div className="review-badge">
+                        <CheckCircle size={14} />
+                        PSYCHIATRIST REVIEW: SYNCHRONIZED
+                        <span className="last-update">Last update: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
 
-                {/* Input Form */}
-                <div style={{
-                    background: "white",
-                    padding: "30px",
-                    borderRadius: "20px",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-                    marginBottom: "30px",
-                }}>
-                    <h2 style={{ fontSize: "20px", marginBottom: "20px", color: "#333" }}>Log Medication</h2>
-                    <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                        <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-                            <div style={{ flex: 1, minWidth: "200px" }}>
-                                <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", color: "#666" }}>Medication Name</label>
-                                <input
-                                    type="text"
-                                    value={medicationName}
-                                    onChange={(e) => setMedicationName(e.target.value)}
-                                    placeholder="e.g. Paracetamol"
-                                    style={{
-                                        width: "100%",
-                                        padding: "12px",
-                                        borderRadius: "10px",
-                                        border: "1px solid #ddd",
-                                    }}
-                                    required
-                                />
-                            </div>
-                            <div style={{ flex: 1, minWidth: "150px" }}>
-                                <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", color: "#666" }}>Dosage</label>
-                                <input
-                                    type="text"
-                                    value={dosage}
-                                    onChange={(e) => setDosage(e.target.value)}
-                                    placeholder="e.g. 500mg"
-                                    style={{
-                                        width: "100%",
-                                        padding: "12px",
-                                        borderRadius: "10px",
-                                        border: "1px solid #ddd",
-                                    }}
-                                />
-                            </div>
-                            <div style={{ flex: 1, minWidth: "150px" }}>
-                                <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", color: "#666" }}>Time Taken</label>
-                                <input
-                                    type="time"
-                                    value={time}
-                                    onChange={(e) => setTime(e.target.value)}
-                                    style={{
-                                        width: "100%",
-                                        padding: "12px",
-                                        borderRadius: "10px",
-                                        border: "1px solid #ddd",
-                                    }}
-                                />
-                            </div>
+                    <div className="med-title-row">
+                        <div>
+                            <h1>Medication <span className="text-purple">History</span></h1>
+                            <p className="med-subtitle">
+                                A comprehensive narrative of your therapeutic journey, maintained for 
+                                clinical precision and personal clarity.
+                            </p>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={isLoading || !medicationName}
-                            style={{
-                                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                color: "white",
-                                border: "none",
-                                padding: "15px",
-                                borderRadius: "10px",
-                                fontSize: "16px",
-                                fontWeight: "bold",
-                                cursor: "pointer",
-                                marginTop: "10px",
-                                boxShadow: "0 5px 15px rgba(102, 126, 234, 0.3)",
-                            }}
-                        >
-                            {isLoading ? "Saving..." : "Add to History"}
-                        </button>
-                    </form>
-                </div>
+                        <div className="med-actions">
+                            <button className="btn-export" onClick={handleExportPDF}>
+                                <Download size={18} /> Export PDF
+                            </button>
+                            <button className="btn-log" onClick={() => setShowLogModal(true)}>
+                                <Plus size={18} /> Log New Medication
+                            </button>
+                        </div>
+                    </div>
+                </header>
 
-                {/* History List */}
-                <div style={{
-                    background: "white",
-                    padding: "30px",
-                    borderRadius: "20px",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-                }}>
-                    <h2 style={{ fontSize: "20px", marginBottom: "20px", color: "#333" }}>Past Entries</h2>
-                    {history.length === 0 ? (
-                        <p style={{ textAlign: "center", color: "#999", fontStyle: "italic" }}>No medication history found.</p>
-                    ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                            {history.map((item) => (
-                                <div key={item.id} style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    padding: "15px",
-                                    background: "#f8f9fa",
-                                    borderRadius: "12px",
-                                    borderLeft: "4px solid #667eea",
-                                }}>
-                                    <div>
-                                        <h3 style={{ margin: "0 0 5px 0", fontSize: "16px", color: "#333" }}>{item.name}</h3>
-                                        <p style={{ margin: 0, fontSize: "14px", color: "#666" }}>
-                                            {item.dosage} {item.time && `at ${item.time}`}
-                                        </p>
-                                        <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#999" }}>
-                                            {item.date || new Date(item.timestamp).toLocaleDateString()}
-                                        </p>
+                {/* ── CURRENT MAINTENANCE ── */}
+                <section className="med-section">
+                    <div className="section-title">
+                        <div className="section-icon"><Heart size={18} /></div>
+                        Current Maintenance
+                    </div>
+                    <div className="maintenance-grid">
+                        {(showAllMaintenance ? maintenance : maintenance.slice(0, 3)).map((med) => (
+                            <motion.div 
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                key={med.id} 
+                                className="med-card"
+                            >
+                                <div className="card-header">
+                                    <div className="med-info">
+                                        <h3>{med.name}</h3>
+                                        <div className="med-category">{med.category || "General"}</div>
                                     </div>
-                                    <button
-                                        onClick={() => deleteEntry(item.id)}
-                                        style={{
-                                            background: "none",
-                                            border: "none",
-                                            color: "#ff6b6b",
-                                            cursor: "pointer",
-                                            fontSize: "18px",
-                                        }}
-                                    >
-                                        🗑️
-                                    </button>
+                                    <div className="card-icon"><Pill size={20} /></div>
                                 </div>
-                            ))}
+                                <div className="card-details">
+                                    <div className="detail-item">
+                                        <label>Dosage</label>
+                                        <p>{med.dosage || "Not specified"}</p>
+                                    </div>
+                                    <div className="detail-item">
+                                        <label>Started</label>
+                                        <p>{med.startedDate || "Recently"}</p>
+                                    </div>
+                                </div>
+                                <div className="card-footer">
+                                    <div className="status-dot" />
+                                    <span>Optimal Efficacy Reported</span>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                    {maintenance.length > 3 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+                            <button 
+                                className="btn-view-all" 
+                                onClick={() => setShowAllMaintenance(!showAllMaintenance)}
+                                style={{
+                                    background: 'rgba(124, 58, 237, 0.05)',
+                                    color: '#7c3aed',
+                                    border: '1px solid rgba(124, 58, 237, 0.2)',
+                                    padding: '8px 20px',
+                                    borderRadius: '100px',
+                                    fontSize: '13px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {showAllMaintenance ? "Show Less" : `See All History (${maintenance.length})`}
+                            </button>
                         </div>
                     )}
-                </div>
+                </section>
+
+                {/* ── HISTORICAL RECORDS ── */}
+                <section className="med-section">
+                    <div className="section-title">
+                        <div className="section-icon"><History size={18} /></div>
+                        Historical Records
+                    </div>
+                    <div className="table-container">
+                        <table className="med-table">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Frequency</th>
+                                    <th>Reason for Stopping</th>
+                                    <th>Efficacy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pastRecords.length > 0 ? pastRecords.map((med) => (
+                                    <tr key={med.id}>
+                                        <td>
+                                            <div className="name-cell">
+                                                <h4>{med.name}</h4>
+                                                <p>{med.dosage}</p>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="period-cell">{med.frequency || "N/A"}</div>
+                                        </td>
+                                        <td>
+                                            <span className={`reason-badge ${med.reason === 'Side Effects' ? 'reason-side-effects' : 'reason-complete'}`}>
+                                                {med.reason || "Course Complete"}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div className="efficacy-stars">
+                                                {[...Array(med.efficacy || 3)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', fontStyle: 'italic', padding: '40px' }}>
+                                            No historical records found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {/* ── LOG ENTRY MODAL ── */}
+                <AnimatePresence>
+                    {showLogModal && (
+                        <ModalPortal>
+                            <motion.div 
+                                className="med-modal-overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowLogModal(false)}
+                            >
+                                <motion.div 
+                                    className="med-modal-content"
+                                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div className="modal-header">
+                                        <h2>Log Medication Entry</h2>
+                                        <button className="modal-close" onClick={() => setShowLogModal(false)}><X /></button>
+                                    </div>
+                                    <form onSubmit={handleSave}>
+                                        <div className="form-grid">
+                                            <div className="form-left">
+                                                <div className="input-group">
+                                                    <label>Medication Name</label>
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="e.g. Sertraline" 
+                                                        value={medicationName}
+                                                        onChange={(e) => setMedicationName(e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="input-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                                    <div>
+                                                        <label>Dosage</label>
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="e.g. 50mg" 
+                                                            value={dosage}
+                                                            onChange={(e) => setDosage(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label>Frequency</label>
+                                                        <select value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+                                                            <option>Once daily</option>
+                                                            <option>Twice daily</option>
+                                                            <option>Three times daily</option>
+                                                            <option>As needed (PRN)</option>
+                                                            <option>At bedtime</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                 <div className="input-group">
+                                                    <label className="checkbox-group">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={isMaintenance}
+                                                            onChange={(e) => setIsMaintenance(e.target.checked)}
+                                                        />
+                                                        Mark as Current Maintenance
+                                                    </label>
+                                                </div>
+
+                                                {!isMaintenance && (
+                                                    <motion.div 
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        className="historical-fields"
+                                                        style={{ marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}
+                                                    >
+                                                        <div className="input-group" style={{ marginBottom: '20px' }}>
+                                                            <label>Reason for Stopping</label>
+                                                            <select value={reason} onChange={(e) => setReason(e.target.value)}>
+                                                                <option>Course Complete</option>
+                                                                <option>Side Effects</option>
+                                                                <option>Lack of Efficacy</option>
+                                                                <option>Financial Reasons</option>
+                                                                <option>Psychiatrist Advice</option>
+                                                                <option>Switched Medication</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="input-group">
+                                                            <label>Treatment Efficacy (1-5 Stars)</label>
+                                                            <div className="efficacy-selector" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                                    <Star 
+                                                                        key={star}
+                                                                        size={24}
+                                                                        onClick={() => setEfficacy(star)}
+                                                                        style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                        fill={star <= efficacy ? "#7c3aed" : "none"}
+                                                                        stroke={star <= efficacy ? "#7c3aed" : "#cbd5e1"}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                            <div className="form-right">
+                                                <div className="input-group">
+                                                    <label>Notes for your psychiatrist</label>
+                                                    <textarea 
+                                                        rows="6" 
+                                                        placeholder="Share specific observations with Dr. Thorne..."
+                                                        value={notes}
+                                                        onChange={(e) => setNotes(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button className="btn-submit" type="submit" disabled={isLoading || !medicationName}>
+                                            {isLoading ? "Saving..." : "Save to History"}
+                                        </button>
+                                    </form>
+                                </motion.div>
+                            </motion.div>
+                        </ModalPortal>
+                    )}
+                </AnimatePresence>
+
             </div>
         </div>
     );

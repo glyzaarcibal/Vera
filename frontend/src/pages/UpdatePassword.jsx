@@ -40,7 +40,7 @@ const UpdatePassword = () => {
       });
       console.log(res);
       alert("Password updated successfully!");
-      navigate("/login");
+      navigate("/");
     } catch (e) {
       alert(e.response?.data?.message || "Internal Server Error");
     }

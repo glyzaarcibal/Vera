@@ -9,6 +9,7 @@ import mobileScanImg from "../assets/mobile-scan.jpg";
 import voiceWaveImg from "../assets/voice-wave.png";
 import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
+import Loader from "../components/Loader";
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
 const Arrow = ({ className }) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
@@ -119,8 +120,14 @@ const Welcome = () => {
 
   const fetchData = async () => { 
     setLoading(true); 
-    await fetchResources(); 
-    if (user?.id) await fetchAssignedResources(); 
+    // Wait for at least 10 seconds AND for data to load
+    const dataPromise = Promise.all([
+      fetchResources(),
+      user?.id ? fetchAssignedResources() : Promise.resolve()
+    ]);
+    const timerPromise = new Promise(resolve => setTimeout(resolve, 10000));
+    
+    await Promise.all([dataPromise, timerPromise]);
     setLoading(false); 
   };
 
@@ -184,12 +191,7 @@ const Welcome = () => {
     }
   };
 
-  if (loading) return (
-    <div className="v-loading">
-      <div className="v-spinner" />
-      <p className="v-loading-text">ENTERING SANCTUARY...</p>
-    </div>
-  );
+  if (loading) return <Loader />;
 
   return (
     <div className="v-welcome-page">

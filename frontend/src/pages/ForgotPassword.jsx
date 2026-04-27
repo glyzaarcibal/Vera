@@ -51,7 +51,7 @@ const ForgotPassword = () => {
 
             <p className="auth-footer-text">
               Remember your password?{" "}
-              <Link to="/login" className="auth-link">
+              <Link to="/" className="auth-link">
                 Sign in
               </Link>
             </p>
@@ -66,7 +66,7 @@ const ForgotPassword = () => {
             <p className="auth-success-text">
               We've sent a password reset link to <strong>{email}</strong>
             </p>
-            <Link to="/login" style={{ width: '100%' }}>
+            <Link to="/" style={{ width: '100%' }}>
               <button className="auth-btn" style={{ width: '100%' }}>
                 Back to login
               </button>

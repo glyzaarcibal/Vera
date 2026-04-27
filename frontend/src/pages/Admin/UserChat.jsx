@@ -378,45 +378,6 @@ const UserChat = () => {
                           <p className="text-sm leading-relaxed">
                             {message.content || "(No content)"}
                           </p>
-                          
-                          {/* ── Suggested Activity Cards ── */}
-                          {message.sent_by !== "user" && (() => {
-                            const detectActivity = (text) => {
-                              if (!text) return [];
-                              const textLower = text.toLowerCase();
-                              const activities = [
-                                { name: 'Take a Breath', path: '/activities/take-a-breath', icon: '🌬️', desc: 'Guided breathing exercise for quick relaxation', keywords: ['take a breath', 'breathing exercise', 'breathe deeply', 'inhale slowly', 'deep breath', 'exhale'] },
-                                { name: 'Diary', path: '/activities/diary', icon: '📓', desc: 'Write and track your daily thoughts', keywords: ['diary', 'journal', 'write your thoughts', 'writing down', 'write down your feelings'] },
-                                { name: 'Mood Tracker', path: '/activities/mood-tracker', icon: '😊', desc: 'Track and monitor your mood', keywords: ['mood tracker', 'track your mood', 'monitor your mood', 'log your mood'] },
-                                { name: 'Sleep Tracker', path: '/activities/sleep-tracker', icon: '😴', desc: 'Monitor your sleep patterns', keywords: ['sleep tracker', 'track your sleep', 'monitor your sleep', 'sleep log'] },
-                                { name: 'Clipcard Game', path: '/activities/clipcard', icon: '🎮', desc: 'Test your memory with matching cards', keywords: ['clipcard game', 'memory game', 'matching cards', 'play a game', 'distract yourself'] },
-                                { name: 'Weekly Wellness Report', path: '/activities/weekly-wellness-report', icon: '📊', desc: 'View your weekly insights', keywords: ['weekly wellness report', 'wellness report', 'weekly progress'] },
-                                { name: 'Medication History', path: '/activities/medication-history', icon: '💊', desc: 'Log and track medication', keywords: ['medication history', 'track medication', 'log medication', 'medication reminder'] },
-                              ];
-                              return activities.filter(act => act.keywords.some(kw => textLower.includes(kw)));
-                            };
-
-                            const matchedActivities = detectActivity(message.content);
-                            if (matchedActivities.length === 0) return null;
-
-                            return (
-                              <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-200">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 text-left">Suggested Activity</p>
-                                {matchedActivities.map((act, idx) => (
-                                  <div 
-                                    key={idx} 
-                                    className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm text-left"
-                                  >
-                                    <div className="text-2xl">{act.icon}</div>
-                                    <div className="flex flex-col flex-1">
-                                      <span className="font-bold text-gray-800 text-sm">{act.name}</span>
-                                      <span className="text-gray-500 text-xs">{act.desc}</span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
 
                         </div>
                         {hasEmotion && selectedEmotion === message.id && (
@@ -900,21 +861,42 @@ const UserChat = () => {
                       ) : medicationHistory.length === 0 ? (
                         <p className="text-xs text-gray-400 text-center py-2">No medication history recorded.</p>
                       ) : (
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                           {medicationHistory.map((item) => (
-                            <div key={item.id} className="p-3 bg-gray-50 rounded-lg border-l-4 border-indigo-400">
-                              <div className="flex justify-between items-start mb-1">
-                                <h4 className="text-sm font-bold text-gray-800">{item.name}</h4>
-                                <span className="text-[10px] text-gray-500 font-medium">
-                                  {formatDate(item.timestamp)}
+                            <div key={item.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 shadow-sm">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{item.medicationName || item.name}</h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{item.dosage}</span>
+                                    {item.isMaintenance && (
+                                      <span className="text-[9px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100 uppercase">Maintenance</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className={`text-[9px] font-black uppercase tracking-tighter px-2 py-1 rounded-full ${item.status?.toLowerCase() === 'taken' || (!item.status && item.taken !== false) ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                  {item.status || (item.taken === false ? "Missed" : "Taken")}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-600">
-                                {item.dosage} {item.time && `• Taken at ${item.time}`}
-                              </p>
-                              {item.date && item.date !== formatDate(item.timestamp) && (
-                                <p className="text-[10px] text-gray-400 mt-1">Logged for: {item.date}</p>
-                              )}
+
+                              <div className="mt-3 pt-3 border-t border-gray-200/50 space-y-2">
+                                <div className="flex justify-between items-center text-[10px]">
+                                  <span className="font-bold text-gray-400 uppercase">Log Time</span>
+                                  <span className="font-semibold text-gray-600">{formatDate(item.timestamp)}</span>
+                                </div>
+                                {item.frequency && (
+                                  <div className="flex justify-between items-center text-[10px]">
+                                    <span className="font-bold text-gray-400 uppercase">Frequency</span>
+                                    <span className="font-semibold text-gray-600">{item.frequency}</span>
+                                  </div>
+                                )}
+                                {item.notes && (
+                                  <div className="mt-2 p-2 bg-white rounded-lg border border-gray-100 italic">
+                                    <span className="block text-[9px] font-black text-gray-400 uppercase mb-1">Notes</span>
+                                    <p className="text-[10px] text-gray-500 leading-snug">"{item.notes}"</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

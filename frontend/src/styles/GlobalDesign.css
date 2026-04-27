@@ -13,6 +13,13 @@
     --border-radius-lg: 24px;
     --border-radius-md: 16px;
     --border-color: rgba(226, 232, 240, 0.8);
+    --font-main: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    font-family: var(--font-main);
+    color: var(--text-main);
+    background-color: #fafafa;
 }
 
 .page-container {

@@ -27,7 +27,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const handleLogout = () => {
     dispatch(clearUser());
     if (onClose) onClose();
-    navigate("/login");
+    navigate("/");
   };
 
   // Close sidebar when clicking links on mobile

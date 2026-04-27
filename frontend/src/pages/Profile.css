@@ -1,5 +1,4 @@
-/* Profile Page Styles — V.E.R.A. Theme */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --app-bg: #EAE6F9;
@@ -19,7 +18,7 @@
   margin: 0 auto;
   min-height: calc(100vh - 76px);
   padding: 10px 24px 10px;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--text-dark);
   display: flex;
   gap: 30px;
@@ -87,7 +86,7 @@
 .profile-info-title {
   display: flex;
   align-items: center;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
   color: var(--text-dark);
   white-space: nowrap;
@@ -108,7 +107,7 @@
 }
 
 .sidebar-label {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
   font-weight: 400;
   color: var(--text-dark);
@@ -121,7 +120,7 @@
   padding: 0 8px;
   display: flex;
   align-items: center;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
   color: var(--text-dark);
 }
@@ -132,7 +131,7 @@
   border: 1px solid var(--border-light);
   border-radius: 6px;
   padding: 0 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
   color: var(--text-dark);
   outline: none;
@@ -177,7 +176,7 @@
   border: none;
   border-radius: 6px;
   padding: 8px 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -212,7 +211,7 @@
 }
 
 .profile-name {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 42px;
   color: var(--text-purple);
   margin: 0;
@@ -232,7 +231,7 @@
 }
 
 .ps-title {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
   font-weight: 700;
   color: #9CA3AF;
@@ -241,7 +240,7 @@
 }
 
 .ps-toggles {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   display: flex;
   gap: 12px;
   font-size: 11px;
@@ -266,7 +265,7 @@
   background: none;
   border: none;
   padding: 6px 0;
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
   color: var(--text-dark);
   cursor: pointer;
@@ -303,7 +302,7 @@
 }
 
 .content-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 28px;
   color: var(--text-purple);
   margin: 0 0 16px 0;
@@ -320,7 +319,7 @@
 }
 
 .privacy-card-header {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
   color: var(--text-dark);
   margin-bottom: 12px;
@@ -334,7 +333,7 @@
 }
 
 .privacy-card-body p {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   color: var(--text-dark);
   line-height: 1.5;
@@ -356,6 +355,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 440px; /* Limit visibility to approx 6 items */
   overflow-y: auto;
   padding-right: 8px;
   scrollbar-width: thin;
@@ -400,7 +400,7 @@
 .badge-new {
   padding: 4px 12px;
   border-radius: 999px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: white;
@@ -440,7 +440,7 @@
 }
 
 .session-date-new {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 10px;
   color: var(--text-dark);
 }
@@ -461,13 +461,13 @@
 }
 
 .session-detail-date {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
   color: var(--text-dark);
 }
 
 .session-detail-summary {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11px;
   color: var(--text-dark);
   line-height: 1.5;
@@ -478,7 +478,7 @@
 .session-detail-summary-title {
   font-weight: 700;
   margin-bottom: 4px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .conversation-box-new {
@@ -495,7 +495,7 @@
 }
 
 .conversation-title-new {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-dark);
@@ -518,7 +518,7 @@
   max-width: 80%;
   padding: 10px 14px;
   border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11px;
   line-height: 1.4;
 }
@@ -537,7 +537,7 @@
 }
 
 .msg-sender-new {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 9px;
   font-weight: 700;
   margin-bottom: 4px;
@@ -545,7 +545,7 @@
 }
 
 .msg-time-new {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 8px;
   text-align: right;
   margin-top: 4px;
@@ -569,7 +569,7 @@
   padding: 10px 16px;
   border-radius: 8px;
   margin-bottom: 16px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
 }
@@ -588,7 +588,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--text-purple);
 }
 
@@ -667,9 +667,9 @@
 }
 
 .sidebar-safety-note h4 {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .sidebar-safety-note p {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }

@@ -155,7 +155,7 @@ const Diary = () => {
           <span style={{ fontSize: "60px", display: "block", marginBottom: "20px" }}>🔒</span>
           <h2 style={{ color: "#7c3aed", marginBottom: "15px" }}>Privacy Required</h2>
           <p style={{ color: "#6b7280", marginBottom: "25px" }}>Your Serenity Jar is a private sanctuary. Please log in to view your memories.</p>
-          <button className="drop-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate("/login")}>
+          <button className="drop-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate("/")}>
             Log In Now
           </button>
         </div>

@@ -25,7 +25,7 @@ const CheckEmail = () => {
                 <div style={{ marginTop: "30px" }}>
                     <p className="auth-footer-text">
                         Verified?{" "}
-                        <Link to="/login" className="auth-link">
+                        <Link to="/" className="auth-link">
                             Sign in
                         </Link>
                     </p>

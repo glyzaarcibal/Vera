@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutGrid, Wind, Moon, Sun, Heart, Timer, ArrowLeft, Settings2, Sparkles, Cloud } from "lucide-react";
+import { LayoutGrid, Wind, Moon, Sun, Timer, ArrowLeft, Sparkles, Cloud } from "lucide-react";
 import axiosInstance from "../../utils/axios.instance";
 
 import "./TakeABreath.css";
@@ -113,10 +113,13 @@ const TakeABreath = () => {
   const [stage, setStage] = useState("idle"); // idle, getReady, inhale, hold, exhale, holdAfter
   const [countdown, setCountdown] = useState(0);
   const [scale, setScale] = useState(1);
+  const [stageDuration, setStageDuration] = useState(0);
   const [history, setHistory] = useState([]);
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [language, setLanguage] = useState("English");
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   
   const audioRefs = useRef({});
   const animationRef = useRef(null);
@@ -136,7 +139,27 @@ const TakeABreath = () => {
       stopSession();
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [language]);
+
+  // Timer simulation
+  useEffect(() => {
+    let interval;
+    if (isBreathing && stage !== "idle" && stage !== "getReady") {
+      interval = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+        setCountdown(prev => Math.max(1, prev - 1));
+      }, 1000);
+    } else if (!isBreathing) {
+      setElapsedSeconds(0);
+    }
+    return () => clearInterval(interval);
+  }, [isBreathing, stage]);
+
+  const formatTime = (totalSeconds) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const loadHistory = async () => {
     if (!userId) return;
@@ -153,8 +176,9 @@ const TakeABreath = () => {
   };
 
   const preloadAudio = () => {
+    const lang = language.toLowerCase();
     Object.entries(AUDIO_SOURCES).forEach(([key, urls]) => {
-      audioRefs.current[key] = new Audio(urls.english);
+      audioRefs.current[key] = new Audio(urls[lang] || urls.english);
     });
   };
 
@@ -173,20 +197,28 @@ const TakeABreath = () => {
     setCountdown(3);
     setSessionStartTime(new Date());
     
+    // Play initial "Get ready"
     playAudio('getReady');
     
+    // Start countdown after a brief delay to allow "Get ready" to finish or start
+    // Or just start immediately if "Get ready" is short. 
+    // To be safe and ensure 3-2-1 visibility:
     timerRef.current = setTimeout(() => {
-      setCountdown(2);
-      playAudio('countdown2');
+      playAudio('countdown3');
+      // Already at 3
       timerRef.current = setTimeout(() => {
-        setCountdown(1);
-        playAudio('countdown1');
+        setCountdown(2);
+        playAudio('countdown2');
         timerRef.current = setTimeout(() => {
-          setCountdown(0);
-          runBreathingCycle();
+          setCountdown(1);
+          playAudio('countdown1');
+          timerRef.current = setTimeout(() => {
+            setCountdown(0);
+            runBreathingCycle();
+          }, 1000);
         }, 1000);
       }, 1000);
-    }, 1000);
+    }, 1000); 
   };
 
   const stopSession = () => {
@@ -212,20 +244,30 @@ const TakeABreath = () => {
       if (currentStage === "inhale") {
         playAudio("inhale");
         duration = activeTechnique.inhale;
-        animateScale(1.5, duration);
+        setStageDuration(duration);
+        setCountdown(duration / 1000);
+        setScale(1.3);
         currentStage = activeTechnique.hold > 0 ? "hold" : "exhale";
       } else if (currentStage === "hold") {
         playAudio("hold");
         duration = activeTechnique.hold;
+        setStageDuration(duration);
+        setCountdown(duration / 1000);
+        // keep scale at 1.3
         currentStage = "exhale";
       } else if (currentStage === "exhale") {
         playAudio("exhale");
         duration = activeTechnique.exhale;
-        animateScale(1, duration);
+        setStageDuration(duration);
+        setCountdown(duration / 1000);
+        setScale(1);
         currentStage = activeTechnique.holdAfter > 0 ? "holdAfter" : "inhale";
       } else if (currentStage === "holdAfter") {
         playAudio("hold");
         duration = activeTechnique.holdAfter;
+        setStageDuration(duration);
+        setCountdown(duration / 1000);
+        // keep scale at 1
         currentStage = "inhale";
       }
       
@@ -235,40 +277,31 @@ const TakeABreath = () => {
     nextStep();
   };
 
-  const animateScale = (target, duration) => {
-    const start = scale;
-    const startTime = performance.now();
-    
-    const animate = (now) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      const currentScale = start + (target - start) * ease;
-      setScale(currentScale);
-      
-      if (progress < 1) animationRef.current = requestAnimationFrame(animate);
-    };
-    animationRef.current = requestAnimationFrame(animate);
-  };
+
 
   const saveHistory = async () => {
-    if (!userId || !sessionStartTime) return;
-    const durationMins = Math.round((new Date() - sessionStartTime) / 60000);
-    const newEntry = {
-      technique: activeTechnique.name,
-      duration: `${durationMins} mins`,
-      timestamp: new Date().toISOString(),
-      date: "Today"
-    };
-    
+    if (!userId || !sessionStartTime || isSaving) return;
     try {
+      setIsSaving(true);
+      const durationMins = Math.round((new Date() - sessionStartTime) / 60000);
+      const newEntry = {
+        technique: activeTechnique.name,
+        duration: `${durationMins} mins`,
+        timestamp: new Date().toISOString(),
+        date: "Today"
+      };
+      
       const res = await axiosInstance.post("/activities/save", {
         activityType: "breath",
         data: newEntry
       });
       if (res.data?.updatedTokens) dispatch(updateTokens(res.data.updatedTokens));
       loadHistory();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getStageDisplay = () => {
@@ -366,32 +399,32 @@ const TakeABreath = () => {
           <div className="outer-glow" />
           <motion.div 
             className="breathing-circle"
-            style={{ transform: `scale(${scale})` }}
+            animate={{ scale: scale }}
+            transition={{ 
+              duration: stageDuration / 1000, 
+              ease: "easeInOut" 
+            }}
           >
             {getStageDisplay()}
           </motion.div>
         </div>
 
         <div className="stats-bar">
-          <div className="stat-item">
-            <Timer size={18} color="#9ca3af" /> 10:00
-          </div>
-          <div className="stat-item">
-            <Heart size={18} color="#ef4444" /> 72 BPM
+          <div className="stat-item" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#7c3aed' }}>
+            <Timer size={20} color="#7c3aed" /> {countdown > 0 ? countdown : "0"}
           </div>
         </div>
 
         <button 
           className="start-btn" 
           onClick={isBreathing ? stopSession : startSession}
+          disabled={isSaving}
+          style={isSaving ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
         >
-          {isBreathing ? t.stop : t.start}
+          {isSaving ? "Saving..." : (isBreathing ? t.stop : t.start)}
         </button>
 
-        <div className="customize-link">
-          <Settings2 size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-          Customize Technique
-        </div>
+
       </main>
 
       {/* ── HISTORY MODAL ── */}

@@ -12,6 +12,7 @@ import {
   Line,
   Bar,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -108,24 +109,36 @@ const WeeklyWellnessReport = () => {
       5: "Very Happy",
     };
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const moodLogs = activities.filter(act => act.activity_type === "mood");
+    const moodLogs = activities.filter(act => 
+      (act.activity_type && act.activity_type.toLowerCase() === "mood") ||
+      (act.activityType && act.activityType.toLowerCase() === "mood")
+    );
+
     const counts = moodLogs.reduce((acc, log) => {
       const data = log.data || {};
-      const logDate = data.timestamp || log.created_at || data.date;
-
-      if (logDate && new Date(logDate) < sevenDaysAgo) {
-        return acc;
+      // Fallback for date: data.timestamp, then log.created_at, then data.date
+      const rawDate = data.timestamp || log.created_at || data.date;
+      
+      if (rawDate) {
+        const entryDate = new Date(rawDate);
+        // Only filter out if it's clearly older than 30 days and is a valid date
+        if (!isNaN(entryDate.getTime()) && entryDate < thirtyDaysAgo) {
+          return acc;
+        }
       }
 
-      const moodLabel =
+      let moodLabel =
         (typeof data.mood === "string" && data.mood) ||
         (data.mood && typeof data.mood === "object" && data.mood.mood) ||
         moodScoreMap[data.mood_score] ||
         data.moodEmoji ||
         "Unknown";
+      
+      // Ensure we don't have empty labels
+      if (!moodLabel || moodLabel === "") moodLabel = "Unknown";
 
       acc[moodLabel] = (acc[moodLabel] || 0) + 1;
       return acc;
@@ -304,7 +317,7 @@ const WeeklyWellnessReport = () => {
 
     doc.setFontSize(14);
     doc.setTextColor(51, 51, 51);
-    doc.text("Mood Distribution (Past 7 Days)", 14, 42);
+    doc.text("Mood Distribution (Past 30 Days)", 14, 42);
 
     const moodTableData = pieData.length
       ? pieData.map((item) => [sanitizePdfText(item.name), String(item.value)])
@@ -738,7 +751,7 @@ const WeeklyWellnessReport = () => {
         <div style={styles.cardsContainer}>
           {/* Mood Distribution Card */}
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>Mood Distribution (Past 7 Days)</h2>
+            <h2 style={styles.sectionTitle}>Mood Distribution (Past 30 Days)</h2>
             {pieData.length > 0 ? (
               <div style={{ ...styles.chartWrapper, height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -757,11 +770,51 @@ const WeeklyWellnessReport = () => {
                       ))}
                     </Pie>
                     <Tooltip />
+                    <Legend verticalAlign="bottom" height={36}/>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p style={styles.noData}>No mood data available for the past week.</p>
+              <p style={styles.noData}>No mood data available for the past 30 days.</p>
+            )}
+
+            {/* Mood Summary Table */}
+            {pieData.length > 0 && (
+              <div style={{ marginTop: '20px', padding: '0 20px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={styles.tableHeaderCell}>Mood</th>
+                      <th style={styles.tableHeaderCell}>Count</th>
+                      <th style={styles.tableHeaderCell}>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pieData.map((item, idx) => {
+                      const total = Object.values(moodCounts).reduce((a, b) => a + b, 0);
+                      const percentage = ((item.value / total) * 100).toFixed(1);
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={styles.tableCell}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ 
+                                display: 'inline-block', 
+                                width: '12px', 
+                                height: '12px', 
+                                backgroundColor: item.color, 
+                                borderRadius: '50%'
+                              }}></span>
+                              {item.name}
+                            </div>
+                          </td>
+                          <td style={styles.tableCell}>{item.value}</td>
+                          <td style={styles.tableCell}>{percentage}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 

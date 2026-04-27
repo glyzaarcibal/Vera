@@ -25,6 +25,7 @@ const SleepTracker = () => {
   const [showPicker, setShowPicker] = useState(null); // 'sleep' or 'wake'
   const [sleepData, setSleepData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -120,8 +121,9 @@ const SleepTracker = () => {
   };
 
   const saveSleepData = async () => {
-    if (!userId) return;
+    if (!userId || isSaving) return;
     try {
+      setIsSaving(true);
       const duration = calculateDuration();
       const newEntry = {
         date: selectedDate.toISOString().split('T')[0],
@@ -144,6 +146,8 @@ const SleepTracker = () => {
       loadSleepData();
     } catch (error) {
       console.error("Error saving sleep data:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -185,6 +189,13 @@ const SleepTracker = () => {
     return date.toDateString() === new Date().toDateString();
   };
 
+  const isFuture = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date > today;
+  };
+
   if (!user) {
     return (
       <div className="sleep-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -192,7 +203,7 @@ const SleepTracker = () => {
            <Moon size={48} color="#7c3aed" style={{ marginBottom: '20px' }} />
            <h2>Login Required</h2>
            <p style={{ color: '#6b7280', margin: '15px 0 25px' }}>Please log in to track your nocturnal recovery and wake up restored.</p>
-           <button className="save-btn" onClick={() => navigate("/login")}>Go to Login</button>
+           <button className="save-btn" onClick={() => navigate("/")}>Go to Login</button>
          </div>
       </div>
     );
@@ -246,8 +257,9 @@ const SleepTracker = () => {
                   d.day ? (
                     <button 
                       key={i} 
-                      className={`calendar-day ${isSelected(d.date) ? 'selected' : ''} ${isToday(d.date) ? 'today' : ''}`}
-                      onClick={() => setSelectedDate(d.date)}
+                      className={`calendar-day ${isSelected(d.date) ? 'selected' : ''} ${isToday(d.date) ? 'today' : ''} ${isFuture(d.date) ? 'future' : ''}`}
+                      onClick={() => !isFuture(d.date) && setSelectedDate(d.date)}
+                      disabled={isFuture(d.date)}
                     >
                       {d.day}
                     </button>
@@ -284,7 +296,14 @@ const SleepTracker = () => {
               <div className="status-badge">{getStatusBadge(hours * 60 + minutes)}</div>
             </div>
 
-            <button className="save-btn" onClick={saveSleepData}>Save Sleep Data</button>
+            <button 
+              className="save-btn" 
+              onClick={saveSleepData}
+              disabled={isSaving}
+              style={isSaving ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+            >
+              {isSaving ? "Saving..." : "Save Sleep Data"}
+            </button>
           </motion.div>
 
           {/* ── RIGHT: HISTORY & INSIGHTS ── */}

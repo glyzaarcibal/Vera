@@ -1,5 +1,4 @@
-/* AvatarAI Page Styles — V.E.R.A. Theme */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --vera-gradient: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #67e8f9 100%);
@@ -23,7 +22,7 @@
 /* ── Outer Wrapper ── */
 .avatarai-outer-container {
   width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: var(--vera-text);
 }
 
@@ -50,7 +49,7 @@
 }
 
 .avatarai-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: clamp(28px, 4vw, 46px);
   font-weight: 400;
   line-height: 1.1;
@@ -80,7 +79,8 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  margin-bottom: 24px;
+  margin: 0 auto 24px;
+  max-width: 1400px;
 }
 
 .avatarai-option {
@@ -178,7 +178,7 @@
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr);
   gap: 24px;
   align-items: start;
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -543,4 +543,86 @@
   .avatarai-agent-shell {
     max-height: 420px;
   }
+}
+
+/* ── Token Gate ── */
+.avatarai-token-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 40px;
+  max-width: 550px;
+  margin: 1rem auto 3rem;
+  box-shadow: 
+    0 20px 50px rgba(0, 0, 0, 0.05),
+    0 10px 20px rgba(124, 58, 237, 0.05);
+  animation: gateReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes gateReveal {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.avatarai-gate-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 15px 30px rgba(124, 58, 237, 0.3);
+  color: white;
+}
+
+.avatarai-gate-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.75rem;
+}
+
+.avatarai-gate-text {
+  font-size: 1.05rem;
+  color: #4a5568;
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.avatarai-gate-text strong {
+  color: #7c3aed;
+  font-weight: 800;
+}
+
+.avatarai-earn-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+}
+
+.avatarai-earn-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(124, 58, 237, 0.4);
 }
