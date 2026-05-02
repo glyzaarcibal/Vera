@@ -96,7 +96,7 @@ const PsychologySidebar = ({ isOpen, onClose }) => {
 
       <div className="sidebar-footer">
         {!collapsed && (
-          <div className="sidebar-user">
+          <div className="sidebar-user" onClick={() => navigate("/profile")} style={{ cursor: 'pointer' }}>
             <div className="sidebar-user-avatar">
               {user?.avatar_url ? (
                 <img src={user.avatar_url} alt="Profile" className="sidebar-profile-img" />

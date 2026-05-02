@@ -452,6 +452,10 @@
   overflow: hidden;
 }
 
+.session-mobile-toggle {
+  display: none;
+}
+
 .session-detail-header-row {
   display: flex;
   justify-content: space-between;
@@ -619,7 +623,31 @@
   }
 
   .sessions-layout-new {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .session-mobile-toggle {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: var(--text-purple);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .session-list-new {
+    width: 100%;
+    max-height: 300px;
   }
 }
 

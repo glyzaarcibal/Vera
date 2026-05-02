@@ -108,6 +108,13 @@
   padding: 8px;
   border-radius: 8px;
   background: #fafbfc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-user:hover {
+  background: #f0f0ff;
+  transform: translateY(-1px);
 }
 
 .sidebar-user-avatar {

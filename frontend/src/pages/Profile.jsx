@@ -41,6 +41,7 @@ const Profile = () => {
   const [sessionSortOrder, setSessionSortOrder] = useState("desc");
   const [sessionTypeFilter, setSessionTypeFilter] = useState("all");
   const [sessionRiskFilter, setSessionRiskFilter] = useState("all");
+  const [showSessionList, setShowSessionList] = useState(true);
 
   // Actions states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -352,10 +353,17 @@ const Profile = () => {
           </select>
         </div>
 
-        <div className="sessions-layout-new">
+        <div className={`sessions-layout-new ${showSessionList ? 'show-list' : 'show-detail'}`}>
+          {/* Mobile Toggle Button */}
+          <button 
+            className="session-mobile-toggle"
+            onClick={() => setShowSessionList(!showSessionList)}
+          >
+            {showSessionList ? "View Conversation" : "Back to Session List"}
+          </button>
           
           {/* List */}
-          <div className="session-list-new">
+          <div className={`session-list-new ${!showSessionList ? 'mobile-hidden' : ''}`}>
             {filteredSessions.length === 0 ? (
               <p style={{fontFamily:"'DM Sans', sans-serif", fontSize:"12px"}}>No sessions found.</p>
             ) : (
@@ -363,7 +371,10 @@ const Profile = () => {
                 <div
                   key={session.id}
                   className={`session-item-new ${selectedSession?.id === session.id ? 'active' : ''}`}
-                  onClick={() => setSelectedSession(session)}
+                  onClick={() => {
+                    setSelectedSession(session);
+                    if (window.innerWidth <= 768) setShowSessionList(false);
+                  }}
                 >
                   <div className="session-badges-new">
                     <span className={`badge-new ${session.type === 'text' ? 'text' : session.type === 'voice' ? 'voice' : 'avatar'}`}>
@@ -384,7 +395,7 @@ const Profile = () => {
           </div>
 
           {/* Details */}
-          <div className="session-detail-new">
+          <div className={`session-detail-new ${showSessionList ? 'mobile-hidden' : ''}`}>
             <h2 className="content-title" style={{marginBottom: "12px"}}>Session Details</h2>
             {selectedSession ? (
               <>

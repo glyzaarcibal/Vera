@@ -40,7 +40,6 @@ export async function generateResponse(message, conversationHistory = []) {
         const chatCompletion = await client.chatCompletion({
           model: model,
           messages,
-          provider: "hf-inference",
         });
 
         if (chatCompletion?.choices?.[0]?.message?.content) {
