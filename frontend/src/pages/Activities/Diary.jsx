@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Smile, Palette, Trash2, ArrowLeft, Book, Heart, Trees } from "lucide-react";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
+import TokenRewardModal from "../../components/TokenRewardModal";
 import jarImage from "../../assets/jar.png";
 
 import "./Diary.css";
@@ -28,6 +29,7 @@ const Diary = () => {
   const [selectedColor, setSelectedColor] = useState("#7C3AED");
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   const moods = [
     { label: "Calm", icon: "😌" },
@@ -86,6 +88,7 @@ const Diary = () => {
       
       if (res.data?.updatedTokens !== null) {
         dispatch(updateTokens(res.data.updatedTokens));
+        setShowRewardModal(true);
       }
       
       loadEntries();
@@ -378,6 +381,12 @@ const Diary = () => {
           </ModalPortal>
         )}
       </AnimatePresence>
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={5}
+        message="Your thoughts have been safely stored in your digital jar. Reflecting is a beautiful step towards growth!"
+      />
     </div>
   );
 };

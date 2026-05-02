@@ -23,15 +23,17 @@ const AdminLayout = () => {
 
       <main className="admin-content" style={{ position: "relative" }}>
         <header className="admin-mobile-header">
-          <button
-            className="admin-sidebar-toggle"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu size={24} />
-          </button>
-          <div className="admin-mobile-logo">
-            <span className="logo-icon">V</span>
-            <span className="logo-text">ADMIN</span>
+          <div className="mobile-header-left">
+            <button
+              className="admin-sidebar-toggle"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div className="admin-mobile-logo">
+              <span className="logo-icon">V</span>
+              <span className="logo-text">ADMIN</span>
+            </div>
           </div>
         </header>
 

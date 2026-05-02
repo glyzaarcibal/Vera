@@ -445,7 +445,7 @@ const WeeklyWellnessReport = () => {
     container: {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f0f4ff 0%, #faf5ff 35%, #fff0f9 65%, #f0f9ff 100%)',
-      padding: '20px',
+      padding: window.innerWidth <= 768 ? '10px' : '20px',
       fontFamily: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
       position: 'relative',
     },
@@ -664,23 +664,37 @@ const WeeklyWellnessReport = () => {
             padding: 10px;
           }
           .title {
-            font-size: 24px;
+            font-size: 22px !important;
           }
           .card {
-            padding: 15px;
+            padding: 16px !important;
+            border-radius: 16px !important;
           }
           .section-title {
             font-size: 18px;
+            margin-bottom: 12px !important;
           }
           .modal-content {
             padding: 20px;
             width: 95%;
           }
+          .chart-wrapper {
+            height: 250px !important;
+          }
         }
 
-        @media (max-width: 600px) {
-          .chart-container {
-            margin: 0 -10px;
+        @media (max-width: 480px) {
+          .title {
+            font-size: 18px !important;
+          }
+          .header-container {
+            padding: 12px !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+          .download-button {
+            width: 100% !important;
+            padding: 12px !important;
           }
         }
 

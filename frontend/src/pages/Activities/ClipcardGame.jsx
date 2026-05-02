@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import axiosInstance from "../../utils/axios.instance";
 import { motion, AnimatePresence } from "framer-motion";
+import TokenRewardModal from "../../components/TokenRewardModal";
 import veraIcon from "../../assets/icon.png";
 
 // ── Emotions Data ────────────────────────────────────────────────
@@ -110,6 +111,7 @@ const ClipCardGame = () => {
   const [gameStatus, setGameStatus] = useState("menu"); // menu, playing, won, lost
   const [currentAffirmation, setCurrentAffirmation] = useState("");
   const [lastShuffleTime, setLastShuffleTime] = useState(Date.now());
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   // Initialization
   const startGame = (selectedMode) => {
@@ -223,6 +225,7 @@ const ClipCardGame = () => {
       });
       if (res.data?.updatedTokens) {
         dispatch(updateTokens(res.data.updatedTokens));
+        setShowRewardModal(true);
       }
     } catch (e) {
       console.error("Save failed", e);
@@ -534,6 +537,12 @@ const ClipCardGame = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={5}
+        message="Amazing focus! You've matched all the cards and earned your tokens. Your brain is getting sharper every day!"
+      />
     </div>
   );
 };

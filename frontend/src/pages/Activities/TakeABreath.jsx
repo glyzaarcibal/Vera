@@ -6,6 +6,7 @@ import { selectUser } from "../../store/slices/authSelectors";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutGrid, Wind, Moon, Sun, Timer, ArrowLeft, Sparkles, Cloud } from "lucide-react";
 import axiosInstance from "../../utils/axios.instance";
+import TokenRewardModal from "../../components/TokenRewardModal";
 
 import "./TakeABreath.css";
 
@@ -120,6 +121,7 @@ const TakeABreath = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   
   const audioRefs = useRef({});
   const animationRef = useRef(null);
@@ -295,7 +297,10 @@ const TakeABreath = () => {
         activityType: "breath",
         data: newEntry
       });
-      if (res.data?.updatedTokens) dispatch(updateTokens(res.data.updatedTokens));
+      if (res.data?.updatedTokens) {
+        dispatch(updateTokens(res.data.updatedTokens));
+        setShowRewardModal(true);
+      }
       loadHistory();
     } catch (e) { 
       console.error(e); 
@@ -475,6 +480,12 @@ const TakeABreath = () => {
         )}
       </AnimatePresence>
 
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={5}
+        message="Your breath session is complete. You've taken a wonderful step toward inner peace and clarity."
+      />
     </div>
   );
 };

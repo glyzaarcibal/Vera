@@ -102,8 +102,34 @@ const Header = () => {
           </Link>
         </div>
 
-        {/* CENTER: Navigation (Desktop) */}
-        <div className={`header-center ${isMenuOpen ? "open" : ""}`}>
+        {/* CENTER: Navigation (Desktop/Mobile Menu) */}
+        <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
+          <div className="mobile-only mobile-menu-header">
+            <div className="mobile-user-profile">
+              <div className="mobile-avatar">
+                {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                  user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Profile" />
+                  ) : (
+                    <UserCircle size={40} />
+                  )
+                )}
+              </div>
+              <div className="mobile-user-info">
+                <p className="mobile-user-name">{user?.username || user?.first_name || "User"}</p>
+              {isAuthenticated && !location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                <div className="mobile-token-pill">
+                  <span>🪙</span>
+                  <span>{user?.tokens ?? 0}</span>
+                </div>
+              )}
+              </div>
+            </div>
+            <button className="mobile-menu-close" onClick={toggleMenu}>
+              <X size={24} />
+            </button>
+          </div>
+
           <Link to="/" className={`header-link ${isActive("/") ? "active" : ""}`}>
              <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
              <span>Home</span>
@@ -148,15 +174,25 @@ const Header = () => {
             </Link>
           )}
 
-          <div className="mobile-only">
+          {isAuthenticated && (
+            <div className="mobile-only mobile-notifications-link">
+               <button onClick={toggleNotifications} className="header-link">
+                 <span className="header-link-icon"><Bell size={18} /></span>
+                 <span>Notifications</span>
+                 {unreadCount > 0 && <span className="mobile-notif-badge">{unreadCount}</span>}
+               </button>
+            </div>
+          )}
+
+          <div className="mobile-only mobile-auth-section">
              <div className="header-divider"></div>
              {isAuthenticated ? (
-               <button onClick={handleLogout} className="header-link text-red">
+               <button onClick={handleLogout} className="header-link header-logout-btn">
                  <LogOut size={18} />
                  <span>Logout</span>
                </button>
              ) : (
-                <Link to="/register" className="header-link color-primary" style={{ fontWeight: 'bold' }}>Get Started</Link>
+                <Link to="/register" className="header-link get-started-link">Get Started</Link>
              )}
           </div>
         </div>
@@ -217,26 +253,28 @@ const Header = () => {
                 )}
               </div>
               
-              <div className="desktop-profile-dropdown desktop-only">
-                <div className="profile-trigger">
-                  <div className="profile-tokens">
-                    <span>🪙</span>
-                    <span>{user?.tokens ?? 0}</span>
+              {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                <div className="desktop-profile-dropdown desktop-only">
+                  <div className="profile-trigger">
+                    <div className="profile-tokens">
+                      <span>🪙</span>
+                      <span>{user?.tokens ?? 0}</span>
+                    </div>
+                    <div className="profile-avatar">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="Profile" className="header-profile-img" />
+                      ) : (
+                        <UserCircle size={24} className="text-gray-400" />
+                      )}
+                    </div>
                   </div>
-                  <div className="profile-avatar">
-                    {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt="Profile" className="header-profile-img" />
-                    ) : (
-                      <UserCircle size={24} className="text-gray-400" />
-                    )}
+                  <div className="dropdown-menu">
+                    <Link to="/profile" className="dropdown-item">Profile</Link>
+                    <Link to="/feedback" className="dropdown-item">Feedback & Support</Link>
+                    <button onClick={handleLogout} className="dropdown-item text-red">Logout</button>
                   </div>
                 </div>
-                <div className="dropdown-menu">
-                  <Link to="/profile" className="dropdown-item">Profile</Link>
-                  <Link to="/feedback" className="dropdown-item">Feedback & Support</Link>
-                  <button onClick={handleLogout} className="dropdown-item text-red">Logout</button>
-                </div>
-              </div>
+              )}
             </>
           ) : (
             <Link to="/register" className="header-button-link desktop-only">

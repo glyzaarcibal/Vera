@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Moon, Sun, Plus, ChevronLeft, ChevronRight, Clock, Trash2, ArrowLeft } from "lucide-react";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
+import TokenRewardModal from "../../components/TokenRewardModal";
 
 import "./SleepTracker.css";
 
@@ -26,6 +27,7 @@ const SleepTracker = () => {
   const [sleepData, setSleepData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -141,6 +143,7 @@ const SleepTracker = () => {
 
       if (res.data?.updatedTokens !== null) {
         dispatch(updateTokens(res.data.updatedTokens));
+        setShowRewardModal(true);
       }
 
       loadSleepData();
@@ -425,6 +428,12 @@ const SleepTracker = () => {
           </ModalPortal>
         )}
       </AnimatePresence>
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={5}
+        message="Good rest is the foundation of mental clarity. Your sleep habits are now logged and your tokens are earned!"
+      />
     </div>
   );
 };

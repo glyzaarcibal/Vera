@@ -43,21 +43,23 @@ const Sidebar = ({ isOpen, onClose }) => {
           {!collapsed && <span className="sidebar-logo-text">ADMIN</span>}
         </div>
 
-        {/* Toggle for desktop / Close for mobile */}
-        <button
-          className="sidebar-close-mobile"
-          onClick={onClose}
-        >
-          <X size={24} />
-        </button>
+        <div className="sidebar-header-actions">
+          {/* Toggle for desktop / Close for mobile */}
+          <button
+            className="sidebar-close-mobile"
+            onClick={onClose}
+          >
+            <X size={20} />
+          </button>
 
-        <button
-          className="sidebar-toggle"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <MdChevronRight /> : <MdChevronLeft />}
-        </button>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <MdChevronRight /> : <MdChevronLeft />}
+          </button>
+        </div>
       </div>
 
       <nav className="sidebar-nav">
@@ -103,9 +105,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         {!collapsed && (
           <div className="sidebar-user">
             <div className="sidebar-user-avatar">
-              {user?.username?.[0]?.toUpperCase() ||
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="Profile" className="sidebar-profile-img" />
+              ) : (
+                user?.username?.[0]?.toUpperCase() ||
                 user?.email?.[0]?.toUpperCase() ||
-                "A"}
+                "A"
+              )}
             </div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">
