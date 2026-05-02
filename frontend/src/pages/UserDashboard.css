@@ -611,13 +611,55 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* ── RESPONSIVE DESIGN ── */
+@media (max-width: 1200px) {
+  .dash-v2-container { padding: 20px 30px; }
+  .dash-v2-welcome h1 { font-size: 3rem; }
+}
+
 @media (max-width: 1024px) {
-  .dash-v2-hero-content { flex-direction: column; text-align: center; }
+  .dash-v2-hero-content { 
+    flex-direction: column; 
+    text-align: center; 
+    gap: 30px;
+  }
+  .dash-v2-welcome p { margin-left: auto; margin-right: auto; }
+  .dash-v2-mood-check { margin-left: auto; margin-right: auto; }
   .mood-btn-group { justify-content: center; flex-wrap: wrap; }
-  .dash-v2-grid { grid-template-columns: 1fr; }
-  .glass-card, .ritual-card { grid-column: span 1; }
-  .ritual-card { flex-direction: column; text-align: center; gap: 24px; }
-  .recommended-grid { grid-template-columns: 1fr; }
+  .dash-v2-grid { grid-template-columns: repeat(2, 1fr); }
+  .glass-card { grid-column: span 2; }
+  .ritual-card { grid-column: span 2; flex-direction: column; text-align: center; gap: 24px; }
+  .recommended-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-inner { flex-direction: column; text-align: center; justify-content: center; }
   .footer-left { flex-direction: column; gap: 8px; }
 }
+
+@media (max-width: 768px) {
+  .dash-v2-grid { grid-template-columns: 1fr; }
+  .glass-card, .ritual-card { grid-column: span 1; }
+  .dash-v2-container { padding: 15px 20px; }
+  .dash-v2-welcome h1 { font-size: 2.5rem; letter-spacing: -1px; }
+  .dash-v2-welcome p { font-size: 1rem; }
+  
+  .vera-ai-card { width: 100%; max-width: 360px; }
+  .glass-card { padding: 30px 24px; }
+  .glass-card h3 { font-size: 24px; }
+  
+  .recommended-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .dash-v2-welcome h1 { font-size: 2rem; }
+  .dash-v2-mood-check { padding: 16px; width: 100%; }
+  .mood-btn-group { gap: 8px; }
+  .mood-pill { padding: 6px 12px; }
+  .mood-pill-label { font-size: 12px; }
+  
+  .vera-ai-card { padding: 24px 20px; }
+  .vera-ai-avatar-inner { width: 100px; height: 100px; }
+  .ai-core-icon { size: 32px; }
+  
+  .dash-v2-card-small { padding: 20px; }
+  .stats-num { font-size: 2.5rem; }
+}
+

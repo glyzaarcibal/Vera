@@ -263,7 +263,7 @@ const UserChat = () => {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto h-[calc(100vh-80px)]">
+    <div className="max-w-[1600px] mx-auto min-h-[calc(100vh-80px)] p-4 md:p-0">
       <div className="mb-5">
         <button
           className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-lg text-indigo-500 text-[15px] font-medium shadow-sm hover:bg-indigo-50 hover:-translate-x-0.5 transition-all"
@@ -284,7 +284,7 @@ const UserChat = () => {
           </div>
         </div>
       ) : (
-        <div className="flex gap-5 h-[calc(100%-60px)]">
+        <div className="flex flex-col lg:flex-row gap-5 min-h-[calc(100vh-140px)]">
           {/* Main Chat Panel */}
           <div className="flex-1 bg-white rounded-xl shadow-sm flex flex-col overflow-hidden">
             <div className="p-5 border-b border-gray-100">
@@ -326,7 +326,7 @@ const UserChat = () => {
                         )}
                       </div>
                       <div
-                        className={`flex-1 max-w-[70%] ${message.sent_by === "user" ? "text-right" : ""
+                        className={`flex-1 max-w-[85%] md:max-w-[70%] ${message.sent_by === "user" ? "text-right" : ""
                           }`}
                       >
                         <div
@@ -520,7 +520,7 @@ const UserChat = () => {
           </div>
 
           {/* Right Panel - Session Info & Notes */}
-          <div className="w-[420px] bg-white rounded-xl shadow-sm flex flex-col overflow-hidden">
+          <div className="w-full lg:w-[420px] bg-white rounded-xl shadow-sm flex flex-col overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-gray-100">
               <button

@@ -222,15 +222,15 @@ const Resources = () => {
   return (
     <div className="resources-container">
       <div className="resources-header">
-        <div>
-          <div className="resources-title">Resources</div>
-          <div style={{ color: '#6b7280', fontSize: '1.1rem', marginTop: 4 }}>
+        <div className="resources-title-group">
+          <h1 className="resources-title">Resources</h1>
+          <p className="resources-subtitle">
             Curate and organize educational and support resources
-          </div>
+          </p>
         </div>
         <button
           onClick={handleCreate}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
+          className="resources-add-btn"
         >
           <MdAdd className="text-xl" />
           <span>Add Resource</span>
@@ -252,59 +252,49 @@ const Resources = () => {
         </div>
       </div>
 
-      <div className="resources-listing" style={{ width: '100%', marginTop: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '0 24px', fontWeight: 700, color: '#a0aec0', fontSize: 13, height: 38 }}>
-          <div style={{ width: 56, minWidth: 56 }}></div>
-          <div style={{ flex: 2 }}>Title</div>
-          <div style={{ flex: 2 }}>Description</div>
-          <div style={{ flex: 1 }}>Category</div>
-          <div style={{ flex: 2 }}>Links</div>
-          <div style={{ width: 90, textAlign: 'center' }}>Actions</div>
+      <div className="resources-listing">
+        <div className="listing-header desktop-only-flex">
+          <div className="header-cell avatar-cell"></div>
+          <div className="header-cell title-cell">Title</div>
+          <div className="header-cell desc-cell">Description</div>
+          <div className="header-cell cat-cell">Category</div>
+          <div className="header-cell link-cell">Links</div>
+          <div className="header-cell action-cell">Actions</div>
         </div>
         <div style={{ borderTop: '1px solid #e3e8f0' }} />
         {resources.length === 0 ? (
-          <div style={{ width: '100%', textAlign: 'center', color: '#a0aec0', fontWeight: 500, padding: '48px 0' }}>
+          <div className="listing-empty">
             No resources found
           </div>
         ) : (
           resources.map((resource) => (
-            <div key={resource.id} style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #f1f5f9', background: '#fff', transition: 'background 0.15s' }} className="hover:bg-gray-50 group">
+            <div key={resource.id} className="listing-row group">
               {/* Avatar/Image */}
-              <div style={{ width: 56, minWidth: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <div className="row-cell avatar-cell">
                 {resource.image_url ? (
                   <img
                     src={resource.image_url}
                     alt={resource.title}
-                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid #e3e8f0' }}
+                    className="avatar-img"
                   />
                 ) : (
-                  <div style={{ width: 40, height: 40, background: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e3e8f0', fontWeight: 700, color: '#a0aec0', fontSize: 18 }}>
+                  <div className="avatar-placeholder">
                     <MdImage className="text-gray-300 text-xl" />
                   </div>
                 )}
               </div>
               {/* Title */}
-              <div style={{ flex: 2, fontWeight: 600, color: '#22223b', fontSize: 16 }}>{resource.title}</div>
+              <div className="row-cell title-cell">{resource.title}</div>
               {/* Description */}
-              <div style={{ flex: 2, color: '#6b7280', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resource.description || 'No description provided.'}</div>
+              <div className="row-cell desc-cell">{resource.description || 'No description provided.'}</div>
               {/* Category */}
-              <div style={{ flex: 1 }}>
-                <span style={{
-                  background: '#eef2ff',
-                  color: '#6366f1',
-                  border: '1px solid #e0e7ff',
-                  borderRadius: 8,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: '3px 12px',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                }}>
+              <div className="row-cell cat-cell">
+                <span className="cat-badge">
                   {resource.category || 'N/A'}
                 </span>
               </div>
               {/* Links */}
-              <div style={{ flex: 2, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div className="row-cell link-cell">
                 {resource.links && resource.links.length > 0 ? (
                   resource.links.map((link, idx) => (
                     <a
@@ -313,27 +303,26 @@ const Resources = () => {
                       className="resource-card-link"
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120, fontSize: 13 }}
                     >
                       {link}
                     </a>
                   ))
                 ) : (
-                  <span style={{ color: '#a0aec0', fontSize: 13 }}>No links</span>
+                  <span className="no-links">No links</span>
                 )}
               </div>
               {/* Actions */}
-              <div style={{ width: 90, display: 'flex', justifyContent: 'center', gap: 8 }}>
+              <div className="row-cell action-cell">
                 <button
                   onClick={() => handleEdit(resource)}
-                  className="p-2.5 text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
+                  className="action-btn edit"
                   title="Edit resource"
                 >
                   <MdEdit className="text-xl" />
                 </button>
                 <button
                   onClick={() => handleDelete(resource.id)}
-                  className="p-2.5 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                  className="action-btn delete"
                   title="Delete resource"
                 >
                   <MdDelete className="text-xl" />

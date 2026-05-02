@@ -769,9 +769,9 @@ const UserSessions = () => {
     <div className="user-sessions-outer-container relative min-h-screen">
       <div className="user-sessions-container">
         {/* Header Section */}
-        <div className="user-sessions-header-row flex items-center justify-between mb-10">
+        <div className="user-sessions-header-row flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-6">
           <div className="flex items-center">
-            <div className="user-sessions-back-col mr-6">
+            <div className="user-sessions-back-col">
               <button
                 className="user-sessions-back-btn flex items-center gap-2.5 bg-white border border-gray-100 px-6 py-3 rounded-2xl text-[13px] font-black shadow-sm hover:shadow-indigo-100 hover:border-indigo-100 transition-all active:scale-95 text-gray-700"
                 onClick={() => navigate(-1)}
@@ -788,7 +788,7 @@ const UserSessions = () => {
             </div>
           </div>
 
-          <div className="user-sessions-export-actions ml-auto flex items-center gap-4">
+          <div className="user-sessions-export-actions w-full md:w-auto flex items-center gap-4">
             {!loading && !reportsLoading && userInfo && (
               <button
                 className={`px-8 py-4 bg-linear-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white font-black rounded-2xl shadow-2xl shadow-indigo-100 hover:shadow-indigo-200 transition-all flex items-center gap-3 active:scale-95 hover:-translate-y-0.5 ${isGeneratingPDF ? "opacity-75 cursor-wait" : ""}`}
@@ -833,7 +833,7 @@ const UserSessions = () => {
               </div>
             </div>
           ) : userInfo ? (
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
               {userInfo.avatar_url ? (
                 <img
                   src={userInfo.avatar_url}
@@ -849,9 +849,9 @@ const UserSessions = () => {
                 <h2 className="section-title mb-1">
                   {userInfo.username || userInfo.email}
                 </h2>
-                <p className="text-base text-gray-600 mb-3">{userInfo.email}</p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
-                  <span className="bg-gray-50 px-2 py-1 rounded">ID: {userInfo.id}</span>
+                <p className="text-base text-gray-600 mb-3 break-all">{userInfo.email}</p>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-sm text-gray-400">
+                  <span className="bg-gray-50 px-2 py-1 rounded truncate max-w-[200px]">ID: {userInfo.id}</span>
                   <span className="bg-gray-50 px-2 py-1 rounded">Role: {userInfo.role}</span>
                   <span className="bg-gray-50 px-2 py-1 rounded">Joined: {new Date(userInfo.created_at).toLocaleDateString()}</span>
                   <span className="bg-gray-50 px-2 py-1 rounded">Gender: {userInfo.gender || "Not specified"}</span>
@@ -863,7 +863,7 @@ const UserSessions = () => {
                   <div className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 ml-1">
                     Privacy Settings
                   </div>
-                  <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                     <div className={`px-5 py-2 rounded-full text-xs font-black border transition-all shadow-sm ${userInfo.permit_store !== false ? "bg-green-50 border-green-200 text-green-600" : "bg-red-50 border-red-200 text-red-600"}`}>
                       STORE: {userInfo.permit_store !== false ? "ON" : "OFF"}
                     </div>
@@ -1532,7 +1532,7 @@ const UserSessions = () => {
                 {pagination.totalPages > 1 && (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-12 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                     <div className="text-sm text-gray-500 font-medium">
-                      Showing Page <span className="text-gray-900 font-bold">{pagination.currentPage}</span> of <span className="text-gray-900 font-bold">{pagination.totalPages}</span> â€¢ <span className="text-indigo-600 font-bold">{pagination.totalSessions}</span> Total Sessions
+                      Showing Page <span className="text-gray-900 font-bold">{pagination.currentPage}</span> of <span className="text-gray-900 font-bold">{pagination.totalPages}</span> • <span className="text-indigo-600 font-bold">{pagination.totalSessions}</span> Total Sessions
                     </div>
                     <div className="flex items-center gap-3">
                       <button
@@ -1567,7 +1567,7 @@ const UserSessions = () => {
                 {pagination.totalPages > 1 && (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                     <div className="text-sm text-gray-500 font-medium">
-                      Page {pagination.currentPage} of {pagination.totalPages} â€¢ Total: {pagination.totalSessions} sessions
+                      Page {pagination.currentPage} of {pagination.totalPages} • Total: {pagination.totalSessions} sessions
                     </div>
                     <div className="flex items-center gap-3">
                       <button

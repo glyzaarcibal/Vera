@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ModalPortal from "../../components/ModalPortal";
+import TokenRewardModal from "../../components/TokenRewardModal";
 import "./MedicationTracker.css";
 
 const MedicationTracker = () => {
@@ -32,6 +33,7 @@ const MedicationTracker = () => {
     const [efficacy, setEfficacy] = useState(3);
     const [showLogModal, setShowLogModal] = useState(false);
     const [showAllMaintenance, setShowAllMaintenance] = useState(false);
+    const [showRewardModal, setShowRewardModal] = useState(false);
 
     useEffect(() => {
         if (userId) {
@@ -87,6 +89,7 @@ const MedicationTracker = () => {
 
             if (res.data?.updatedTokens !== null) {
                 dispatch(updateTokens(res.data.updatedTokens));
+                setShowRewardModal(true);
             }
 
             setMedicationName("");
@@ -458,6 +461,12 @@ const MedicationTracker = () => {
                 </AnimatePresence>
 
             </div>
+            <TokenRewardModal 
+                isOpen={showRewardModal} 
+                onClose={() => setShowRewardModal(false)}
+                amount={5}
+                message="Your health record has been updated. Staying consistent with your medication is a vital part of your well-being."
+            />
         </div>
     );
 };

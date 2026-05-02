@@ -166,33 +166,31 @@ const UserManagement = () => {
 
 
   return (
-    <div className="user-management-container" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0' }}>
-      <div className="page-header" style={{ marginBottom: 32 }}>
-        <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, color: '#22223b', marginBottom: 8 }}>
-          User <span className="gradient-text" style={{ background: 'linear-gradient(90deg,#667eea,#764ba2)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Management</span>
+    <div className="user-management-container">
+      <div className="user-management-header-row">
+        <h1 className="page-title">
+          User <span className="gradient-text">Management</span>
         </h1>
-        <p className="page-subtitle" style={{ color: '#6b7280', fontSize: 18, fontWeight: 500 }}>Manage system users, roles, and account status</p>
+        <p className="page-subtitle">Manage system users, roles, and account status</p>
       </div>
 
-      <div className="design-section" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 8px 32px rgba(102,126,234,0.08)', padding: 32, marginBottom: 32 }}>
-        <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 relative">
-          <div className="relative w-full md:w-96 mb-4 md:mb-0">
-            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
+      <div className="user-management-controls-section">
+        <div className="controls-grid">
+          <div className="search-wrapper">
+            <MdSearch className="search-icon-inside" />
             <input
               type="text"
-              placeholder="Search users by name or email..."
+              placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#667eea] focus:bg-white transition-all shadow-sm"
-              style={{ marginBottom: 0, fontSize: 16 }}
+              className="search-input-field"
             />
           </div>
-          <div className="flex flex-wrap gap-4 w-full md:w-auto items-center">
+          <div className="filters-wrapper">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
-              style={{ minWidth: 120, fontSize: 15 }}
+              className="filter-select-field"
             >
               <option value="all">All Roles</option>
               <option value="admin">Admin</option>
@@ -203,8 +201,7 @@ const UserManagement = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
-              style={{ minWidth: 120, fontSize: 15 }}
+              className="filter-select-field"
             >
               <option value="all">All Status</option>
               <option value="Active">Active</option>
@@ -212,9 +209,7 @@ const UserManagement = () => {
             </select>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
-              type="button"
-              style={{ fontSize: 15 }}
+              className="add-user-action-btn"
             >
               <MdAdd className="text-xl" />
               <span>Add User</span>
@@ -223,77 +218,69 @@ const UserManagement = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm" style={{ background: '#fff' }}>
-        <table className="w-full text-left border-collapse" style={{ fontSize: 15 }}>
+      <div className="users-table-wrapper">
+        <table className="users-table">
           <thead>
-            <tr style={{ background: '#f8fafc', textTransform: 'uppercase', letterSpacing: 1.2, color: '#a0aec0', fontWeight: 700, fontSize: 12 }}>
-              <th style={{ padding: '18px 24px' }}>User</th>
-              <th style={{ padding: '18px 24px' }}>Role</th>
-              <th style={{ padding: '18px 24px' }}>Status</th>
-              <th style={{ padding: '18px 24px' }}>Joined</th>
-              <th style={{ padding: '18px 24px', textAlign: 'center' }}>Actions</th>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th className="desktop-only-table-cell">Joined</th>
+              <th className="action-cell">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} style={{ transition: 'background 0.15s' }} className="hover:bg-gray-50 group">
-                <td style={{ padding: '18px 24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#f0eeff,#fef5ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#667eea', fontWeight: 700, border: '1px solid #fff', boxShadow: '0 2px 8px rgba(102,126,234,0.08)', overflow: 'hidden' }}>
+              <tr key={user.id} className="user-row">
+                <td>
+                  <div className="user-info-cell">
+                    <div className="user-avatar-circle">
                       {user.avatar_url ? (
-                        <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={user.avatar_url} alt="" className="avatar-img-small" />
                       ) : (
                         user.username.charAt(0).toUpperCase()
                       )}
                     </div>
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#22223b', fontSize: 16 }}>{user.username}</div>
-                      <div style={{ fontSize: 13, color: '#a0aec0', fontWeight: 500 }}>{user.email}</div>
+                    <div className="user-text-info">
+                      <div className="username-text">{user.username}</div>
+                      <div className="email-text">{user.email}</div>
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '18px 24px' }}>
-                  <span style={{
-                    background: user.role === 'admin' ? '#ede9fe' : user.role === 'moderator' ? '#dbeafe' : '#f3f4f6',
-                    color: user.role === 'admin' ? '#7c3aed' : user.role === 'moderator' ? '#2563eb' : '#6b7280',
-                    border: '1px solid ' + (user.role === 'admin' ? '#ddd6fe' : user.role === 'moderator' ? '#bfdbfe' : '#e5e7eb'),
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    padding: '4px 14px',
-                    textTransform: 'uppercase',
-                    letterSpacing: 1,
-                  }}>{user.role}</span>
+                <td>
+                  <span className={`role-badge role-${user.role.toLowerCase()}`}>
+                    {user.role}
+                  </span>
                 </td>
-                <td style={{ padding: '18px 24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: user.status === 'Active' ? '#4ade80' : '#d1d5db', boxShadow: user.status === 'Active' ? '0 0 8px #4ade8080' : 'none' }}></div>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: '#6b7280' }}>{user.status}</span>
+                <td>
+                  <div className="status-cell">
+                    <div className={`status-dot ${user.status.toLowerCase()}`}></div>
+                    <span className="status-text">{user.status}</span>
                   </div>
                 </td>
-                <td style={{ padding: '18px 24px', fontSize: 14, color: '#64748b', fontWeight: 500 }}>{user.joined}</td>
-                <td style={{ padding: '18px 24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
+                <td className="desktop-only-table-cell date-cell">{user.joined}</td>
+                <td>
+                  <div className="actions-cell">
                     <button
                       onClick={() => navigate(`/admin/sessions/${user.id}`)}
-                      style={{ padding: 10, color: '#6366f1', background: '#f5f3ff', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
+                      className="action-btn-item view"
                       title="View sessions"
                     >
-                      <MdSearch style={{ fontSize: 20 }} />
+                      <MdSearch />
                     </button>
                     <button
                       onClick={() => openEditModal(user)}
-                      style={{ padding: 10, color: '#f59e42', background: '#fff7ed', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
+                      className="action-btn-item edit"
                       title="Edit user"
                     >
-                      <MdEdit style={{ fontSize: 20 }} />
+                      <MdEdit />
                     </button>
                     <button
                       onClick={() => openDeleteModal(user)}
-                      style={{ padding: 10, color: '#ef4444', background: '#fef2f2', borderRadius: 12, border: 'none', transition: 'background 0.15s' }}
+                      className="action-btn-item delete"
                       title="Delete user"
                     >
-                      <MdDelete style={{ fontSize: 20 }} />
+                      <MdDelete />
                     </button>
                   </div>
                 </td>
@@ -301,44 +288,21 @@ const UserManagement = () => {
             ))}
           </tbody>
         </table>
-        {/* Pagination Controls */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, padding: '24px 0' }}>
+        <div className="pagination-controls">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={pagination.currentPage === 1}
-            style={{
-              padding: '10px 24px',
-              borderRadius: 12,
-              border: 'none',
-              background: pagination.currentPage === 1 ? '#e5e7eb' : 'linear-gradient(90deg,#667eea,#764ba2)',
-              color: pagination.currentPage === 1 ? '#a0aec0' : '#fff',
-              fontWeight: 700,
-              fontSize: 15,
-              cursor: pagination.currentPage === 1 ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-              minWidth: 100,
-            }}
+            className="pagination-btn-action"
           >
             Previous
           </button>
-          <span style={{ fontWeight: 600, color: '#6b7280', fontSize: 15 }}>
+          <span className="pagination-page-info">
             Page {pagination.currentPage} of {pagination.totalPages}
           </span>
           <button
             onClick={() => setCurrentPage((prev) => Math.min(pagination.totalPages, prev + 1))}
             disabled={pagination.currentPage === pagination.totalPages}
-            style={{
-              padding: '10px 24px',
-              borderRadius: 12,
-              border: 'none',
-              background: pagination.currentPage === pagination.totalPages ? '#e5e7eb' : 'linear-gradient(90deg,#667eea,#764ba2)',
-              color: pagination.currentPage === pagination.totalPages ? '#a0aec0' : '#fff',
-              fontWeight: 700,
-              fontSize: 15,
-              cursor: pagination.currentPage === pagination.totalPages ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-              minWidth: 100,
-            }}
+            className="pagination-btn-action"
           >
             Next
           </button>

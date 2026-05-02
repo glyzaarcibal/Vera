@@ -11,17 +11,17 @@ export const saveActivity = async (req, res) => {
     }
     await saveActivityToDB(userId, activityType, data);
     
-    // Award 1 token for completing an activity
+    // Award 5 tokens for completing an activity
     let updatedTokens = null;
     try {
-      updatedTokens = await addTokens(userId, 1, `Completed activity: ${activityType}`);
+      updatedTokens = await addTokens(userId, 5, `Completed activity: ${activityType}`);
     } catch (tokenError) {
       console.error("[saveActivity] Failed to award tokens:", tokenError);
       // Don't fail the request if token awarding fails
     }
 
     res.status(200).json({ 
-      message: "Activity saved successfully and 1 token earned!",
+      message: "Activity saved successfully and 5 tokens earned!",
       updatedTokens 
     });
   } catch (error) {

@@ -267,6 +267,7 @@ import axiosInstance from "../../utils/axios.instance";
 import { useSelector, useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
+import TokenRewardModal from "../../components/TokenRewardModal";
 
 const MoodTrackerScreen = ({ navigation }) => {
   const user = useSelector(selectUser);
@@ -280,6 +281,8 @@ const MoodTrackerScreen = ({ navigation }) => {
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [filter, setFilter] = useState("all"); // 'all', 'week', 'month'
   const [isLoading, setIsLoading] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [rewardData, setRewardData] = useState({ amount: 0, message: "" });
 
   // Group moods for organized display
   const groupedMoods = moods.reduce((acc, mood) => {
@@ -406,6 +409,8 @@ const MoodTrackerScreen = ({ navigation }) => {
 
       if (res.data?.updatedTokens !== null) {
         dispatch(updateTokens(res.data.updatedTokens));
+        setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
+        setShowRewardModal(true);
       }
 
       // Refetch history after saving
@@ -1371,6 +1376,12 @@ const MoodTrackerScreen = ({ navigation }) => {
           )}
         </div>
       </div>
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={rewardData.amount}
+        message={rewardData.message}
+      />
     </div>
   );
 };

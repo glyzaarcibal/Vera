@@ -207,6 +207,14 @@
 .filter-pills {
   display: flex;
   gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+}
+
+.filter-pills::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
 }
 
 .filter-pill {
@@ -230,9 +238,15 @@
 /* ── ACTIVITY GRID ── */
 .act-v2-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 40px;
+}
+
+@media (max-width: 480px) {
+  .act-v2-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .act-v2-card {
