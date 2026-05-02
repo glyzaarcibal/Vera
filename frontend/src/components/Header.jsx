@@ -105,7 +105,14 @@ const Header = () => {
         {/* CENTER: Navigation (Desktop/Mobile Menu) */}
         <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
           <div className="mobile-only mobile-menu-header">
-            <div className="mobile-user-profile">
+            <div 
+              className="mobile-user-profile" 
+              onClick={() => {
+                navigate("/profile");
+                setIsMenuOpen(false);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="mobile-avatar">
                 {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
                   user?.avatar_url ? (
