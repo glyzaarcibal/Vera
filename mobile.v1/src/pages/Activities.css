@@ -1,0 +1,424 @@
+/* Activities V2 Styles — Compact Wellness Dashboard */
+
+:root {
+  --act-purple: #7C3AED;
+  --act-purple-light: #F5F3FF;
+  --act-bg: #FFFFFF;
+  --act-text-main: #1F2937;
+  --act-text-gray: #6B7280;
+  --act-shadow: 0 15px 30px rgba(124, 58, 237, 0.05);
+  --act-border: rgba(124, 58, 237, 0.08);
+}
+
+.act-v2-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 40px 40px; /* Reduced top padding */
+  min-height: 100vh;
+  color: var(--act-text-main);
+  background-color: transparent;
+}
+
+/* ── HEADER ── */
+.act-v2-header {
+  margin-bottom: 20px;
+}
+
+.act-v2-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+.act-v2-subtitle {
+  font-size: 1rem;
+  color: var(--act-text-gray);
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+/* ── STATS GRID ── */
+.act-v2-stats-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.act-v2-stat-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: var(--act-shadow);
+  border: 1px solid var(--act-border);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #9CA3AF;
+  margin-bottom: 12px;
+}
+
+.stat-value-group {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--act-purple);
+}
+
+.stat-total {
+  font-size: 1.2rem;
+  color: #D1D5DB;
+  font-weight: 600;
+}
+
+.stat-desc {
+  font-size: 13px;
+  color: var(--act-text-gray);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.stat-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 15px;
+}
+
+/* Vitality Ring */
+.vitality-ring {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.vitality-ring svg {
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #F3F4F6;
+  stroke-width: 10;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: var(--act-purple);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 282;
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+.ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--act-purple);
+}
+
+/* Sleep Card Specifics */
+.sleep-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sleep-icon-box {
+  width: 38px;
+  height: 38px;
+  background: #FDF2F8;
+  color: #BE185D;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sleep-text h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: #111827;
+}
+
+.sleep-text span {
+  font-size: 12px;
+  color: var(--act-text-gray);
+}
+
+.sleep-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 60px;
+  margin-top: auto;
+}
+
+.sleep-bar {
+  background: #FCE7F3;
+  border-radius: 999px;
+  width: 100%;
+  transition: all 0.3s;
+}
+
+.sleep-bar.active {
+  background: #BE185D;
+}
+
+/* ── FILTERS ── */
+.act-v2-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #111827;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+}
+
+.filter-pills::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.filter-pill {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: none;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--act-text-gray);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-pill.active {
+  background: var(--act-purple);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+/* ── ACTIVITY GRID ── */
+.act-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 480px) {
+  .act-v2-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.act-v2-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--act-shadow);
+  border: 1px solid var(--act-border);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.card-image-section {
+  height: 160px;
+  overflow: hidden;
+  position: relative;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-icon-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.card-category {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.card-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #111827;
+}
+
+.card-description {
+  font-size: 12px;
+  color: var(--act-text-gray);
+  line-height: 1.4;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.card-action-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-action-btn:active {
+  transform: translateY(0);
+}
+
+.act-v2-card:hover .card-img {
+  transform: scale(1.05);
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+/* ── BOTTOM CTA ── */
+.act-v2-cta-card {
+  background: white;
+  border-radius: 30px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: var(--act-shadow);
+  border: 1px solid var(--act-border);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cta-icon-outer {
+  width: 50px;
+  height: 50px;
+  background: var(--act-purple-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.cta-icon-inner {
+  width: 38px;
+  height: 38px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+.cta-desc {
+  font-size: 14px;
+  color: var(--act-text-gray);
+  max-width: 600px;
+  margin: 0 auto 24px;
+}
+
+.cta-btn {
+  padding: 12px 40px;
+  border-radius: 999px;
+  border: none;
+  background: var(--act-purple);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 15px rgba(124, 58, 237, 0.2);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .act-v2-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

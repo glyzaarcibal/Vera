@@ -1,0 +1,703 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --app-bg: #EAE6F9;
+  --text-purple: #7C3AED;
+  --text-purple-light: #9B7BF7;
+  --text-dark: #1E1B4B;
+  --text-gray: #6B7280;
+  --border-purple: #9B7BF7;
+  --border-light: #E0D4F6;
+  --card-bg: #FFFFFF;
+  --bg-input: #E2DFEB;
+  --green: #10B981;
+}
+
+.profile-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: calc(100vh - 76px);
+  padding: 10px 24px 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text-dark);
+  display: flex;
+  gap: 30px;
+  background-color: transparent;
+}
+
+/* ── LEFT SIDEBAR ── */
+.profile-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto; /* internal scroll if small */
+  padding-right: 8px;
+  padding-bottom: 20px;
+}
+
+/* Custom scrollbar for sidebar */
+.profile-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.profile-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.profile-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+.avatar-card {
+  width: 100%;
+  max-width: 160px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-icon-placeholder {
+  width: 70%;
+  height: 70%;
+  color: #a78bfa;
+}
+
+.profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-info-title {
+  display: flex;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-dark);
+  white-space: nowrap;
+}
+
+.profile-info-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: var(--text-dark);
+  margin-left: 10px;
+}
+
+.sidebar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dark);
+}
+
+.sidebar-value {
+  height: 24px;
+  background-color: var(--bg-input);
+  border-radius: 6px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-dark);
+}
+
+.sidebar-input {
+  height: 24px;
+  background-color: white;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 0 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  color: var(--text-dark);
+  outline: none;
+}
+
+.sidebar-input:focus {
+  border-color: var(--text-purple);
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: var(--text-purple);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.avatar-edit-btn:hover {
+  transform: scale(1.1);
+}
+
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sidebar-btn {
+  background-color: var(--text-purple);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sidebar-btn:hover {
+  opacity: 0.9;
+}
+
+.sidebar-btn.ghost {
+  background-color: transparent;
+  color: var(--text-purple);
+  border: 1px solid var(--text-purple);
+}
+
+/* ── MAIN CONTENT ── */
+.profile-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.profile-main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.profile-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 42px;
+  color: var(--text-purple);
+  margin: 0;
+  line-height: 1;
+}
+
+.privacy-settings-box {
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+.ps-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ps-toggles {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ── TABS ── */
+.custom-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--text-dark);
+  margin-bottom: 16px;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.custom-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-dark);
+  cursor: pointer;
+  position: relative;
+}
+
+.custom-tab.active {
+  color: var(--text-purple);
+}
+
+.custom-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px; /* offset for the border-bottom padding */
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--text-purple);
+}
+
+/* ── CONTENT AREA ── */
+.profile-tab-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.content-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 28px;
+  color: var(--text-purple);
+  margin: 0 0 16px 0;
+  flex-shrink: 0;
+}
+
+/* ── PRIVACY TAB ── */
+.privacy-card-new {
+  background-color: white;
+  border: 1px solid var(--border-purple);
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+}
+
+.privacy-card-header {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.privacy-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.privacy-card-body p {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-dark);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+/* ── SESSIONS TAB ── */
+.sessions-layout-new {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  overflow: hidden;
+}
+
+.session-list-new {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 440px; /* Limit visibility to approx 6 items */
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-purple-light) transparent;
+}
+
+.session-list-new::-webkit-scrollbar,
+.conversation-messages-list::-webkit-scrollbar {
+  width: 6px;
+}
+.session-list-new::-webkit-scrollbar-track,
+.conversation-messages-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.session-list-new::-webkit-scrollbar-thumb,
+.conversation-messages-list::-webkit-scrollbar-thumb {
+  background: var(--text-purple-light);
+  border-radius: 4px;
+}
+
+.session-item-new {
+  background-color: white;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-item-new.active {
+  border: 1.5px solid var(--border-purple);
+}
+
+.session-badges-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-new {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.badge-new.text {
+  background-color: #7DD3FC;
+  color: #0284C7;
+}
+
+.badge-new.avatar {
+  background-color: #F0ABFC;
+  color: #C026D3;
+}
+
+.badge-new.voice {
+  background-color: #FDE047;
+  color: #D97706;
+}
+
+.badge-new.risk-low {
+  background-color: transparent;
+  color: #16A34A;
+  font-weight: 700;
+}
+
+.badge-new.risk-moderate {
+  background-color: transparent;
+  color: #D97706;
+  font-weight: 700;
+}
+
+.badge-new.risk-critical {
+  background-color: transparent;
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.session-date-new {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px;
+  color: var(--text-dark);
+}
+
+.session-detail-new {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.session-mobile-toggle {
+  display: none;
+}
+
+.session-detail-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.session-detail-date {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text-dark);
+}
+
+.session-detail-summary {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-dark);
+  line-height: 1.5;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.session-detail-summary-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.conversation-box-new {
+  background-color: white;
+  border: 1px solid var(--border-purple);
+  border-radius: 12px;
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.conversation-title-new {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.conversation-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-purple-light) transparent;
+}
+
+.msg-new {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.msg-new.bot {
+  background-color: white;
+  color: var(--text-dark);
+  border: 1px solid var(--border-light);
+  align-self: flex-start;
+}
+
+.msg-new.user {
+  background-color: var(--text-purple);
+  color: white;
+  align-self: flex-end;
+}
+
+.msg-sender-new {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.msg-time-new {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 8px;
+  text-align: right;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* ── APPOINTMENT TAB ── */
+.appointment-box-new {
+  background-color: white;
+  border: 1px solid var(--border-purple);
+  border-radius: 12px;
+  min-height: 300px;
+  padding: 24px;
+}
+
+/* Utility */
+.vera-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+.vera-toast.success {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+.vera-toast.error {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+/* Loading */
+.loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  color: var(--text-purple);
+}
+
+/* Hide file input */
+.hidden { display: none; }
+
+/* ──────────────────────────────────────────
+   RESPONSIVE DESIGN
+   ────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .profile-page-container {
+    flex-direction: column;
+    padding: 24px 16px 48px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .profile-sidebar {
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  /* Make the avatar centered and not too huge */
+  .avatar-card {
+    max-width: 250px;
+    margin: 0 auto;
+  }
+
+  .sessions-layout-new {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .session-mobile-toggle {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: var(--text-purple);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .session-list-new {
+    width: 100%;
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-main-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .profile-name {
+    font-size: 32px;
+  }
+
+  .custom-tabs {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .privacy-card-body {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .session-detail-header-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .avatar-card {
+    max-width: 200px;
+  }
+}
+
+/* Reminder Styles */
+.privacy-card-new.reminder {
+  border: 1.5px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.02);
+  border-left: 5px solid #EF4444 !important;
+}
+
+.privacy-card-new.reminder .privacy-card-header {
+  color: #DC2626 !important;
+}
+
+.sidebar-safety-note h4 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.sidebar-safety-note p {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}

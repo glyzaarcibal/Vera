@@ -10,6 +10,7 @@ import voiceWaveImg from "../assets/voice-wave.png";
 import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
+import "./Welcome.css";
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
 const Arrow = ({ className }) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>;
@@ -275,7 +276,7 @@ const Welcome = () => {
           <div className="v-visualizer-orb">
             <div className="v-orb-outer">
               <div className="v-orb-inner">
-                 <span className="material-symbols-outlined">mic</span>
+                 <span className="material-symbols-outlined"></span>
               </div>
             </div>
             <div className="v-ping-1" />
