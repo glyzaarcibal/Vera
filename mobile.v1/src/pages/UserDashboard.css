@@ -1,0 +1,665 @@
+/* User Dashboard V2 — Premium Sanctuary Theme */
+
+.dash-v2-page {
+  min-height: 100vh;
+  background-color: #FAFAFE;
+  padding-bottom: 80px;
+}
+
+.dash-v2-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 40px;
+}
+
+/* ── HERO SECTION ── */
+.dash-v2-hero {
+  margin-bottom: 50px;
+  position: relative;
+}
+
+.dash-v2-hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.dash-v2-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.dash-v2-welcome h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -2px;
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+
+.dash-v2-welcome p {
+  font-size: 1.1rem;
+  color: #4B5563;
+  max-width: 480px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+/* Mood Check */
+.dash-v2-mood-check {
+  background: white;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  max-width: fit-content;
+}
+
+.check-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #9CA3AF;
+  margin-bottom: 16px;
+}
+
+.mood-btn-group {
+  display: flex;
+  gap: 12px;
+}
+
+.mood-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F9FAFB;
+  border: 1px solid #F3F4F6;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mood-pill:hover {
+  background: white;
+  border-color: #7c3aed33;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.mood-pill-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+/* Vera AI Card */
+.vera-ai-card-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vera-ai-card {
+  background: white;
+  border-radius: 36px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 360px;
+}
+
+.vera-ai-avatar {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.vera-ai-avatar-inner {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border: 4px solid #f3f0ff;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+}
+
+.pro-ai-avatar {
+  background: linear-gradient(135deg, #1f2937, #111827);
+  box-shadow: inset 0 4px 20px rgba(0,0,0,0.6), 0 0 0 2px rgba(124, 58, 237, 0.1);
+  position: relative;
+}
+
+.ai-core-pulse {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
+  border-radius: 50%;
+  animation: corePulse 2s infinite ease-in-out alternate;
+}
+
+.ai-core-ring {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 2px solid rgba(124, 58, 237, 0.2);
+  border-radius: 50%;
+  animation: ringSpin 8s infinite linear;
+  border-top-color: #7c3aed;
+  border-bottom-color: #00d2ff;
+}
+
+.ai-core-icon {
+  color: white;
+  z-index: 2;
+  filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.9));
+}
+
+@keyframes corePulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+@keyframes ringSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.vera-ai-status-dot {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  background-color: #0b8a4f;
+  border-radius: 50%;
+  border: 4px solid white;
+}
+
+.vera-ai-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.vera-ai-subtitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0b8a4f;
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+}
+
+.vera-ai-quote-box {
+  background-color: #f6f6f8;
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.vera-ai-quote {
+  font-size: 14px;
+  color: #4b5563;
+  font-style: italic;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.vera-ai-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.vera-ai-sync {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.sync-value {
+  font-weight: 800;
+  color: #7c3aed;
+}
+
+.vera-ai-talk-btn {
+  width: 100%;
+  padding: 16px;
+  background-color: white;
+  border: 2px solid #eaddff;
+  border-radius: 28px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vera-ai-talk-btn:hover {
+  background-color: #f3f0ff;
+  border-color: #7c3aed;
+  color: #7c3aed;
+}
+
+/* ── GRID ── */
+.dash-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.glass-card {
+  grid-column: span 2;
+  background: white;
+  border-radius: 32px;
+  padding: 40px;
+  box-shadow: 0 20px 50px rgba(124, 58, 237, 0.05);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #7c3aed;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.glass-card h3 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.glass-card p {
+  color: #6B7280;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 400px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-link {
+  font-size: 15px;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.card-icon-circle {
+  width: 48px;
+  height: 48px;
+  background: #f3f0ff;
+  color: #7c3aed;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Stats Card */
+.stats-card {
+  background: white;
+  border-radius: 32px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stats-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9CA3AF;
+}
+
+.stats-num {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #7c3aed;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.stats-progress-bg {
+  height: 8px;
+  background: #f3f0ff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stats-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #00d2ff);
+  transition: width 1s ease-out;
+}
+
+/* Tool Cards */
+.tool-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+}
+
+.tool-icon-box {
+  width: 44px;
+  height: 44px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  color: #7c3aed;
+}
+
+.tool-card h4 {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.tool-card p {
+  font-size: 13px;
+  color: #6B7280;
+  line-height: 1.5;
+}
+
+.tool-arrow {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: #D1D5DB;
+}
+
+/* Ritual Card */
+.ritual-card {
+  grid-column: span 3;
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  color: white;
+  border-radius: 32px;
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ritual-info p {
+  color: rgba(255,255,255,0.8);
+  margin: 8px 0 0 0;
+  max-width: 500px;
+}
+
+.ritual-card .card-tag { color: white; opacity: 0.8; }
+.ritual-card h3 { font-size: 24px; font-weight: 800; }
+
+.ritual-start-btn {
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 14px 32px;
+  border-radius: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* ── RECOMMENDED SECTION ── */
+.dash-recommended {
+  margin-top: 60px;
+}
+
+.recommended-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.recommended-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.view-all-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: #7c3aed;
+  text-decoration: none;
+}
+
+.recommended-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.rec-card {
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.rec-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+}
+
+.rec-img-wrap {
+  position: relative;
+  height: 180px;
+  width: 100%;
+}
+
+.rec-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rec-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 50%);
+}
+
+.rec-overlay-title {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  color: white;
+  font-weight: 800;
+  font-size: 18px;
+  z-index: 2;
+}
+
+.rec-content {
+  padding: 20px;
+}
+
+.rec-category {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.rec-content h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.rec-content p {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ── FOOTER ── */
+.dash-footer {
+  margin-top: 40px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 40px;
+  padding-bottom: 20px;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-logo {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: #111827;
+}
+
+.footer-copy {
+  font-size: 10px;
+  color: #9ca3af;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-links a {
+  font-size: 11px;
+  font-weight: 800;
+  color: #9ca3af;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: #7c3aed;
+}
+
+/* ── UTILS ── */
+.v-gradient-text {
+  background: linear-gradient(90deg, #7c3aed, #00d2ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── RESPONSIVE DESIGN ── */
+@media (max-width: 1200px) {
+  .dash-v2-container { padding: 20px 30px; }
+  .dash-v2-welcome h1 { font-size: 3rem; }
+}
+
+@media (max-width: 1024px) {
+  .dash-v2-hero-content { 
+    flex-direction: column; 
+    text-align: center; 
+    gap: 30px;
+  }
+  .dash-v2-welcome p { margin-left: auto; margin-right: auto; }
+  .dash-v2-mood-check { margin-left: auto; margin-right: auto; }
+  .mood-btn-group { justify-content: center; flex-wrap: wrap; }
+  .dash-v2-grid { grid-template-columns: repeat(2, 1fr); }
+  .glass-card { grid-column: span 2; }
+  .ritual-card { grid-column: span 2; flex-direction: column; text-align: center; gap: 24px; }
+  .recommended-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-inner { flex-direction: column; text-align: center; justify-content: center; }
+  .footer-left { flex-direction: column; gap: 8px; }
+}
+
+@media (max-width: 768px) {
+  .dash-v2-grid { grid-template-columns: 1fr; }
+  .glass-card, .ritual-card { grid-column: span 1; }
+  .dash-v2-container { padding: 15px 20px; }
+  .dash-v2-welcome h1 { font-size: 2.5rem; letter-spacing: -1px; }
+  .dash-v2-welcome p { font-size: 1rem; }
+  
+  .vera-ai-card { width: 100%; max-width: 360px; }
+  .glass-card { padding: 30px 24px; }
+  .glass-card h3 { font-size: 24px; }
+  
+  .recommended-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .dash-v2-welcome h1 { font-size: 2rem; }
+  .dash-v2-mood-check { padding: 16px; width: 100%; }
+  .mood-btn-group { gap: 8px; }
+  .mood-pill { padding: 6px 12px; }
+  .mood-pill-label { font-size: 12px; }
+  
+  .vera-ai-card { padding: 24px 20px; }
+  .vera-ai-avatar-inner { width: 100px; height: 100px; }
+  .ai-core-icon { size: 32px; }
+  
+  .dash-v2-card-small { padding: 20px; }
+  .stats-num { font-size: 2.5rem; }
+}
+
