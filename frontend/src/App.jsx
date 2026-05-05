@@ -26,7 +26,6 @@ import UserChat from "./pages/Admin/UserChat";
 import Resources from "./pages/Admin/Resources";
 import FeedbackManagement from "./pages/Admin/FeedbackManagement";
 import AvatarAI from "./pages/Avatar";
-import VideoAI from "./pages/VideoAI";
 import PsychologyLayout from "./layouts/PsychologyLayout";
 import PsychologyDashboard from "./pages/Psychology/Dashboard";
 import PsychologyUserManagement from "./pages/Psychology/UserManagement";
@@ -79,7 +78,6 @@ const App = () => {
         <Route path="/chat" element={<ChatAI />} />
         <Route path="/voice" element={<VoiceAI />} />
         <Route path="/avatar" element={<AvatarAI />} />
-        <Route path="/video-maker" element={<VideoAI />} />
         <Route path="/activities" element={<Activities />} />
         <Route path="/activities/clipcard" element={<ClipcardGame />} />
         <Route path="/activities/diary" element={<Diary />} />
