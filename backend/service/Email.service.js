@@ -6,17 +6,26 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, "../.env"), override: true });
+dotenv.config();
 
 // Configure Nodemailer with Gmail SMTP
 const transporter = nodemailer.createTransport({
+  pool: true, // Use connection pooling
   host: "smtp.gmail.com",
   port: 587,
   secure: false, // true for 465, false for other ports (587)
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '', // Remove spaces from App Password
+    user: (process.env.EMAIL_USER || "").trim(),
+    pass: (process.env.EMAIL_PASS || "").replace(/\s+/g, ''), // Remove all spaces from App Password
   },
+  tls: {
+    // This helps with some network environments that interfere with TLS
+    rejectUnauthorized: false,
+    minVersion: "TLSv1.2"
+  },
+  connectionTimeout: 20000, // 20 seconds
+  greetingTimeout: 20000,
+  socketTimeout: 30000,
   // Force IPv4 to avoid ENETUNREACH errors on environments like Render
   family: 4 
 });
