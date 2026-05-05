@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import dns from "dns";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -19,16 +20,16 @@ const transporter = nodemailer.createTransport({
     pass: (process.env.EMAIL_PASS || "").replace(/\s+/g, ''), // Remove all spaces from App Password
   },
   tls: {
-    // This helps with some network environments that interfere with TLS
     rejectUnauthorized: false,
     minVersion: "TLSv1.2"
   },
-  connectionTimeout: 20000, // 20 seconds
+  // Custom lookup to strictly force IPv4
+  lookup: (hostname, options, callback) => {
+    dns.lookup(hostname, { family: 4 }, callback);
+  },
+  connectionTimeout: 20000,
   greetingTimeout: 20000,
   socketTimeout: 30000,
-  // Force IPv4 to avoid ENETUNREACH errors on environments like Render
-  family: 4,
-  localAddress: "0.0.0.0" // Force local binding to IPv4
 });
 
 // Verify connection configuration
