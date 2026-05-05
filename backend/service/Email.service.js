@@ -27,7 +27,8 @@ const transporter = nodemailer.createTransport({
   greetingTimeout: 20000,
   socketTimeout: 30000,
   // Force IPv4 to avoid ENETUNREACH errors on environments like Render
-  family: 4 
+  family: 4,
+  localAddress: "0.0.0.0" // Force local binding to IPv4
 });
 
 // Verify connection configuration
