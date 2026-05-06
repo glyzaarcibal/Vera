@@ -123,11 +123,17 @@ export const resendVerification = async (req, res) => {
   }
 
   try {
-    await resendVerificationLink(email);
-    return res.status(200).json({ message: "Verification code sent to your email." });
+    const result = await resendVerificationLink(email);
+    return res.status(200).json({ 
+      message: result?.message || "Verification code sent to your email.",
+      devMode: result?.devMode
+    });
   } catch (e) {
     console.error("Resend verification error:", e);
-    return res.status(500).json({ message: "Failed to send verification code." });
+    return res.status(500).json({ 
+      message: "Failed to send verification code.",
+      error: e.message 
+    });
   }
 };
 export const sendGuardianVerification = async (req, res) => {
