@@ -204,33 +204,50 @@ export async function resendVerificationLink(email) {
     if (updateError) throw updateError;
 
     console.log(`Resending verification code email to pending user ${email}`);
-    await sendVerificationCodeEmail(email, newCode);
-    return;
+    try {
+      await sendVerificationCodeEmail(email, newCode);
+      return { message: "Verification code sent to your email" };
+    } catch (emailError) {
+      console.error("Failed to resend verification email:", emailError);
+      const statusCode = emailError.code || emailError.statusCode || emailError.response?.status;
+      if (statusCode === 403) {
+        return { 
+          message: "Resend successful (Internal)! Note: SendGrid rejected the email. Check if your sender email is verified.",
+          devMode: true
+        };
+      }
+      throw emailError;
+    }
   }
 
   // 2. If not in pending_users, check if they exist in Supabase Auth but are unconfirmed
   const user = await findUserByEmail(email);
   if (user) {
-    // If user exists in Auth but we are here, it means they are likely unconfirmed
-    // or the system is trying to re-verify them.
-    // To use the Code flow, we need them in pending_users.
-    // For now, we'll just log the code and send it.
-    // NOTE: This might require them to re-register if they aren't in pending_users,
-    // but we'll try to send the code anyway for testing.
     console.log(`Fallback: User ${email} found in Auth but not pending. Sending code anyway.`);
 
-    // Create a temporary entry in pending_users so the 'verify-account' endpoint works
     await supabaseAdmin
       .from('pending_users')
       .upsert({
         email: email,
-        password: 'RE-VERIFY-REQUIRED', // They'll need to re-enter/know their pwd or we skip pwd update
+        password: 'RE-VERIFY-REQUIRED',
         token: newCode,
         created_at: new Date()
       });
 
-    await sendVerificationCodeEmail(email, newCode);
-    return;
+    try {
+      await sendVerificationCodeEmail(email, newCode);
+      return { message: "Verification code sent to your email" };
+    } catch (emailError) {
+       console.error("Failed to resend verification email (fallback):", emailError);
+       const statusCode = emailError.code || emailError.statusCode || emailError.response?.status;
+       if (statusCode === 403) {
+         return { 
+           message: "Resend successful (Internal)! Note: SendGrid rejected the email. Check if your sender email is verified.",
+           devMode: true
+         };
+       }
+       throw emailError;
+    }
   }
 
   throw new Error("User not found for verification.");
