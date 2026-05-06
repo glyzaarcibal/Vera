@@ -1,6 +1,5 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import dotenv from "dotenv";
-import dns from "dns";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -12,34 +11,17 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 console.log("-----------------------------------------");
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "NOT SET");
+console.log("RESEND_API_KEY:", process.env.RESEND_API_KEY ? "SET" : "NOT SET");
 console.log("-----------------------------------------");
 
-// Configure Nodemailer with Gmail SMTP
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // true for 465
-  family: 4, // avoid IPv6 issue
-  auth: {
-    user: (process.env.EMAIL_USER || "").trim(),
-    pass: (process.env.EMAIL_PASS || "").replace(/\s+/g, ''), // Remove spaces from App Password
-  },
-});
-
-// Verify connection configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.warn("Nodemailer: Configuration error. Check your EMAIL_USER and EMAIL_PASS (App Password).", error.message);
-  } else {
-    console.log("Nodemailer: Server is ready to take our messages.");
-  }
-});
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Helper to get synced email config
 const getEmailConfig = () => {
-  const fromEmail = (process.env.EMAIL_FROM || process.env.EMAIL_USER || "").trim();
+  // If no EMAIL_FROM is set, fallback to Resend's default onboarding email
+  // Note: Resend requires a verified domain to use custom from addresses.
+  const fromEmail = (process.env.EMAIL_FROM || "onboarding@resend.dev").trim();
   const fromName = (process.env.EMAIL_FROM_NAME || "Vera").trim();
   return { fromEmail, fromName };
 };
@@ -48,7 +30,7 @@ const getEmailConfig = () => {
  * Common Email error handler
  */
 const handleEmailError = (emailType, error) => {
-  console.error(`Error sending ${emailType} email:`, error);
+  console.error(`Error sending ${emailType} email via Resend:`, error);
   if (error && typeof error === 'object') {
     console.error(`Detailed ${emailType} email error:`, JSON.stringify(error, null, 2));
   }
@@ -63,8 +45,8 @@ export const sendVerificationCodeEmail = async (email, code) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const mailOptions = {
-      from: `"${fromName}" <${fromEmail}>`,
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
       to: email,
       subject: "Your Verification Code - Vera",
       html: `
@@ -83,11 +65,14 @@ export const sendVerificationCodeEmail = async (email, code) => {
           </p>
         </div>
       `,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Verification code email sent via Nodemailer:", info.messageId);
-    return info;
+    if (error) {
+      throw error;
+    }
+
+    console.log("Verification code email sent via Resend:", data?.id);
+    return data;
   } catch (error) {
     handleEmailError("verification code", error);
   }
@@ -97,8 +82,8 @@ export const sendVerificationEmail = async (email, link) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const mailOptions = {
-      from: `"${fromName}" <${fromEmail}>`,
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
       to: email,
       subject: "Verify Your Email Address - Vera",
       html: `
@@ -113,11 +98,14 @@ export const sendVerificationEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't create an account, you can safely ignore this email.</p>
         </div>
       `,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent via Nodemailer:", info.messageId);
-    return info;
+    if (error) {
+      throw error;
+    }
+
+    console.log("Verification email sent via Resend:", data?.id);
+    return data;
   } catch (error) {
     handleEmailError("verification", error);
   }
@@ -127,8 +115,8 @@ export const sendPasswordResetEmail = async (email, link) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const mailOptions = {
-      from: `"${fromName}" <${fromEmail}>`,
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
       to: email,
       subject: "Reset Your Password - Vera",
       html: `
@@ -143,11 +131,14 @@ export const sendPasswordResetEmail = async (email, link) => {
           <p style="margin-top: 30px; font-size: 12px; color: #999;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent via Nodemailer:", info.messageId);
-    return info;
+    if (error) {
+      throw error;
+    }
+
+    console.log("Password reset email sent via Resend:", data?.id);
+    return data;
   } catch (error) {
     handleEmailError("password reset", error);
   }
@@ -161,8 +152,8 @@ export const sendGuardianVerificationEmail = async (email, code, childName) => {
   const { fromEmail, fromName } = getEmailConfig();
 
   try {
-    const mailOptions = {
-      from: `"${fromName}" <${fromEmail}>`,
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
       to: email,
       subject: "Action Required: Guardian Consent for Vera",
       html: `
@@ -183,13 +174,15 @@ export const sendGuardianVerificationEmail = async (email, code, childName) => {
           </div>
         </div>
       `,
-    };
+    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Guardian verification email sent via Nodemailer:", info.messageId);
-    return info;
+    if (error) {
+      throw error;
+    }
+
+    console.log("Guardian verification email sent via Resend:", data?.id);
+    return data;
   } catch (error) {
     handleEmailError("guardian verification", error);
   }
 };
-
