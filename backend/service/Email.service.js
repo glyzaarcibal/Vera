@@ -7,29 +7,25 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config();
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ override: false });
+}
+
+console.log("-----------------------------------------");
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "NOT SET");
+console.log("-----------------------------------------");
 
 // Configure Nodemailer with Gmail SMTP
 const transporter = nodemailer.createTransport({
-  pool: true, // Use connection pooling
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports (587)
+  port: 465,
+  secure: true, // true for 465
+  family: 4, // avoid IPv6 issue
   auth: {
     user: (process.env.EMAIL_USER || "").trim(),
-    pass: (process.env.EMAIL_PASS || "").replace(/\s+/g, ''), // Remove all spaces from App Password
+    pass: (process.env.EMAIL_PASS || "").replace(/\s+/g, ''), // Remove spaces from App Password
   },
-  tls: {
-    rejectUnauthorized: false,
-    minVersion: "TLSv1.2"
-  },
-  // Custom lookup to strictly force IPv4
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, callback);
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 30000,
 });
 
 // Verify connection configuration
