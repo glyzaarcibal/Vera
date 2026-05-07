@@ -1,63 +1,65 @@
 import dotenv from "dotenv";
 dotenv.config();
+
 const FRONTEND_URL = process.env.FRONTEND_URL;
 
-// backend/config/cors.config.js
 const allowedOrigins = [
   FRONTEND_URL,
   "https://vera-7nnk.vercel.app",
   "https://vera-builder.vercel.app",
-  "https://localhost",          // Idagdag ito para sa Secure Mobile Origin
-  "http://localhost",           // Idagdag ito para sa Normal Mobile Origin
-  "capacitor://localhost",      // Idagdag ito para sa Capacitor
+  "https://localhost",
+  "http://localhost",
+  "capacitor://localhost",
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
 ].filter(Boolean);
 
-
 const corsConfig = {
   credentials: true,
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
+    // 1. Allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) {
       return callback(null, true);
     }
 
     const normalizedOrigin = origin.replace(/\/$/, "").toLowerCase();
-    const normalizedAllowed = allowedOrigins.map(o =>
-      typeof o === 'string' ? o.replace(/\/$/, "").toLowerCase() : o
-    );
 
-    console.log(`[CORS] Request Origin: ${origin}`);
+    // 2. Check if the origin is in our explicit allowed list
+    const isExplicitlyAllowed = allowedOrigins.some((o) => {
+      if (!o) return false;
+      return o.replace(/\/$/, "").toLowerCase() === normalizedOrigin;
+    });
 
-    // Check direct list
-    if (normalizedAllowed.includes(normalizedOrigin)) {
-      console.log(`[CORS] Origin allowed by direct list.`);
+    if (isExplicitlyAllowed) {
       return callback(null, true);
     }
 
-    // Vercel Pattern - more robust matching
-    const isVercel = normalizedOrigin.endsWith(".vercel.app") ||
-      normalizedOrigin.includes("vercel.app");
-
-    if (isVercel) {
-      console.log(`[CORS] Origin allowed by Vercel pattern.`);
+    // 3. Allow any Vercel deployment (for preview branches)
+    if (normalizedOrigin.endsWith(".vercel.app") || normalizedOrigin.includes("vercel.app")) {
       return callback(null, true);
     }
 
-    // If development environment, allow localhost
-    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+    // 4. Allow localhost in development
+    if (normalizedOrigin.includes("localhost") || normalizedOrigin.includes("127.0.0.1")) {
       return callback(null, true);
     }
 
+    // 5. If not allowed, we log it but don't necessarily crash the server
     console.warn(`[CORS] Origin NOT allowed: ${origin}`);
-    callback(null, false); // Return false instead of throwing Error to prevent 500s
+    return callback(null, false);
   },
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin"],
-  optionsSuccessStatus: 200, // Important for legacy browsers
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Access-Control-Allow-Origin",
+  ],
+  exposedHeaders: ["Set-Cookie"], // Important for cross-origin cookies
+  optionsSuccessStatus: 200,
 };
-
 
 export default corsConfig;

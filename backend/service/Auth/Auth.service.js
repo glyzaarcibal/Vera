@@ -32,9 +32,12 @@ async function generateUniquePendingUserCode(maxAttempts = 10) {
 }
 
 export async function createUsers(user) {
+  console.log("[AUTH] createUsers started for:", user.email);
   const code = await generateUniquePendingUserCode();
+  console.log("[AUTH] Generated code:", code);
 
   // 1. Save to pending_users table
+  console.log("[AUTH] Inserting into pending_users...");
   const { error: insertError } = await supabaseAdmin
     .from('pending_users')
     .insert([{
@@ -50,16 +53,19 @@ export async function createUsers(user) {
     }]);
 
   if (insertError) {
-    console.error("Supabase Insert Error (pending_users):", JSON.stringify(insertError, null, 2));
+    console.error("[AUTH] Supabase Insert Error (pending_users):", JSON.stringify(insertError, null, 2));
     throw insertError;
   }
+  console.log("[AUTH] Successfully inserted into pending_users.");
 
   // 2. Send verification code email
   try {
+    console.log("[AUTH] Attempting to send verification email...");
     await sendVerificationCodeEmail(user.email, code);
+    console.log("[AUTH] Verification email sent successfully.");
     return { message: "Verification code sent to your email" };
   } catch (emailError) {
-    console.error("Failed to send verification code email:", emailError);
+    console.error("[AUTH] Failed to send verification code email:", emailError);
 
     // If it's a SendGrid/Resend restriction (e.g., 403 Forbidden), don't crash the whole registration.
     // Just allow them to proceed and tell them to check the server logs.
@@ -67,15 +73,15 @@ export async function createUsers(user) {
     console.log(`[AUTH] Debug: Email error detected. Code: ${emailError.code}, StatusCode: ${emailError.statusCode}, ResponseStatus: ${emailError.response?.status}`);
 
     if (statusCode === 403 || statusCode === "403") {
+      console.warn("[AUTH] Email service restricted (403). Falling back to devMode.");
       return {
         message: "Registration successful! (Email sent skipped due to provider restriction. Check server logs for your verification code.)",
         devMode: true
       };
     }
 
+    console.error("[AUTH] Re-throwing email error as registration failure.");
     throw new Error("Failed to send verification email. Please try again later.");
-
-
   }
 }
 

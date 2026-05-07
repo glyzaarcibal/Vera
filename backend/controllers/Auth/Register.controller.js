@@ -60,6 +60,7 @@ export const verifyAccount = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
+  console.log("[AUTH] Registration request received:", req.body.email);
   const { email, password, username, contactNumber, birthDate } = req.body;
 
   if (!email || !password || !username) {
@@ -67,51 +68,66 @@ export const registerUser = async (req, res) => {
       .status(400)
       .json({ message: "Please fill all the required fields." });
   }
-  const isUserExisting = await userExists(email);
-  const isPasswordValid = isValidPassword(password);
 
-  if (isUserExisting) {
-    const { data, error } = await supabaseAnon.auth.signInWithPassword({
-      email,
-      password,
-    });
+  try {
+    console.log("[AUTH] Validating user existence...");
+    const isUserExisting = await userExists(email);
+    console.log("[AUTH] User exists check result:", isUserExisting);
 
-    if (!error && data?.session && data?.user) {
-      const profile = await getProfile(data.user.id);
+    const isPasswordValid = isValidPassword(password);
 
-      res.cookie("access_token", data.session.access_token, cookieConfig);
-      res.cookie("refresh_token", data.session.refresh_token, refreshCookieConfig);
-
-      return res.status(200).json({
-        message: "Success",
-        profile,
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+    if (isUserExisting) {
+      console.log("[AUTH] User already exists, attempting sign-in check...");
+      const { data, error } = await supabaseAnon.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (!error && data?.session && data?.user) {
+        console.log("[AUTH] User exists and password correct, logging in...");
+        const profile = await getProfile(data.user.id);
+
+        res.cookie("access_token", data.session.access_token, cookieConfig);
+        res.cookie("refresh_token", data.session.refresh_token, refreshCookieConfig);
+
+        return res.status(200).json({
+          message: "Success",
+          profile,
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      console.log("[AUTH] User exists but sign-in failed or incomplete.");
+      return res.status(409).json({ message: "User already exists." });
     }
 
-    return res.status(409).json({ message: "User already exists." });
-  }
-  if (!isPasswordValid)
-    return res.status(422).json({ message: "Password is invalid." });
+    if (!isPasswordValid) {
+      return res.status(422).json({ message: "Password is invalid." });
+    }
 
-  const formData = { email, password, username, contactNumber, birthDate };
-  try {
+    const formData = { email, password, username, contactNumber, birthDate };
+    console.log("[AUTH] Creating new user in pending_users...");
     const result = await createUsers(formData);
+    console.log("[AUTH] createUsers result:", result);
+
     return res.status(200).json({
       message: result.message || "Please check your email for the verification code."
     });
   } catch (e) {
-    console.error("Detailed Registration Error:", e);
-    // stringify the error if it's an object to see more details in logs
-    if (typeof e === 'object') {
-      console.error("Registration Error Body:", JSON.stringify(e, null, 2));
-    }
+    console.error("CRITICAL REGISTRATION ERROR:", e);
     
+    // Better error message for the client
+    let clientMessage = "Internal Server Error during registration";
+    if (e.message && e.message.includes("Supabase")) {
+      clientMessage = "Database connection error. Please try again later.";
+    }
+
     return res.status(500).json({
-      message: "Internal Server Error during registration",
-      details: e.message || "Unknown error",
-      error: e // Sending the full error for debugging
+      message: clientMessage,
+      details: e.message || "No error message provided",
+      error: e,
+      stack: e.stack
     });
   }
 };
