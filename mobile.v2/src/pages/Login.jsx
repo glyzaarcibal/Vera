@@ -50,8 +50,22 @@ const Login = () => {
       navigate("/dashboard");
     } catch (e) {
       const message = e.response?.data?.message || "Internal Server Error";
-      if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
+      const status = e.response?.status;
+      if ((status === 401 || status === 403) && (message.includes("verify") || message.includes("confirm") || message.includes("pending"))) {
         navigate("/email-verified", { state: { email: formData.email } });
+      } else if (status === 401) {
+        // Check if user is in pending_users by trying to resend verification
+        try {
+          await axiosInstance.post("/auth/resend-verification", { email: formData.email });
+          navigate("/email-verified", { state: { email: formData.email } });
+        } catch {
+          setErrorModal({
+            isOpen: true,
+            title: "Access Restricted",
+            message,
+            type: "error"
+          });
+        }
       } else {
         setErrorModal({
           isOpen: true,

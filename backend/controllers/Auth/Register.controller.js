@@ -118,16 +118,19 @@ export const registerUser = async (req, res) => {
     console.error("CRITICAL REGISTRATION ERROR:", e);
     
     // Better error message for the client
-    let clientMessage = "Internal Server Error during registration";
-    if (e.message && e.message.includes("Supabase")) {
+    let clientMessage = "Registration failed";
+    let details = e.message || "No error message provided";
+    
+    if (details.includes("Supabase")) {
       clientMessage = "Database connection error. Please try again later.";
+    } else if (details.includes("email") || details.includes("Email")) {
+      clientMessage = "Registration recorded, but email delivery failed.";
     }
 
     return res.status(500).json({
       message: clientMessage,
-      details: e.message || "No error message provided",
-      error: e,
-      stack: e.stack
+      details: details,
+      error: process.env.NODE_ENV === 'development' ? e : undefined,
     });
   }
 };

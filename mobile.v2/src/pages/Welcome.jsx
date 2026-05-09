@@ -186,7 +186,23 @@ const Welcome = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || "Invalid credentials");
+      const message = err.response?.data?.message || "Invalid credentials";
+      const status = err.response?.status;
+      if ((status === 401 || status === 403) && (message.includes("verify") || message.includes("confirm") || message.includes("pending"))) {
+        navigate("/email-verified", { state: { email: loginEmail } });
+      } else if (status === 401) {
+        // Check if user is in pending_users by trying to resend verification
+        try {
+          await axiosInstance.post("/auth/resend-verification", { email: loginEmail });
+          // If resend succeeded, the user IS pending → redirect to verify
+          navigate("/email-verified", { state: { email: loginEmail } });
+        } catch {
+          // Resend failed → genuinely invalid credentials
+          setLoginError(message);
+        }
+      } else {
+        setLoginError(message);
+      }
     } finally {
       setIsLoggingIn(false);
     }

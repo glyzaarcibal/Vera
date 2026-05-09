@@ -36,52 +36,60 @@ export async function createUsers(user) {
   const code = await generateUniquePendingUserCode();
   console.log("[AUTH] Generated code:", code);
 
-  // 1. Save to pending_users table
-  console.log("[AUTH] Inserting into pending_users...");
+  // 1. Save to pending_users table (using upsert to avoid duplicate email errors)
+  console.log("[AUTH] Upserting into pending_users for:", user.email);
   const { error: insertError } = await supabaseAdmin
     .from('pending_users')
-    .insert([{
+    .upsert([{
       email: user.email,
       password: user.password,
       user_metadata: {
-        name: user.username,
-        contact_number: user.contactNumber,
-        birthday: user.birthDate
+        name: user.username || "",
+        contact_number: user.contactNumber || "",
+        birthday: user.birthDate || ""
       },
-      token: code, // Still using the 'token' column to store the code
-      created_at: new Date()
-    }]);
+      token: code,
+      created_at: new Date().toISOString()
+    }], { onConflict: 'email' });
 
   if (insertError) {
-    console.error("[AUTH] Supabase Insert Error (pending_users):", JSON.stringify(insertError, null, 2));
-    throw insertError;
+    console.error("[AUTH] Supabase Upsert Error (pending_users):", insertError);
+    // Include more info in the error message for the controller to catch
+    const errorMsg = insertError.message || insertError.details || "Database error";
+    throw new Error(`Supabase Error: ${errorMsg}`);
   }
-  console.log("[AUTH] Successfully inserted into pending_users.");
+  console.log("[AUTH] Successfully upserted into pending_users.");
 
   // 2. Send verification code email
   try {
-    console.log("[AUTH] Attempting to send verification email...");
+    console.log("[AUTH] Attempting to send verification email to:", user.email);
     await sendVerificationCodeEmail(user.email, code);
     console.log("[AUTH] Verification email sent successfully.");
     return { message: "Verification code sent to your email" };
   } catch (emailError) {
     console.error("[AUTH] Failed to send verification code email:", emailError);
 
-    // If it's a SendGrid/Resend restriction (e.g., 403 Forbidden), don't crash the whole registration.
-    // Just allow them to proceed and tell them to check the server logs.
+    // Get the status code from the error if available
     const statusCode = emailError.code || emailError.statusCode || emailError.response?.status;
     console.log(`[AUTH] Debug: Email error detected. Code: ${emailError.code}, StatusCode: ${emailError.statusCode}, ResponseStatus: ${emailError.response?.status}`);
 
-    if (statusCode === 403 || statusCode === "403") {
-      console.warn("[AUTH] Email service restricted (403). Falling back to devMode.");
+    // If it's a known email service error (like 403 Forbidden, 401 Unauthorized, etc.)
+    // don't crash the whole registration. Allow them to proceed and warn them.
+    if (statusCode) {
+      console.warn(`[AUTH] Email service error (${statusCode}). Allowing registration to proceed with warning.`);
       return {
-        message: "Registration successful! (Email sent skipped due to provider restriction. Check server logs for your verification code.)",
-        devMode: true
+        message: `Registration recorded! However, we couldn't send the email code (Error ${statusCode}). Please check server logs or try "Resend Code" in a few minutes.`,
+        devMode: true,
+        emailError: emailError.message
       };
     }
 
-    console.error("[AUTH] Re-throwing email error as registration failure.");
-    throw new Error("Failed to send verification email. Please try again later.");
+    // For other unknown errors, we still try to be resilient but log more
+    console.warn("[AUTH] Unknown email error during registration. Falling back to success with warning.");
+    return {
+      message: "Registration recorded! (Email delivery might be delayed. If you don't receive it, try resending later.)",
+      devMode: true
+    };
   }
 }
 
@@ -140,6 +148,7 @@ export async function verifyUserRegistration(code) {
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
+    const birthday = pendingUser.user_metadata?.birthday;
     const { error: upsertError } = await supabaseAdmin
       .from("profiles")
       .upsert({
@@ -147,7 +156,7 @@ export async function verifyUserRegistration(code) {
         username: pendingUser.user_metadata?.name || finalUser.email.split('@')[0],
         first_name: firstName,
         last_name: lastName,
-        birthday: pendingUser.user_metadata?.birthday,
+        birthday: (birthday && birthday.trim() !== "") ? birthday : null,
         contact_number: pendingUser.user_metadata?.contact_number,
         tokens: 5
       });
@@ -216,13 +225,18 @@ export async function resendVerificationLink(email) {
     } catch (emailError) {
       console.error("Failed to resend verification email:", emailError);
       const statusCode = emailError.code || emailError.statusCode || emailError.response?.status;
-      if (statusCode === 403) {
+      
+      if (statusCode) {
         return { 
-          message: "Resend successful (Internal)! Note: SendGrid rejected the email. Check if your sender email is verified.",
+          message: `Internal record updated, but email provider rejected the request (Error ${statusCode}).`,
           devMode: true
         };
       }
-      throw emailError;
+      
+      return {
+        message: "Internal record updated, but email delivery failed. Please try again later.",
+        devMode: true
+      };
     }
   }
 
@@ -393,9 +407,10 @@ export async function createGuardianVerification(childEmail, guardianEmail, chil
       }]);
     
     if (insertError) {
-      console.warn("Table 'guardian_codes' likely missing. Error:", insertError.message);
-      // Fallback: If no table for codes exists, just log the code for now or throw error.
-      // throw new Error("Verification table missing.");
+      console.warn("[GUARDIAN] Table 'guardian_codes' likely missing or insert failed. Error:", insertError.message);
+      // We don't throw here to allow dev testing without all tables
+    } else {
+      console.log("[GUARDIAN] Code saved to DB for:", childEmail);
     }
   } catch (e) {
     console.error("Failed to save guardian code:", e);
