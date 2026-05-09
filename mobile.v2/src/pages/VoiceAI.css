@@ -593,6 +593,7 @@
 @media (max-width: 640px) {
   .immersive-call-view {
     padding: 32px 20px;
+    border-radius: 32px;
   }
   
   .avatar-container {
@@ -603,6 +604,92 @@
   .premium-start-btn {
     padding: 16px 32px;
     font-size: 16px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .voice-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .voice-selection-card {
+    padding: 16px;
+    border-radius: 24px;
+    gap: 14px;
+  }
+
+  .card-avatar-wrap {
+    width: 72px;
+    height: 72px;
+  }
+
+  .card-avatar-wrap img {
+    border-radius: 18px;
+  }
+
+  .card-header h3 {
+    font-size: 16px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+  }
+
+  .call-header {
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .call-controls {
+    gap: 24px;
+  }
+
+  .circle-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .btn-inner {
+    width: 72px;
+    height: 72px;
+  }
+
+  .companion-name {
+    font-size: 24px;
+  }
+
+  .active-transcript {
+    font-size: 16px;
+  }
+
+  .transcript-container {
+    padding: 20px;
+    border-radius: 24px;
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .voice-ai-container {
+    padding: 0 12px 32px;
+  }
+
+  .immersive-call-view {
+    padding: 24px 16px;
+    border-radius: 24px;
+  }
+
+  .avatar-container {
+    width: 160px;
+    height: 160px;
+    margin-bottom: 20px;
+  }
+
+  .end-session-btn {
+    padding: 10px 18px;
+    font-size: 13px;
   }
 }
 

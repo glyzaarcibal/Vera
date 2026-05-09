@@ -671,3 +671,223 @@
   .v-hero-btns { justify-content: center; }
   .v-promo-glass-card { flex-direction: column; padding: 40px; text-align: center; }
 }
+
+@media (max-width: 768px) {
+  .v-hero-wrap {
+    min-height: auto;
+    padding-top: 20px;
+  }
+
+  .v-hero-container {
+    padding: 20px 16px;
+    gap: 30px;
+  }
+
+  .v-hero-content-left h1 {
+    font-size: 2.5rem !important;
+    letter-spacing: -1.5px;
+  }
+
+  .v-hero-content-left p {
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  .v-hero-btns {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v-btn-primary,
+  .v-btn-glass {
+    padding: 14px 28px;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+  }
+
+  .v-hero-content-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .v-login-glass-card {
+    padding: 32px 24px;
+    border-radius: 28px;
+    max-width: 100%;
+  }
+
+  .v-login-header {
+    margin-bottom: 24px;
+  }
+
+  .v-login-header h2 {
+    font-size: 24px;
+  }
+
+  .v-input-group input {
+    height: 52px;
+    padding: 14px 16px;
+  }
+
+  .v-btn-submit {
+    height: 56px;
+  }
+
+  .v-breaker-section {
+    padding: 40px 16px;
+  }
+
+  .v-breathing-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 32px 24px;
+    gap: 24px;
+  }
+
+  .v-breaker-text h3 {
+    font-size: 24px;
+  }
+
+  .v-visualizer-orb {
+    width: 140px;
+    height: 140px;
+  }
+
+  .v-orb-outer {
+    width: 110px;
+    height: 110px;
+  }
+
+  .v-orb-inner {
+    width: 80px;
+    height: 80px;
+  }
+
+  .v-bento-section {
+    padding: 60px 16px;
+  }
+
+  .v-section-head {
+    margin-bottom: 32px;
+  }
+
+  .v-section-head h2 {
+    font-size: 28px !important;
+  }
+
+  .v-bento-grid {
+    gap: 16px;
+  }
+
+  .v-bento-item {
+    padding: 28px;
+    border-radius: 24px;
+  }
+
+  .v-bento-vertical {
+    grid-row: span 1;
+  }
+
+  .v-promo-section {
+    padding: 60px 16px;
+  }
+
+  .v-promo-glass-card {
+    padding: 28px 20px;
+    border-radius: 32px;
+    gap: 40px;
+  }
+
+  .v-promo-title {
+    font-size: 32px !important;
+  }
+
+  .v-promo-desc {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .v-phone-mockup-wrapper {
+    height: 350px;
+  }
+
+  .v-phone-primary, .v-phone-secondary {
+    width: 200px;
+    height: 420px;
+    border-width: 8px;
+  }
+
+  .v-cta-section {
+    padding: 60px 16px;
+  }
+
+  .v-cta-card {
+    border-radius: 28px;
+    padding: 60px 24px;
+  }
+
+  .v-btn-cta {
+    padding: 16px 32px;
+    font-size: 16px;
+  }
+
+  .v-main-footer {
+    padding: 40px 16px;
+  }
+
+  .v-footer-top {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .v-hero-content-left h1 {
+    font-size: 2rem !important;
+  }
+
+  .v-login-glass-card {
+    padding: 24px 16px;
+    border-radius: 24px;
+  }
+
+  .v-bento-item {
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .v-phone-mockup-wrapper {
+    height: 280px;
+  }
+
+  .v-phone-primary, .v-phone-secondary {
+    width: 160px;
+    height: 340px;
+    border-width: 6px;
+    border-radius: 28px;
+  }
+
+  .v-phone-primary {
+    transform: rotate(-8deg) translateX(-30px);
+  }
+
+  .v-phone-secondary {
+    transform: rotate(-4deg) translateX(30px) translateY(30px);
+  }
+
+  .v-promo-title {
+    font-size: 26px !important;
+  }
+
+  .v-cta-card {
+    padding: 48px 20px;
+    border-radius: 24px;
+  }
+
+  .v-cta-card h2 {
+    font-size: 1.5rem !important;
+  }
+}

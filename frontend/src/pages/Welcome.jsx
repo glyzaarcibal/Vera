@@ -186,7 +186,13 @@ const Welcome = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      setLoginError(err.response?.data?.message || "Invalid credentials");
+      const message = err.response?.data?.message || "Invalid credentials";
+      const status = err.response?.status;
+      if ((status === 401 || status === 403) && (message.includes("verify") || message.includes("confirm") || message.includes("pending"))) {
+        navigate("/email-verified", { state: { email: loginEmail } });
+      } else {
+        setLoginError(message);
+      }
     } finally {
       setIsLoggingIn(false);
     }

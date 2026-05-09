@@ -50,7 +50,8 @@ const Login = () => {
       navigate("/dashboard");
     } catch (e) {
       const message = e.response?.data?.message || "Internal Server Error";
-      if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
+      const status = e.response?.status;
+      if ((status === 401 || status === 403) && (message.includes("verify") || message.includes("confirm") || message.includes("pending"))) {
         navigate("/email-verified", { state: { email: formData.email } });
       } else {
         setErrorModal({

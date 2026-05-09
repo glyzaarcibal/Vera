@@ -129,7 +129,7 @@ const EmailVerified = () => {
         <div className="auth-circle auth-circle-2"></div>
       </div>
 
-      <div className="auth-card" style={{ maxWidth: "450px", width: "90%" }}>
+      <div className="auth-card auth-card-verify">
         {status === "input" && (
           <>
             <div style={{ textAlign: "center", marginBottom: "30px" }}>
@@ -143,29 +143,19 @@ const EmailVerified = () => {
               </p>
             </div>
 
-            <div className="otp-input-container" style={{ display: "flex", justifyContent: "space-between", gap: "10px", marginBottom: "30px" }}>
+            <div className="otp-input-container">
               {code.map((digit, index) => (
                 <input
                   key={index}
                   ref={inputRefs[index]}
                   type="text"
+                  inputMode="numeric"
                   maxLength="1"
                   value={digit}
                   onChange={(e) => handleChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
                   className="otp-input"
-                  style={{
-                    width: "50px",
-                    height: "60px",
-                    textAlign: "center",
-                    fontSize: "24px",
-                    fontWeight: "bold",
-                    borderRadius: "10px",
-                    border: "2px solid #ddd",
-                    outline: "none",
-                    transition: "all 0.3s ease",
-                  }}
                 />
               ))}
             </div>
