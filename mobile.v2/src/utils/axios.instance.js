@@ -11,8 +11,8 @@ const baseApiUrl = normalizeApiBaseUrl(configuredApiUrl || "http://localhost:500
 
 const axiosInstance = axios.create({
 
-  baseURL: "http://localhost:5000/api",
-  //baseURL: baseApiUrl,
+  //baseURL: "http://localhost:5000/api",
+  baseURL: baseApiUrl,
 
   timeout: 30000,
   withCredentials: true,
