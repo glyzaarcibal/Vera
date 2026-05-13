@@ -18,7 +18,9 @@ import { selectUser } from "../../store/slices/authSelectors";
 import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
 import { useLanguage } from "../../context/LanguageContext";
-import axiosInstance from "../../utils/axios.instance";
+import axiosInstance from "../../utils/axios.instance.js";
+// Re-assigning to ensure it's in scope for all internal functions if there's some weird shadowing
+const api = axiosInstance;
 import { updateTokens } from "../../store/slices/authSlice";
 
 const animationCache = new Map();
@@ -28,7 +30,11 @@ const getAnimationData = async (animationPath) => {
     return animationCache.get(animationPath);
   }
 
-  const response = await fetch(animationPath);
+  // Ensure we fetch from the correct origin for mobile/web consistency
+  const baseUrl = window.location.origin;
+  const targetUrl = animationPath.startsWith("http") ? animationPath : `${baseUrl}${animationPath.startsWith("/") ? "" : "/"}${animationPath}`;
+  
+  const response = await fetch(targetUrl);
   if (!response.ok) {
     throw new Error(`Failed to load animation: ${animationPath}`);
   }
@@ -417,7 +423,7 @@ const MoodTrackerScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      const res = await axiosInstance.post("/activities/save", {
+      const res = await api.post("/activities/save", {
         activityType: "mood",
         data: newEntry
       });
@@ -451,7 +457,7 @@ const MoodTrackerScreen = ({ navigation }) => {
     if (!userId) return;
     try {
       setIsLoading(true);
-      const response = await axiosInstance.get("/activities");
+      const response = await api.get("/activities");
       const activities = response.data.activities || [];
 
       // Filter only mood activities and extract the data
@@ -486,7 +492,7 @@ const MoodTrackerScreen = ({ navigation }) => {
 
   const executeDelete = async (id) => {
     try {
-      await axiosInstance.delete(`/activities/${id}`);
+      await api.delete(`/activities/${id}`);
       const updatedHistory = moodHistory.filter(entry => entry.id !== id);
       setMoodHistory(updatedHistory);
       setConfirmDeleteId(null);

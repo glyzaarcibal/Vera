@@ -990,6 +990,15 @@
   }
 }
 
+.didagent-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 0;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .avatarai-outer-container.session-active {
     height: calc(100vh - 80px);
@@ -1021,7 +1030,8 @@
   }
 
   .didagent-controls {
-    padding-bottom: 5px;
+    padding: 10px 0;
+    gap: 16px;
   }
 
   .didagent-video-wrap {
