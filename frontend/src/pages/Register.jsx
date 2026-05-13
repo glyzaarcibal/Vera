@@ -237,9 +237,9 @@ const Register = () => {
               </p>
               <div className="auth-landscape-features">
                 <div className="auth-feature">
-                  <h1 className="auth-landscape-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                  <h2 className="auth-landscape-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
                     Analyze Your <span style={{ color: '#fbbf24' }}>Emotions Today!</span>
-                  </h1>
+                  </h2>
                   <span>Secure Authentication</span>
                 </div>
                 <div className="auth-feature">
@@ -262,7 +262,7 @@ const Register = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="auth-form auth-form-grid">
-              <h2 className="auth-title" style={{ fontSize: '2rem', color: '#1e293b', marginBottom: '0.25rem' }}>Voice Analysis Profile</h2>
+              <h3 className="auth-title" style={{ fontSize: '2rem', color: '#1e293b', marginBottom: '0.25rem' }}>Voice Analysis Profile</h3>
               <div className="auth-form-row">
                 <div className="auth-field">
                   <label className="auth-label" htmlFor="username">
