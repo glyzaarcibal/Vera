@@ -17,3 +17,13 @@ export async function getActivitiesFromDB(userId) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function deleteActivityFromDB(userId, activityId) {
+  // Delete a specific activity for a user
+  const { error } = await supabaseAdmin
+    .from("activities")
+    .delete()
+    .eq("id", activityId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+}

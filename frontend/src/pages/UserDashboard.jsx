@@ -1,93 +1,99 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { selectUser } from "../store/slices/authSelectors";
+import { selectUser } from "../store/slices/authSelectors.js";
 import { motion } from "framer-motion";
-import { 
-  MessageCircle, 
-  Mic, 
-  Book, 
-  Heart, 
-  Sparkles, 
-  Zap, 
+import {
+  MessageCircle,
+  Mic,
+  Book,
+  Heart,
+  Sparkles,
+  Zap,
   ArrowRight,
   Smile,
   Frown,
   Meh,
   Sun
 } from "lucide-react";
-import veraMascot from "../assets/images/vera_mascot.png";
 import axiosInstance from "../utils/axios.instance.js";
+import PullToRefresh from "../components/PullToRefresh.jsx";
+import MoodTrackerModal from "../components/MoodTrackerModal.jsx";
+import { useLanguage } from "../context/LanguageContext";
 import "./UserDashboard.css";
 
 const UserDashboard = () => {
+  const { language = 'en', t } = useLanguage();
+  console.log("[UserDashboard] Current language:", language);
   const user = useSelector(selectUser);
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("Good morning");
   const [vitality, setVitality] = useState(0);
   const [syncDepth, setSyncDepth] = useState(88);
-  const [veraQuote, setVeraQuote] = useState("I'm noticing your vocal resonance is softer today. Would you like to try a grounding exercise?");
+  const [veraQuote, setVeraQuote] = useState("");
   const [resources, setResources] = useState([]);
+  const [showMoodModal, setShowMoodModal] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      const res = await axiosInstance.get("/activities");
+      const logs = res.data.activities || [];
+      
+      const today = new Date().toLocaleDateString('en-US');
+      const moodToday = logs.find(l => l.activity_type === 'mood' && l.data?.date === today);
+      if (!moodToday) {
+        setShowMoodModal(true);
+      }
+
+      const newVitality = Math.min(20 + (logs.length * 5), 100);
+      setVitality(newVitality);
+      setSyncDepth(Math.min(100, 65 + (logs.length * 4)));
+
+      if (newVitality >= 80) setVeraQuote(t("vera_quote_high"));
+      else if (newVitality >= 50) setVeraQuote(t("vera_quote_med"));
+      else setVeraQuote(t("vera_quote_low"));
+      
+      const resResources = await axiosInstance.get("/resources");
+      setResources(resResources.data.resources || resResources.data || []);
+    } catch (e) {
+      console.error("Error fetching dashboard data:", e);
+    }
+  };
 
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 4) setGreeting("Good evening");
-    else if (hour < 12) setGreeting("Good morning");
-    else if (hour < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-    
-    // Fetch some basic stats
-    const fetchStats = async () => {
-      try {
-        const res = await axiosInstance.get("/activities");
-        const logs = res.data.activities || [];
-        const newVitality = Math.min(20 + (logs.length * 5), 100);
-        setVitality(newVitality);
-        setSyncDepth(Math.min(100, 65 + (logs.length * 4)));
-        
-        if (newVitality >= 80) setVeraQuote("Your resonance is remarkably clear today. Let's keep this positive momentum going!");
-        else if (newVitality >= 50) setVeraQuote("Your energy feels balanced. Shall we do a quick check-in to align your thoughts?");
-        else setVeraQuote("I'm noticing your vocal resonance is softer today. Would you like to try a grounding exercise?");
-      } catch (e) { console.error(e); }
-    };
-    fetchStats();
+    if (hour < 4) setGreeting(t("greeting_evening"));
+    else if (hour < 12) setGreeting(t("greeting_morning"));
+    else if (hour < 18) setGreeting(t("greeting_afternoon"));
+    else setGreeting(t("greeting_evening"));
 
-    // Fetch dynamic resources for recommendation
-    const fetchResources = async () => {
-      try {
-        const res = await axiosInstance.get("/resources");
-        setResources(res.data.resources || res.data || []);
-      } catch (e) {
-        console.error("Error fetching recommended resources:", e);
-      }
-    };
-    fetchResources();
-  }, []);
+    fetchDashboardData();
+  }, [t]);
 
   const moodButtons = [
-    { label: "Radiant", icon: <Sun size={24} />, color: "#FBBF24" },
-    { label: "Good", icon: <Smile size={24} />, color: "#10B981" },
-    { label: "Okay", icon: <Meh size={24} />, color: "#6B7280" },
-    { label: "Not Great", icon: <Frown size={24} />, color: "#EF4444" },
+    { label: t("radiant"), icon: <Sun size={24} />, color: "#FBBF24" },
+    { label: t("good"), icon: <Smile size={24} />, color: "#10B981" },
+    { label: t("okay"), icon: <Meh size={24} />, color: "#6B7280" },
+    { label: t("not_great"), icon: <Frown size={24} />, color: "#EF4444" },
   ];
 
   return (
-    <div className="dash-v2-page">
+    <PullToRefresh onRefresh={fetchDashboardData}>
+      <div className="dash-v2-page">
       <div className="dash-v2-container">
-        {/* ── TOP HERO SECTION ── */}
         <section className="dash-v2-hero">
           <div className="dash-v2-hero-content">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="dash-v2-welcome"
             >
-              <span className="dash-v2-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+              <span className="dash-v2-date">{new Date().toLocaleDateString(language === 'tl' ? 'tl-PH' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
               <h1>{greeting}, <span className="v-gradient-text">{user?.firstName || user?.username || "Companion"}</span>.</h1>
-              <p>Welcome back to your sanctuary. Ready to start our healing journey today?</p>
-              
+              <p>{t("welcome_back")}</p>
+
               <div className="dash-v2-mood-check">
-                <p className="check-label">HOW ARE YOU FEELING?</p>
+                <p className="check-label">{t("how_feeling")}</p>
                 <div className="mood-btn-group">
                   {moodButtons.map(m => (
                     <button key={m.label} className="mood-pill" onClick={() => navigate("/activities/mood-tracker")}>
@@ -98,8 +104,8 @@ const UserDashboard = () => {
                 </div>
               </div>
             </motion.div>
-            
-            <motion.div 
+
+            <motion.div
               className="vera-ai-card-wrap"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -114,9 +120,9 @@ const UserDashboard = () => {
                   </div>
                   <div className="vera-ai-status-dot"></div>
                 </div>
-                
+
                 <h2 className="vera-ai-title">V.E.R.A. AI</h2>
-                <p className="vera-ai-subtitle">ATTUNED & ACTIVE</p>
+                <p className="vera-ai-subtitle">{t("attuned_active")}</p>
 
                 <div className="vera-ai-quote-box">
                   <p className="vera-ai-quote">
@@ -124,35 +130,34 @@ const UserDashboard = () => {
                   </p>
                   <hr className="vera-ai-divider" />
                   <div className="vera-ai-sync">
-                    <span>Sync Depth</span>
+                    <span>{t("sync_depth")}</span>
                     <span className="sync-value">{syncDepth}%</span>
                   </div>
                 </div>
 
                 <button className="vera-ai-talk-btn" onClick={() => navigate("/chat")}>
-                  Talk to V.E.R.A.
+                  {t("talk_vera")}
                 </button>
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* ── CORE ACTIVITY GRID ── */}
         <section className="dash-v2-grid">
           <div className="dash-v2-card-large glass-card" onClick={() => navigate("/avatar")}>
-            <div className="card-tag"><Sparkles size={14} /> AVATAR IMMERSION</div>
-            <h3>Interactive Avatar Session</h3>
-            <p>Step into a safe, face-to-face environment with V.E.R.A's visual avatar. Experience compassionate visual interactions, real-time facial expressions, and deeper emotional connection.</p>
+            <div className="card-tag"><Sparkles size={14} /> {t("avatar_immersion")}</div>
+            <h3>{t("interactive_avatar_session")}</h3>
+            <p>{t("avatar_desc")}</p>
             <div className="card-footer">
-              <span className="card-link">Launch Avatar</span>
+              <span className="card-link">{t("launch_avatar")}</span>
               <div className="card-icon-circle"><MessageCircle size={20} /></div>
             </div>
           </div>
 
           <div className="dash-v2-card-small stats-card">
             <div className="stats-header">
-               <Zap size={18} color="#7c3aed" fill="#7c3aed" />
-               <span>Current Vitality</span>
+              <Zap size={18} color="#7c3aed" fill="#7c3aed" />
+              <span>{t("vitality")}</span>
             </div>
             <div className="stats-main">
               <span className="stats-num">{vitality}%</span>
@@ -160,37 +165,36 @@ const UserDashboard = () => {
                 <div className="stats-progress-fill" style={{ width: `${vitality}%` }} />
               </div>
             </div>
-            <p>You're doing great! Keep up the daily check-ins.</p>
+            <p>{t("vitality_desc")}</p>
           </div>
 
           <div className="dash-v2-card-small tool-card" onClick={() => navigate("/voice")}>
-             <div className="tool-icon-box"><Mic size={20} /></div>
-             <h4>Voice Biometrics</h4>
-             <p>Record a clip to analyze your emotional frequency.</p>
-             <ArrowRight size={16} className="tool-arrow" />
+            <div className="tool-icon-box"><Mic size={20} /></div>
+            <h4>{t("voice_biometrics")}</h4>
+            <p>{t("voice_desc")}</p>
+            <ArrowRight size={16} className="tool-arrow" />
           </div>
 
           <div className="dash-v2-card-small tool-card" onClick={() => navigate("/activities/diary")}>
-             <div className="tool-icon-box"><Book size={20} /></div>
-             <h4>Digital Diary</h4>
-             <p>Log your thoughts in your private encrypted journal.</p>
-             <ArrowRight size={16} className="tool-arrow" />
+            <div className="tool-icon-box"><Book size={20} /></div>
+            <h4>{t("digital_diary")}</h4>
+            <p>{t("diary_desc")}</p>
+            <ArrowRight size={16} className="tool-arrow" />
           </div>
 
           <div className="dash-v2-card-small tool-card" onClick={() => navigate("/activities/take-a-breath")}>
-             <div className="tool-icon-box"><Heart size={20} /></div>
-             <h4>Deep Breath Reflection</h4>
-             <p>A quick 3-minute guided breathing session to center yourself before moving forward.</p>
-             <ArrowRight size={16} className="tool-arrow" />
+            <div className="tool-icon-box"><Heart size={20} /></div>
+            <h4>{t("deep_breath")}</h4>
+            <p>{t("breath_desc")}</p>
+            <ArrowRight size={16} className="tool-arrow" />
           </div>
         </section>
 
-        {/* ── RECOMMENDED SECTION ── */}
         <section className="dash-recommended">
           <div className="recommended-header">
-            <h2>Recommended for Your Sanctuary</h2>
+            <h2>{t("recommended")}</h2>
           </div>
-          
+
           <div className="recommended-grid">
             {resources.length > 0 ? (
               resources.map((resource, i) => {
@@ -214,26 +218,35 @@ const UserDashboard = () => {
                 );
               })
             ) : (
-              <p style={{ color: '#6b7280', gridColumn: 'span 3', textAlign: 'center' }}>No recommended resources available at the moment.</p>
+              <p style={{ color: '#6b7280', gridColumn: 'span 3', textAlign: 'center' }}>{t("no_resources")}</p>
             )}
           </div>
         </section>
       </div>
 
-      {/* ── FOOTER ── */}
       <footer className="dash-footer">
         <div className="dash-v2-container footer-inner">
           <div className="footer-left">
             <span className="footer-logo">V.E.R.A.</span>
-            <span className="footer-copy">© 2024 V.E.R.A. ALL RIGHTS RESERVED. PROVIDING A SANCTUARY FOR YOUR EMOTIONAL WELL-BEING.</span>
+            <span className="footer-copy">{t("all_rights")}</span>
           </div>
           <div className="footer-links">
-            <Link to="/privacy">PRIVACY POLICY</Link>
-            <Link to="/terms">TERMS OF SERVICE</Link>
+            <Link to="/privacy">{t("privacy_policy")}</Link>
+            <Link to="/terms">{t("terms_service")}</Link>
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+
+      <MoodTrackerModal 
+        isOpen={showMoodModal} 
+        onClose={() => setShowMoodModal(false)} 
+        onLogged={() => {
+          setShowMoodModal(false);
+          fetchDashboardData();
+        }}
+      />
+    </PullToRefresh>
   );
 };
 

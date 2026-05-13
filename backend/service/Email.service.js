@@ -175,3 +175,35 @@ export const sendGuardianVerificationEmail = async (email, code, childName) => {
     `,
   });
 };
+export const sendCriticalRiskAlert = async (guardianEmail, childName, riskScore, summary) => {
+  return sendEmail({
+    to: guardianEmail,
+    subject: `URGENT: Mental Health Alert for ${childName} - Vera`,
+    emailType: "critical risk alert",
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #fff5f5; border-radius: 12px; border: 2px solid #fc8181;">
+        <h2 style="color: #c53030; text-align: center;">Urgent Safety Notification</h2>
+        <p style="color: #2d3748; font-size: 16px;">Hello,</p>
+        <p style="color: #2d3748; font-size: 16px;">This is an automated alert from <strong>Vera</strong>. Our AI system has detected a <strong>Critical Risk Level</strong> during a recent interaction with <strong>${childName}</strong>.</p>
+        
+        <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #c53030;">
+          <h3 style="margin-top: 0; color: #c53030;">Assessment Summary:</h3>
+          <p style="color: #4a5568; font-style: italic;">"${summary}"</p>
+          <p style="margin-bottom: 0;"><strong>Risk Score:</strong> ${riskScore}/100</p>
+        </div>
+
+        <p style="color: #2d3748; font-weight: bold;">Recommended Actions:</p>
+        <ul style="color: #2d3748;">
+          <li>Check in with ${childName} immediately.</li>
+          <li>Contact a licensed mental health professional or counselor.</li>
+          <li>In case of immediate danger, contact emergency services.</li>
+        </ul>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #feb2b2; font-size: 12px; color: #718096;">
+          <p>This alert was generated based on voice and text analysis. While our AI is advanced, it should be used as a supporting tool alongside professional care.</p>
+          <p>Vera - AI Mental Wellness Companion</p>
+        </div>
+      </div>
+    `,
+  });
+};

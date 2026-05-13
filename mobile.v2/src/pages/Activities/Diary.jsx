@@ -9,11 +9,13 @@ import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
 import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
+import { useLanguage } from "../../context/LanguageContext";
 import jarImage from "../../assets/jar.png";
 
 import "./Diary.css";
 
 const Diary = () => {
+  const { t, language } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
@@ -35,19 +37,19 @@ const Diary = () => {
   const [showRewardModal, setShowRewardModal] = useState(false);
 
   const moods = [
-    { label: "Calm", icon: "😌" },
-    { label: "Happy", icon: "😊" },
-    { label: "Sad", icon: "😔" },
-    { label: "Energetic", icon: "⚡" },
-    { label: "Peaceful", icon: "🕊️" }
+    { label: "Calm", icon: "😌", tKey: "calm" },
+    { label: "Happy", icon: "😊", tKey: "happy" },
+    { label: "Sad", icon: "😔", tKey: "sad" },
+    { label: "Energetic", icon: "⚡", tKey: "energetic" },
+    { label: "Peaceful", icon: "🕊️", tKey: "peaceful" }
   ];
 
   const colors = [
-    { label: "Purple", value: "#7C3AED" },
-    { label: "Red", value: "#EF4444" },
-    { label: "Green", value: "#10B981" },
-    { label: "Orange", value: "#F59E0B" },
-    { label: "Blue", value: "#3B82F6" }
+    { label: language === 'tl' ? "Lila" : "Purple", value: "#7C3AED" },
+    { label: language === 'tl' ? "Pula" : "Red", value: "#EF4444" },
+    { label: language === 'tl' ? "Berde" : "Green", value: "#10B981" },
+    { label: language === 'tl' ? "Bugaw" : "Orange", value: "#F59E0B" },
+    { label: language === 'tl' ? "Asul" : "Blue", value: "#3B82F6" }
   ];
 
   useEffect(() => {
@@ -109,7 +111,7 @@ const Diary = () => {
         timestamp: new Date().toISOString(),
         mood: selectedMood,
         color: selectedColor,
-        category: activeCategory || "Inner Peace"
+        category: activeCategory || (language === 'tl' ? "Kapayapaan sa Loob" : "Inner Peace")
       };
       
       saveEntryToDB(newEntry);
@@ -157,10 +159,10 @@ const Diary = () => {
       <div className="diary-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="diary-input-card" style={{ textAlign: 'center', maxWidth: '400px' }}>
           <span style={{ fontSize: "60px", display: "block", marginBottom: "20px" }}>🔒</span>
-          <h2 style={{ color: "#7c3aed", marginBottom: "15px" }}>Privacy Required</h2>
-          <p style={{ color: "#6b7280", marginBottom: "25px" }}>Your Serenity Jar is a private sanctuary. Please log in to view your memories.</p>
+          <h2 style={{ color: "#7c3aed", marginBottom: "15px" }}>{t('privacy_consent')}</h2>
+          <p style={{ color: "#6b7280", marginBottom: "25px" }}>{t('safety_reminder_desc')}</p>
           <button className="drop-btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate("/")}>
-            Log In Now
+             {t('back')}
           </button>
         </div>
       </div>
@@ -174,7 +176,7 @@ const Diary = () => {
         {/* ── LEFT PANEL ── */}
         <div className="diary-left-panel">
           <button className="option-btn" onClick={() => navigate(-1)} style={{ width: 'fit-content' }}>
-            <ArrowLeft size={18} /> Back
+            <ArrowLeft size={18} /> {t('back')}
           </button>
 
           <header className="diary-header">
@@ -182,14 +184,14 @@ const Diary = () => {
               initial={{ opacity: 0, x: -30 }} 
               animate={{ opacity: 1, x: 0 }}
             >
-              What's on your <span className="accent-text">mind</span> today?
+              {t('diary_title').split('{mind}')[0]}<span className="accent-text">{language === 'tl' ? 'isip' : 'mind'}</span>{t('diary_title').split('{mind}')[1]}
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, x: -30 }} 
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              Release your thoughts into the ether and let them settle in your Serenity Jar.
+              {t('diary_subtitle')}
             </motion.p>
           </header>
 
@@ -201,7 +203,7 @@ const Diary = () => {
           >
             <textarea
               className="diary-textarea"
-              placeholder="Today I felt..."
+              placeholder={t('diary_placeholder')}
               value={entry}
               onChange={(e) => setEntry(e.target.value)}
             />
@@ -214,13 +216,13 @@ const Diary = () => {
                     onClick={() => { setShowMoodPicker(!showMoodPicker); setShowColorPicker(false); }}
                     style={{ backgroundColor: showMoodPicker ? '#e5e7eb' : '' }}
                   >
-                    {moods.find(m => m.label === selectedMood)?.icon} {selectedMood}
+                    {moods.find(m => m.label === selectedMood)?.icon} {t(moods.find(m => m.label === selectedMood)?.tKey || 'calm')}
                   </button>
                   {showMoodPicker && (
                     <div className="picker-popover">
                       {moods.map(m => (
                         <button key={m.label} onClick={() => { setSelectedMood(m.label); setShowMoodPicker(false); }}>
-                          {m.icon} {m.label}
+                          {m.icon} {t(m.tKey)}
                         </button>
                       ))}
                     </div>
@@ -251,16 +253,16 @@ const Diary = () => {
                 onClick={handleSave}
                 disabled={!entry.trim()}
               >
-                Drop into Jar <Sparkles size={18} />
+                {t('diary_drop_btn')} <Sparkles size={18} />
               </button>
             </div>
           </motion.div>
 
           <div className="diary-categories">
             {[
-              { name: "Nature Walk", icon: <Trees size={20} />, color: "#ecfdf5", iconColor: "#10b981" },
-              { name: "Dream Journal", icon: <motion.span animate={{ rotate: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 3 }}>🌙</motion.span>, color: "#f5f3ff", iconColor: "#7c3aed" },
-              { name: "Gratitude", icon: <Heart size={20} fill="#ef4444" color="#ef4444" />, color: "#fef2f2", iconColor: "#ef4444" }
+              { name: t('diary_nature_walk'), icon: <Trees size={20} />, color: "#ecfdf5", iconColor: "#10b981" },
+              { name: t('diary_dream_journal'), icon: <motion.span animate={{ rotate: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 3 }}>🌙</motion.span>, color: "#f5f3ff", iconColor: "#7c3aed" },
+              { name: t('diary_gratitude'), icon: <Heart size={20} fill="#ef4444" color="#ef4444" />, color: "#fef2f2", iconColor: "#ef4444" }
             ].map((cat, i) => {
               const count = entries.filter(e => e.category === cat.name).length;
               const isActive = activeCategory === cat.name;
@@ -280,7 +282,7 @@ const Diary = () => {
                   </div>
                   <div className="cat-info">
                     <h4>{cat.name}</h4>
-                    <span>{count} Reflections</span>
+                    <span>{count} {t('diary_reflections')}</span>
                   </div>
                 </motion.div>
               );
@@ -318,15 +320,15 @@ const Diary = () => {
             </div>
 
             <div className="jar-label">
-              <span>CURRENT JAR</span>
-              <h3>{activeCategory || "Inner Peace"}</h3>
+              <span>{language === 'tl' ? 'KASALUKUYANG JAR' : 'CURRENT JAR'}</span>
+              <h3>{activeCategory || (language === 'tl' ? "Kapayapaan sa Loob" : "Inner Peace")}</h3>
             </div>
           </div>
 
           <div className="diary-stats">
             <div className="stat-item">
               <span className="stat-value">{entries.length || "0"}</span>
-              <span className="stat-label-text">TOTAL ORBS</span>
+              <span className="stat-label-text">{language === 'tl' ? 'KABUUANG ORBS' : 'TOTAL ORBS'}</span>
             </div>
           </div>
         </div>
@@ -364,13 +366,13 @@ const Diary = () => {
                   <button className="option-btn" onClick={() => setModalVisible(false)}>✕</button>
                 </div>
                 
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '10px' }}>Memory from {selectedEntry.date}</h2>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '10px' }}>{t('diary_memory_from')} {selectedEntry.date}</h2>
                 <p style={{ fontSize: '1.1rem', color: '#4b5563', lineHeight: 1.6, fontStyle: 'italic' }}>
                   "{selectedEntry.text}"
                 </p>
 
                 <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                   <button className="drop-btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setModalVisible(false)}>Keep in Jar</button>
+                   <button className="drop-btn" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setModalVisible(false)}>{t('diary_keep_in_jar')}</button>
                    <button className="option-btn" onClick={() => setConfirmDeleteId(selectedEntry.id)} style={{ color: '#ef4444' }}>
                      <Trash2 size={18} />
                    </button>
@@ -384,24 +386,24 @@ const Diary = () => {
       <ReusableModal
         isOpen={!!confirmDeleteId}
         onClose={() => setConfirmDeleteId(null)}
-        title="Delete Memory"
+        title={language === 'tl' ? "I-delete ang Alaala" : "Delete Memory"}
         type="error"
       >
         <p className="text-slate-500 text-[16px] leading-relaxed font-medium mb-10">
-          Are you sure you want to delete this memory? This action cannot be undone.
+          {t('diary_delete_confirm')}
         </p>
         <div className="flex gap-4">
           <button 
             onClick={() => setConfirmDeleteId(null)}
             className="flex-1 py-4 rounded-[1rem] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
           >
-            Cancel
+            {language === 'tl' ? "Kanselahin" : "Cancel"}
           </button>
           <button 
             onClick={() => confirmDelete(confirmDeleteId)}
             className="flex-1 py-4 rounded-[1rem] font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
           >
-            Delete
+            {language === 'tl' ? "I-delete" : "Delete"}
           </button>
         </div>
       </ReusableModal>
@@ -410,7 +412,7 @@ const Diary = () => {
         isOpen={showRewardModal} 
         onClose={() => setShowRewardModal(false)}
         amount={5}
-        message="Your thoughts have been safely stored in your digital jar. Reflecting is a beautiful step towards growth!"
+        message={t('diary_reward')}
       />
     </div>
   );

@@ -21,7 +21,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 import ReusableModal from "../../components/ReusableModal";
-import "../Admin/Reports.css";
+import PullToRefresh from "../../components/PullToRefresh.jsx";
+import "./Reports.css";
 
 const CHART_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
 
@@ -37,7 +38,23 @@ const getWeekdayLabel = (dateValue) => {
   return date.toLocaleString("default", { weekday: "short" });
 };
 
-const PsychologyReports = () => {
+const parseSleepHours = (val) => {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
+    let total = 0;
+    if (hMatch) total += parseInt(hMatch[1], 10);
+    if (mMatch) total += parseInt(mMatch[1], 10) / 60;
+    if (total > 0) return total;
+    const num = parseFloat(val);
+    return Number.isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
+
+const AdminReports = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorModal, setErrorModal] = useState({ isOpen: false, title: "", message: "" });
@@ -141,6 +158,12 @@ const PsychologyReports = () => {
               totalRiskScoreSum += Number(session.risk_score);
               if (session.risk_score > maxUserRiskScore) maxUserRiskScore = session.risk_score;
             }
+            if (session.created_at) {
+              const sessDate = new Date(session.created_at);
+              const diff = now - sessDate;
+              if (diff <= oneDay) activeToday.add(user.id);
+              if (diff <= sevenDays) activeThisWeek.add(user.id);
+            }
           });
 
           if (userCriticalCount > 0) {
@@ -163,8 +186,9 @@ const PsychologyReports = () => {
             }
 
             if (activityType === 'sleep') {
-              const hours = activity.data?.sleepHours || activity.data?.hours || activity.data?.duration || 0;
-              if (hours > 0) { totalSleep += Number(hours); sleepEntries += 1; }
+              const sleepVal = activity.data?.sleepHours || activity.data?.hours || activity.data?.duration;
+              const hours = parseSleepHours(sleepVal);
+              if (hours > 0) { totalSleep += hours; sleepEntries += 1; }
             }
           });
         });
@@ -277,38 +301,90 @@ const PsychologyReports = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
+    const primaryColor = [102, 126, 234];
+    
+    // Title & Header
     doc.setFontSize(22);
-    doc.setTextColor(102, 126, 234);
-    doc.text("User Insights Report", 105, 20, { align: "center" });
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("Neural Intelligence Analytics Report", 105, 20, { align: "center" });
+    
     doc.setFontSize(10);
     doc.setTextColor(113, 128, 150);
     doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 105, 28, { align: "center" });
+    
+    // Section 1: Key Performance Metrics
     doc.setFontSize(14);
     doc.setTextColor(26, 32, 44);
-    doc.text("Metrics Overview", 14, 45);
+    doc.text("Key Performance Metrics", 14, 45);
 
     const summaryData = [
-      ["Total Users", analytics.totalUsers.toLocaleString()],
-      ["Active Users", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
-      ["Total Activities Recorded", aggregateReport.totalActivities.toLocaleString()],
-      ["Total AI Sessions", aggregateReport.totalSessions.toLocaleString()],
-      ["Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
+      ["Total User Identities", analytics.totalUsers.toLocaleString()],
+      ["Active Engagement (Verified)", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
+      ["App Affinity (Habit Strength Index)", `${aggregateReport.engagementScore}%`],
+      ["Retention Ratio (DAU / WAU)", `${aggregateReport.dau} / ${aggregateReport.wau}`],
+      ["Traffic Peak (Active Velocity)", aggregateReport.peakHour],
+      ["Sleep Average (Wellness Recovery)", `${aggregateReport.avgSleep}h`],
+      ["Total Activity Logs", aggregateReport.totalActivities.toLocaleString()],
+      ["AI Sessions Analyzed", aggregateReport.totalSessions.toLocaleString()],
+      ["Global Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
     ];
 
     autoTable(doc, {
       startY: 50,
-      head: [["Metric", "Value"]],
+      head: [["Performance Metric", "Aggregated Value"]],
       body: summaryData,
-      theme: "grid",
-      headStyles: { fillColor: [102, 126, 234], fontStyle: 'bold' },
-      styles: { fontSize: 10 },
+      theme: "striped",
+      headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 4 },
     });
 
-    doc.save(`psychology-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
+    // Section 2: Top Activity Modalities
+    let currentY = doc.lastAutoTable.finalY + 15;
+    doc.text("Top Activity Modalities", 14, currentY);
+    
+    const activityData = aggregateReport.activityTypeData.map(item => [
+      item.name.toUpperCase(),
+      item.value.toLocaleString()
+    ]);
+
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [["Activity Type", "Total Records"]],
+      body: activityData.length > 0 ? activityData : [["No activity data recorded", "0"]],
+      theme: "grid",
+      headStyles: { fillColor: [139, 92, 246] },
+      styles: { fontSize: 9 },
+    });
+
+    // Section 3: Critical User Alerts
+    currentY = doc.lastAutoTable.finalY + 15;
+    if (currentY > 250) { doc.addPage(); currentY = 20; }
+    
+    doc.setTextColor(225, 29, 72);
+    doc.text("Critical User Alerts (High Priority)", 14, currentY);
+    doc.setTextColor(26, 32, 44);
+
+    const criticalData = aggregateReport.criticalUsersData.map(user => [
+      user.name,
+      user.sessions.toString(),
+      user.score ? user.score.toFixed(1) : "N/A"
+    ]);
+
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [["User Identity", "Critical Sessions", "Peak Risk Score"]],
+      body: criticalData.length > 0 ? criticalData : [["Baseline Normal - No critical flags detected", "-", "-"]],
+      theme: "grid",
+      headStyles: { fillColor: [225, 29, 72] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`vera-admin-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
-    <div className="reports-page">
+    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
+      <div className="reports-page">
 
       {/* ── Header ── */}
       <div className="reports-header">
@@ -353,25 +429,12 @@ const PsychologyReports = () => {
         message={errorModal.message}
       />
 
-      {/* ── Intelligence Briefing ──
-      <div className="briefing-banner">
-        <h3 className="briefing-label">
-          <span className="briefing-label-dot" />
-          DASHBOARD INTELLIGENCE
-        </h3>
-        <p className="briefing-body">
-          This <strong>Intelligence Briefing</strong> aggregates deep-learning assessments from total user interactions.
-          By cross-referencing AI-driven risk scores, wellness logs, and engagement velocity, it identifies hidden
-          patterns to help practitioners implement preemptive clinical strategies.
-        </p>
-      </div> */}
-
       {error && <p className="reports-error">{error}</p>}
 
       {/* ── AI Analytics Hub ── */}
       <div className="ai-hub-card">
         <div className="ai-hub-header">
-          
+
           <div className="ai-hub-title-section">
             <h2>AI Analytics Hub</h2>
             <p className="ai-hub-subtitle">NEURAL INTELLIGENCE REPORT</p>
@@ -661,8 +724,9 @@ const PsychologyReports = () => {
         </div>
 
       </div>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 
-export default PsychologyReports;
+export default AdminReports;

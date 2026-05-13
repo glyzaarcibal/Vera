@@ -5,10 +5,12 @@ import { Menu, X, Bell, LogOut, User, Activity, LayoutDashboard, Sparkles, Chevr
 import axiosInstance from "../utils/axios.instance";
 import { selectIsAuthenticated, selectUser } from "../store/slices/authSelectors";
 import { clearUser } from "../store/slices/authSlice";
+import { useLanguage } from "../context/LanguageContext";
 import logoImg from "../assets/logo.png";
 import "./Header.css";
 
 const Header = () => {
+  const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,9 +19,18 @@ const Header = () => {
   const user = useSelector(selectUser);
 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleNotifications = () => {
@@ -93,7 +104,7 @@ const Header = () => {
   };
 
   return (
-    <header className="header">
+    <header className={`header ${isScrolled ? "header--scrolled" : ""}`}>
       <nav className="header-nav">
         {/* LEFT: Logo */}
         <div className="header-left">
@@ -105,33 +116,39 @@ const Header = () => {
         {/* CENTER: Navigation (Desktop/Mobile Menu) */}
         <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
           <div className="mobile-only mobile-menu-header">
-            <div 
-              className="mobile-user-profile" 
-              onClick={() => {
-                navigate("/profile");
-                setIsMenuOpen(false);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="mobile-avatar">
-                {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
-                  user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="Profile" />
-                  ) : (
-                    <UserCircle size={40} />
-                  )
-                )}
-              </div>
-              <div className="mobile-user-info">
-                <p className="mobile-user-name">{user?.username || user?.first_name || "User"}</p>
-              {isAuthenticated && !location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
-                <div className="mobile-token-pill">
-                  <span>🪙</span>
-                  <span>{user?.tokens ?? 0}</span>
+            {isAuthenticated ? (
+              <div 
+                className="mobile-user-profile" 
+                onClick={() => {
+                  navigate("/profile");
+                  setIsMenuOpen(false);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="mobile-avatar">
+                  {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                    user?.avatar_url ? (
+                      <img src={user.avatar_url} alt="Profile" />
+                    ) : (
+                      <UserCircle size={40} />
+                    )
+                  )}
                 </div>
-              )}
+                <div className="mobile-user-info">
+                  <p className="mobile-user-name">{user?.username || user?.first_name || "User"}</p>
+                {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                  <div className="mobile-token-pill">
+                    <span>🪙</span>
+                    <span>{user?.tokens ?? 0}</span>
+                  </div>
+                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="mobile-logo-link">
+                <img src={logoImg} alt="V.E.R.A. Logo" className="logo-img" />
+              </Link>
+            )}
             <button className="mobile-menu-close" onClick={toggleMenu}>
               <X size={24} />
             </button>
@@ -139,53 +156,63 @@ const Header = () => {
 
           <Link to="/" className={`header-link ${isActive("/") ? "active" : ""}`}>
              <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-             <span>Home</span>
+             <span>{t("home")}</span>
           </Link>
 
           {/* AI DROPDOWN */}
           <div className="desktop-ai-dropdown">
             <div className="header-link dropdown-trigger">
               <span className="header-link-icon mobile-only"><Sparkles size={18} /></span>
-              <span>AI Features</span>
+              <span>{t("ai_features")}</span>
               <ChevronDown size={14} className="dropdown-arrow-icon" />
             </div>
             <div className="desktop-ai-menu">
               <Link to="/voice" className="ai-menu-item">
-                <Mic size={16} /> <span>Voice AI</span>
+                <Mic size={16} /> <span>{t("voice_ai")}</span>
               </Link>
               <Link to="/avatar" className="ai-menu-item">
-                <UserCircle size={16} /> <span>Avatar AI</span>
+                <UserCircle size={16} /> <span>{t("avatar_ai")}</span>
               </Link>
               <Link to="/chat" className="ai-menu-item">
-                <MessageSquare size={16} /> <span>Chat AI</span>
+                <MessageSquare size={16} /> <span>{t("chat_ai")}</span>
               </Link>
             </div>
           </div>
 
           <Link to="/activities" className={`header-link ${isActive("/activities") ? "active" : ""}`}>
             <span className="header-link-icon mobile-only"><Activity size={18} /></span>
-            <span>Activities</span>
+            <span>{t("activities")}</span>
           </Link>
 
           {user?.role?.toLowerCase() === "admin" && (
             <Link to="/admin" className={`header-link ${location.pathname.startsWith("/admin") ? "active" : ""}`}>
               <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-              <span>Admin</span>
+              <span>{t("admin")}</span>
             </Link>
           )}
 
           {user?.role?.toLowerCase() === "psychology" && (
             <Link to="/psychology" className={`header-link ${location.pathname.startsWith("/psychology") ? "active" : ""}`}>
               <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-              <span>Psychology</span>
+              <span>{t("psychology")}</span>
             </Link>
           )}
+
+          {/* Language Switcher in Mobile Menu */}
+          <div className="mobile-only language-switcher-mobile">
+            <div className="header-divider"></div>
+            <p className="mobile-section-label">{t("language")}</p>
+            <div className="lang-btn-group">
+               <button className={`lang-btn ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>{t("english")}</button>
+               <button className={`lang-btn ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>{t("tagalog")}</button>
+            </div>
+          </div>
 
           {isAuthenticated && (
             <div className="mobile-only mobile-notifications-link">
                <button onClick={toggleNotifications} className="header-link">
                  <span className="header-link-icon"><Bell size={18} /></span>
-                 <span>Notifications</span>
+                 <span>{t("notifications")}</span>
                  {unreadCount > 0 && <span className="mobile-notif-badge">{unreadCount}</span>}
                </button>
             </div>
@@ -193,19 +220,25 @@ const Header = () => {
 
           <div className="mobile-only mobile-auth-section">
              <div className="header-divider"></div>
-             {isAuthenticated ? (
-               <button onClick={handleLogout} className="header-link header-logout-btn">
-                 <LogOut size={18} />
-                 <span>Logout</span>
-               </button>
-             ) : (
-                <Link to="/register" className="header-link get-started-link">Get Started</Link>
-             )}
+              {isAuthenticated ? (
+                <button onClick={handleLogout} className="header-link header-logout-btn">
+                  <LogOut size={18} />
+                  <span>{t("logout")}</span>
+                </button>
+              ) : (
+                 <Link to="/register" className="header-button-link get-started-link" onClick={() => setIsMenuOpen(false)}>{t("get_started")}</Link>
+              )}
           </div>
         </div>
 
         {/* RIGHT: Actions */}
         <div className="header-right">
+          {/* Desktop Language Switcher */}
+          <div className="desktop-only language-switcher-pill">
+             <button className={`lang-pill ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>EN</button>
+             <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>TL</button>
+          </div>
+
           {isAuthenticated ? (
             <>
               <div className="notification-container" ref={notificationRef}>
@@ -223,7 +256,7 @@ const Header = () => {
                 {isNotificationOpen && (
                   <div className="notification-dropdown">
                     <div className="notification-header">
-                      <h3>Notifications</h3>
+                      <h3>{t("notifications")}</h3>
                       <button className="mark-read-btn" onClick={() => {
                         const currentIds = notifications.map(n => n.id);
                         const clearedIds = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
@@ -276,9 +309,9 @@ const Header = () => {
                     </div>
                   </div>
                   <div className="dropdown-menu">
-                    <Link to="/profile" className="dropdown-item">Profile</Link>
-                    <Link to="/feedback" className="dropdown-item">Feedback & Support</Link>
-                    <button onClick={handleLogout} className="dropdown-item text-red">Logout</button>
+                    <Link to="/profile" className="dropdown-item">{t("profile")}</Link>
+                    <Link to="/feedback" className="dropdown-item">{t("feedback")}</Link>
+                    <button onClick={handleLogout} className="dropdown-item text-red">{t("logout")}</button>
                   </div>
                 </div>
               )}

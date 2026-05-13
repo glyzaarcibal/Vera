@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutGrid, Wind, Moon, Sun, Timer, ArrowLeft, Sparkles, Cloud } from "lucide-react";
 import axiosInstance from "../../utils/axios.instance";
 import TokenRewardModal from "../../components/TokenRewardModal";
+import ModalPortal from "../../components/ModalPortal";
+import { useLanguage } from "../../context/LanguageContext";
 
 import "./TakeABreath.css";
 
@@ -27,13 +29,13 @@ import countdown1En from "../../assets/breath/countdown1.mp3";
 import countdown1Tl from "../../assets/breath/countdown1tagalog.mp3";
 
 const AUDIO_SOURCES = {
-  getReady: { english: getReadyEn, tagalog: getReadyTl },
-  inhale: { english: inhaleEn, tagalog: inhaleTl },
-  exhale: { english: exhaleEn, tagalog: exhaleTl },
-  hold: { english: holdEn, tagalog: holdTl },
-  countdown3: { english: countdown3En, tagalog: countdown3Tl },
-  countdown2: { english: countdown2En, tagalog: countdown2Tl },
-  countdown1: { english: countdown1En, tagalog: countdown1Tl },
+  getReady: { en: getReadyEn, tl: getReadyTl },
+  inhale: { en: inhaleEn, tl: inhaleTl },
+  exhale: { en: exhaleEn, tl: exhaleTl },
+  hold: { en: holdEn, tl: holdTl },
+  countdown3: { en: countdown3En, tl: countdown3Tl },
+  countdown2: { en: countdown2En, tl: countdown2Tl },
+  countdown1: { en: countdown1En, tl: countdown1Tl },
 };
 
 const TECHNIQUES = [
@@ -72,38 +74,8 @@ const TECHNIQUES = [
   }
 ];
 
-const TEXTS = {
-  English: {
-    title: "Focus on your breath",
-    subtitle: "Inhale as the circle expands, exhale as it contracts.",
-    start: "Start Session",
-    stop: "Stop Session",
-    inhale: "Inhale",
-    hold: "Hold",
-    exhale: "Exhale",
-    techniques: "Techniques",
-    recent: "Recent Journeys",
-    back: "Back",
-    history: "Full History",
-    noSessions: "No sessions yet."
-  },
-  Tagalog: {
-    title: "Tumutok sa iyong paghinga",
-    subtitle: "Huminga habang lumalaki ang bilog, ibuga habang lumiliit ito.",
-    start: "Magsimula",
-    stop: "Itigil",
-    inhale: "Huminga",
-    hold: "Pigil",
-    exhale: "Ibuga",
-    techniques: "Mga Teknik",
-    recent: "Mga Nakaraang Session",
-    back: "Bumalik",
-    history: "Buong Kasaysayan",
-    noSessions: "Wala pang session."
-  }
-};
-
 const TakeABreath = () => {
+  const { language, t } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
@@ -117,7 +89,6 @@ const TakeABreath = () => {
   const [stageDuration, setStageDuration] = useState(0);
   const [history, setHistory] = useState([]);
   const [sessionStartTime, setSessionStartTime] = useState(null);
-  const [language, setLanguage] = useState("English");
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -127,8 +98,6 @@ const TakeABreath = () => {
   const animationRef = useRef(null);
   const isBreathingRef = useRef(false);
   const timerRef = useRef(null);
-
-  const t = TEXTS[language];
 
   useEffect(() => {
     isBreathingRef.current = isBreathing;
@@ -178,9 +147,9 @@ const TakeABreath = () => {
   };
 
   const preloadAudio = () => {
-    const lang = language.toLowerCase();
+    const lang = language;
     Object.entries(AUDIO_SOURCES).forEach(([key, urls]) => {
-      audioRefs.current[key] = new Audio(urls[lang] || urls.english);
+      audioRefs.current[key] = new Audio(urls[lang] || urls.en);
     });
   };
 
@@ -311,9 +280,9 @@ const TakeABreath = () => {
 
   const getStageDisplay = () => {
     if (stage === "getReady") return countdown;
-    if (stage === "inhale") return t.inhale;
-    if (stage === "hold" || stage === "holdAfter") return t.hold;
-    if (stage === "exhale") return t.exhale;
+    if (stage === "inhale") return t("inhale");
+    if (stage === "hold" || stage === "holdAfter") return t("hold");
+    if (stage === "exhale") return t("exhale");
     return "";
   };
 
@@ -322,28 +291,14 @@ const TakeABreath = () => {
       
       {/* ── SIDEBAR ── */}
       <aside className="breath-sidebar">
-        <header style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <header style={{ marginBottom: '30px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           <button className="nav-btn" onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: '#6b7280', fontWeight: '600' }}>
-            <ArrowLeft size={18} /> {t.back}
+            <ArrowLeft size={18} /> {t("back")}
           </button>
-          <div className="language-toggle">
-            <button 
-              className={`lang-btn ${language === 'English' ? 'active' : ''}`}
-              onClick={() => setLanguage('English')}
-            >
-              EN
-            </button>
-            <button 
-              className={`lang-btn ${language === 'Tagalog' ? 'active' : ''}`}
-              onClick={() => setLanguage('Tagalog')}
-            >
-              TL
-            </button>
-          </div>
         </header>
 
         <section className="sidebar-section">
-          <h2>{t.techniques}</h2>
+          <h2>{t("breath_techniques")}</h2>
           <div className="technique-list">
             {TECHNIQUES.map(tech => (
               <div 
@@ -358,11 +313,11 @@ const TakeABreath = () => {
                   <span className="badge" style={{ background: '#f3f4f6', color: '#6b7280' }}>{tech.pattern}</span>
                 </div>
                 <div className="card-content">
-                  <h3>{language === 'Tagalog' ? tech.nameTl : tech.name}</h3>
-                  <p>{language === 'Tagalog' ? tech.descTl : tech.desc}</p>
+                  <h3>{language === 'tl' ? tech.nameTl : tech.name}</h3>
+                  <p>{language === 'tl' ? tech.descTl : tech.desc}</p>
                 </div>
                 {activeTechnique.id === tech.id && (
-                  <span className="badge" style={{ position: 'absolute', top: '20px', right: '20px', background: '#7c3aed', color: 'white' }}>ACTIVE</span>
+                  <span className="badge" style={{ position: 'absolute', top: '20px', right: '20px', background: '#7c3aed', color: 'white' }}>{t("active").toUpperCase()}</span>
                 )}
               </div>
             ))}
@@ -371,8 +326,8 @@ const TakeABreath = () => {
 
         <section className="sidebar-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ margin: 0 }}>{t.recent}</h2>
-            <button onClick={() => setShowHistoryModal(true)} className="view-all-btn">{t.history}</button>
+            <h2 style={{ margin: 0 }}>{t("breath_recent")}</h2>
+            <button onClick={() => setShowHistoryModal(true)} className="view-all-btn">{t("history")}</button>
           </div>
           <div className="journey-list">
             {history.length > 0 ? history.slice(0, 3).map((item, i) => (
@@ -386,7 +341,7 @@ const TakeABreath = () => {
                 </div>
                 <span className="journey-badge">DEEP</span>
               </div>
-            )) : <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{t.noSessions}</p>}
+            )) : <p style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{t("breath_no_sessions")}</p>}
           </div>
         </section>
       </aside>
@@ -394,9 +349,9 @@ const TakeABreath = () => {
       {/* ── MAIN CONTENT ── */}
       <main className="breath-main">
         <header className="main-header">
-          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>{t.title}</motion.h1>
+          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>{t("breath_focus")}</motion.h1>
           <motion.p initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            {t.subtitle}
+            {t("breath_subtitle")}
           </motion.p>
         </header>
 
@@ -426,7 +381,7 @@ const TakeABreath = () => {
           disabled={isSaving}
           style={isSaving ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
         >
-          {isSaving ? "Saving..." : (isBreathing ? t.stop : t.start)}
+          {isSaving ? t("breath_saving") : (isBreathing ? t("stop") : t("start"))}
         </button>
 
 
@@ -458,9 +413,9 @@ const TakeABreath = () => {
                   <table className="history-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Technique</th>
-                        <th>Duration</th>
+                        <th>{t("date")}</th>
+                        <th>{t("technique")}</th>
+                        <th>{t("duration")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -484,7 +439,7 @@ const TakeABreath = () => {
         isOpen={showRewardModal} 
         onClose={() => setShowRewardModal(false)}
         amount={5}
-        message="Your breath session is complete. You've taken a wonderful step toward inner peace and clarity."
+        message={t("breath_reward")}
       />
     </div>
   );

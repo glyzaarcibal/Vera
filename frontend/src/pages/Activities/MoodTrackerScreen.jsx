@@ -263,14 +263,14 @@ const MOOD_LEVELS = [
 
 const moods = MOOD_LEVELS;
 
-import axiosInstance from "../../utils/axios.instance";
 import { useSelector, useDispatch } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
+import { useLanguage } from "../../context/LanguageContext";
 
 const MoodTrackerScreen = ({ navigation }) => {
+  const { t, language } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
@@ -524,9 +524,9 @@ const MoodTrackerScreen = ({ navigation }) => {
     // Date range and filter info
     doc.setFontSize(11);
     doc.setTextColor(100, 100, 100);
-    const filterText = filter === 'all' ? 'All Time' : filter === 'week' ? 'Last 7 Days' : 'Last 30 Days';
-    doc.text(`Period: ${filterText}`, 105, 30, { align: "center" });
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
+    const filterText = filter === 'all' ? (language === 'tl' ? 'Lahat ng Oras' : 'All Time') : filter === 'week' ? (language === 'tl' ? 'Nakaraang 7 Araw' : 'Last 7 Days') : (language === 'tl' ? 'Nakaraang 30 Araw' : 'Last 30 Days');
+    doc.text(`${language === 'tl' ? 'Panahon' : 'Period'}: ${filterText}`, 105, 30, { align: "center" });
+    doc.text(`${language === 'tl' ? 'Ginawa noong' : 'Generated on'}: ${new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -734,7 +734,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             fontWeight: "bold",
           }}
         >
-          Mood Tracker 🌈
+          {t('mood_title')} 🌈
         </h1>
 
         <div style={{ width: "40px" }} /> {/* Spacer */}
@@ -754,7 +754,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                   textAlign: "center",
                 }}
               >
-                How are you feeling today?
+                {t('mood_question')}
               </h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
@@ -773,7 +773,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       alignItems: "center",
                       gap: "10px"
                     }}>
-                      {category === "Positive" ? "✨ Positive Moods" : "⛈️ Negative Moods"}
+                      {category === "Positive" ? `✨ ${t('mood_positive')}` : `⛈️ ${t('mood_negative')}`}
                     </h3>
 
                     {Object.entries(subcategories).map(([subcategory, subMoods]) => (
@@ -786,7 +786,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                           marginBottom: "10px",
                           paddingLeft: "10px"
                         }}>
-                          {subcategory}
+                          {t(subcategory.toLowerCase().replace(' ', '_')) || subcategory}
                         </h4>
                         <div
                           style={{

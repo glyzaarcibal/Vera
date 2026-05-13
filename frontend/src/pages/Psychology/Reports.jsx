@@ -17,10 +17,11 @@ import {
   Legend,
 } from "recharts";
 import { MdPsychology, MdTimeline, MdAccessTime, MdPeople, MdTrendingUp, MdNightsStay } from "react-icons/md";
-import jsPDF from "jspdf";
+import jsPDF from "jsPDF";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 import ReusableModal from "../../components/ReusableModal";
+import PullToRefresh from "../../components/PullToRefresh.jsx";
 import "../Admin/Reports.css";
 
 const CHART_COLORS = ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
@@ -35,6 +36,21 @@ const getWeekdayLabel = (dateValue) => {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "Unknown";
   return date.toLocaleString("default", { weekday: "short" });
+};
+const parseSleepHours = (val) => {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
+    let total = 0;
+    if (hMatch) total += parseInt(hMatch[1], 10);
+    if (mMatch) total += parseInt(mMatch[1], 10) / 60;
+    if (total > 0) return total;
+    const num = parseFloat(val);
+    return Number.isNaN(num) ? 0 : num;
+  }
+  return 0;
 };
 
 const PsychologyReports = () => {
@@ -165,6 +181,12 @@ const PsychologyReports = () => {
                 totalRiskScoreSum += Number(session.risk_score);
                 if (session.risk_score > maxUserRiskScore) maxUserRiskScore = session.risk_score;
              }
+             if (session.created_at) {
+                const sessDate = new Date(session.created_at);
+                const diff = now - sessDate;
+                if (diff <= oneDay) activeToday.add(user.id);
+                if (diff <= sevenDays) activeThisWeek.add(user.id);
+             }
           });
 
           if (userCriticalCount > 0) {
@@ -192,13 +214,14 @@ const PsychologyReports = () => {
                if (diff <= sevenDays) activeThisWeek.add(user.id);
             }
 
-            if (activityType === 'sleep') {
-               const hours = activity.data?.sleepHours || activity.data?.hours || activity.data?.duration || 0;
-               if (hours > 0) {
-                  totalSleep += Number(hours);
-                  sleepEntries += 1;
-               }
-            }
+             if (activityType === 'sleep') {
+                const sleepVal = activity.data?.sleepHours || activity.data?.hours || activity.data?.duration;
+                const hours = parseSleepHours(sleepVal);
+                if (hours > 0) {
+                   totalSleep += hours;
+                   sleepEntries += 1;
+                }
+             }
           });
         });
 
@@ -354,50 +377,69 @@ const PsychologyReports = () => {
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-
-    // Title
+    const primaryColor = [102, 126, 234];
+    
+    // Title & Header
     doc.setFontSize(22);
-    doc.setTextColor(102, 126, 234);
-    doc.text("User Insights Report", 105, 20, { align: "center" });
-
-    // Date
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("Clinical Psychology Analytics Report", 105, 20, { align: "center" });
+    
     doc.setFontSize(10);
     doc.setTextColor(113, 128, 150);
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })}`, 105, 28, { align: "center" });
-
-    // Summary Statistics
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 105, 28, { align: "center" });
+    
+    // Section 1: Strategic Clinical Metrics
     doc.setFontSize(14);
     doc.setTextColor(26, 32, 44);
-    doc.text("Metrics Overview", 14, 45);
+    doc.text("Strategic Clinical Metrics", 14, 45);
 
     const summaryData = [
-      ["Total Users", analytics.totalUsers.toLocaleString()],
-      ["Active Users", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
-      ["Total Activities Recorded", aggregateReport.totalActivities.toLocaleString()],
-      ["Total AI Sessions", aggregateReport.totalSessions.toLocaleString()],
-      ["Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
+      ["Total User Identities", analytics.totalUsers.toLocaleString()],
+      ["Active Engagement (Verified)", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
+      ["App Affinity (Habit Strength Index)", `${aggregateReport.engagementScore}%`],
+      ["Retention Ratio (DAU / WAU)", `${aggregateReport.dau} / ${aggregateReport.wau}`],
+      ["Traffic Peak (Active Velocity)", aggregateReport.peakHour],
+      ["Sleep Average (Wellness Recovery)", `${aggregateReport.avgSleep}h`],
+      ["Global Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
+      ["Total AI Sessions Evaluated", aggregateReport.totalSessions.toLocaleString()],
     ];
 
     autoTable(doc, {
       startY: 50,
-      head: [["Metric", "Value"]],
+      head: [["Performance Metric", "Aggregated Value"]],
       body: summaryData,
-      theme: "grid",
-      headStyles: { fillColor: [102, 126, 234], fontStyle: 'bold' },
-      styles: { fontSize: 10 }
+      theme: "striped",
+      headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 4 },
     });
 
-    // Save the PDF
-    doc.save(`psychology-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
+    // Section 2: Critical Behavioral Alerts
+    let currentY = doc.lastAutoTable.finalY + 15;
+    doc.setTextColor(225, 29, 72);
+    doc.text("Critical Behavioral Alerts (P1 Priority)", 14, currentY);
+    doc.setTextColor(26, 32, 44);
+    
+    const criticalData = aggregateReport.criticalUsersData.map(user => [
+      user.name,
+      user.sessions.toString(),
+      user.score ? user.score.toFixed(1) : "N/A"
+    ]);
+
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [["User Identity", "Critical Risk Sessions", "Max Risk Score"]],
+      body: criticalData.length > 0 ? criticalData : [["No clinical flags detected", "-", "-"]],
+      theme: "grid",
+      headStyles: { fillColor: [225, 29, 72] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`vera-psych-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
-    <div className="reports-page">
+    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
+      <div className="reports-page">
       <div className="reports-header mb-2">
         <div>
           <h1 className="reports-title">User Analytics</h1>
@@ -409,23 +451,27 @@ const PsychologyReports = () => {
             className="reports-download-btn"
             disabled={loading}
             style={{
-              padding: "12px 24px",
-              borderRadius: "14px",
+              padding: "14px 28px",
+              borderRadius: "16px",
               border: "none",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
               color: "white",
               cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: "700",
-              fontSize: "14px",
+              fontWeight: "800",
+              fontSize: "13px",
               display: "flex",
               alignItems: "center",
-              gap: "10px",
-              boxShadow: "0 10px 20px -5px rgba(102, 126, 234, 0.4)",
+              gap: "12px",
+              boxShadow: "0 8px 24px -8px rgba(0,0,0,0.35)",
               transition: "all 0.3s ease",
               opacity: loading ? 0.6 : 1,
+              letterSpacing: "0.04em",
             }}
           >
-            📄 Export Analytics PDF
+            <div style={{ background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "10px" }}>
+              <MdTrendingUp style={{ fontSize: "20px", display: "block" }} />
+            </div>
+            EXPORT ANALYTICS PDF
           </button>
         )}
       </div>
@@ -493,33 +539,33 @@ const PsychologyReports = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="Measures user involvement based on daily/weekly interactions">
           <div className="bg-blue-50 p-3 rounded-xl text-blue-500"><MdTimeline size={24} /></div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Engagement Score</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">App Affinity</div>
             <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : aggregateReport.engagementScore}%</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Overall App Habit</div>
+            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Habit Strength Index</div>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="Daily Active Users / Weekly Active Users">
           <div className="bg-emerald-50 p-3 rounded-xl text-emerald-500"><MdPeople size={24} /></div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DAU / WAU</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Retention Ratio</div>
             <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : `${aggregateReport.dau} / ${aggregateReport.wau}`}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">User Retention Ratio</div>
+            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">DAU / WAU Efficiency</div>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="The most active hour where users tend to use the application">
           <div className="bg-purple-50 p-3 rounded-xl text-purple-500"><MdAccessTime size={24} /></div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Peak Usage</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Traffic Peak</div>
             <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : aggregateReport.peakHour}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Highest Traffic Time</div>
+            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Active Velocity Time</div>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-transform" title="The collective average sleep duration across all user logs">
           <div className="bg-indigo-50 p-3 rounded-xl text-indigo-500"><MdNightsStay size={24} /></div>
           <div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Avg Sleep</div>
-            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : `${aggregateReport.avgSleep} hrs`}</div>
-            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Global Sleep Quality</div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sleep Avg</div>
+            <div className="text-2xl font-black text-gray-800 leading-none">{loading ? "..." : `${aggregateReport.avgSleep}h`}</div>
+            <div className="text-[9px] text-gray-400 mt-1 uppercase tracking-wider">Wellness Recovery</div>
           </div>
         </div>
       </div>
@@ -640,98 +686,6 @@ const PsychologyReports = () => {
 
         <div className="report-card">
           <div className="mb-4">
-            <h3 className="report-card-title mb-1">Activity Levels (Weekday)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Identifies on which days users engage the most, helpful for timing notifications.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.weekdayActivity}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Bar dataKey="records" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Session Risk Distribution</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Categorizes the psychological risk states of your user base generated by AI.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={aggregateReport.riskLevelData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={60}
-                  paddingAngle={5}
-                >
-                  {aggregateReport.riskLevelData.map((entry, index) => (
-                    <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Top Activity Types</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Highlights the most popular features (e.g., mood logs) to guide app focus.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={aggregateReport.activityTypeData} layout="vertical" margin={{ left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 11}} />
-                <Tooltip 
-                   contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 6, 6, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
-            <h3 className="report-card-title mb-1">Activity Volume (Last 7 Days)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Tracks exact fluctuation of daily interactions to alert for user burnout or disengagement.</p>
-          </div>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={aggregateReport.weeklyActivityData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
-                <Tooltip 
-                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
-                />
-                <Line type="monotone" dataKey="activities" stroke="#ef4444" strokeWidth={4} dot={{ stroke: '#ef4444', strokeWidth: 2, r: 4, fill: '#ffffff' }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <div className="mb-4">
             <h3 className="report-card-title mb-1">Account Status Distribution</h3>
             <p className="text-[11px] text-gray-500 font-medium">Shows the ratio of completely verified internal users versus inactive/anonymous.</p>
           </div>
@@ -792,7 +746,8 @@ const PsychologyReports = () => {
         </div>
 
       </div>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 

@@ -4,6 +4,8 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
+import PullToRefresh from "../components/PullToRefresh.jsx";
+import { useLanguage } from "../context/LanguageContext";
 import './AvatarAI.css';
 
 // Import local images
@@ -11,6 +13,7 @@ import HumanGuideImg from '../assets/human_guide.png';
 import AnimalCompanionImg from '../assets/animal_companion.png';
 
 export default function AvatarAI() {
+  const { t } = useLanguage();
   const user = useSelector((state) => state.auth.user);
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 3;
@@ -33,31 +36,31 @@ export default function AvatarAI() {
   const avatarOptions = [
     {
       id: 'human',
-      name: 'The Human Guide',
+      name: t("human_guide"),
       badge: 'CLINICAL WISDOM',
       icon: User,
       image: HumanGuideImg,
-      description: 'A nurturing and relatable digital presence modeled after professional therapeutic counselors.',
+      description: t("human_desc"),
       features: [
-        'Offers structured cognitive exercises and nuanced verbal dialogue for complex emotional processing.',
-        'Ideal for those seeking direct professional guidance, active listening, and high-fidelity social connection.'
+        t("human_feature_1"),
+        t("human_feature_2")
       ],
-      buttonText: 'Select Human Guide',
+      buttonText: t("select_human"),
       colorTheme: 'purple',
       component: DIDAgent
     },
     {
       id: 'animal',
-      name: 'The Animal Companion',
+      name: t("animal_companion"),
       badge: 'SENSORY GROUNDING',
       icon: PawPrint,
       image: AnimalCompanionImg,
-      description: 'A non-verbal, intuitive partner designed for emotional regulation and sensory comfort.',
+      description: t("animal_desc"),
       features: [
-        'Focuses on rhythmic breathing cues, calming bio-feedback, and non-judgmental silent companionship.',
-        'Best for high-stress moments where quiet grounding and nature-inspired presence are preferred over conversation.'
+        t("animal_feature_1"),
+        t("animal_feature_2")
       ],
-      buttonText: 'Select Animal Companion',
+      buttonText: t("select_animal"),
       colorTheme: 'green',
       component: AnimalAI
     }
@@ -77,27 +80,17 @@ export default function AvatarAI() {
   }, [transcripts]);
 
   return (
-    <div className={`avatarai-outer-container ${isSessionStarted ? 'session-active' : ''}`}>
+    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
+      <div className={`avatarai-outer-container ${isSessionStarted ? 'session-active' : ''}`}>
       
       {!selectedAvatar && (
         <div className="avatarai-selection-header">
-          <div className="avatarai-header-top">
-            <div className="avatarai-logo">
-              <div className="avatarai-logo-icon" />
-              <span>V.E.R.A..</span>
-            </div>
-            <Link to="/hub" className="avatarai-back-link">
-              <MoveLeft size={18} />
-              <span>BACK TO HUB</span>
-            </Link>
-          </div>
             <div className="avatarai-header-content">
             <h1 className="avatarai-main-title">
-              Choose Your <span className="avatarai-accent">Guide</span>
+              {t("choose_guide")}
             </h1>
             <p className="avatarai-main-subtitle">
-              Personalize your healing environment. Select the therapeutic presence that 
-              resonates most with your emotional state today.
+              {t("personalize_env")}
             </p>
           </div>
         </div>
@@ -113,13 +106,10 @@ export default function AvatarAI() {
                 <div className="avatarai-gate-icon">
                   <Zap size={40} />
                 </div>
-                <h2 className="avatarai-gate-title">Tokens Required</h2>
-                <p className="avatarai-gate-text">
-                  Avatar AI sessions require <strong>{SESSION_COST} tokens</strong>. 
-                  You currently have <strong>{tokens} tokens</strong>.
-                </p>
+                <h2 className="avatarai-gate-title">{t("tokens_required")}</h2>
+                <p className="avatarai-gate-text" dangerouslySetInnerHTML={{ __html: t("tokens_gate_desc").replace("{cost}", SESSION_COST).replace("{tokens}", tokens) }} />
                 <button className="avatarai-earn-btn" onClick={() => window.location.href = "/activities"}>
-                  Go to Activities to Earn Tokens
+                  {t("go_activities")}
                 </button>
               </div>
             ) : (
@@ -163,8 +153,7 @@ export default function AvatarAI() {
             )}
             
             <div className="avatarai-footer-note">
-              You can switch your guide at any time during your journey. Both options 
-              provide the same level of V.E.R.A. core therapeutic monitoring.
+              {t("avatar_switch_note")}
             </div>
           </>
         ) : (
@@ -187,11 +176,11 @@ export default function AvatarAI() {
                   <div className="avatarai-conversation-header">
                     <div className="avatarai-conversation-title-wrap">
                       <MessageSquare size={17} className="avatarai-conversation-icon" />
-                      <span className="avatarai-conversation-title">Conversation History</span>
+                      <span className="avatarai-conversation-title">{t("conversation_history")}</span>
                     </div>
                     <button className="avatarai-end-call-btn" onClick={endCall}>
                       <PhoneOff size={14} />
-                      <span>End Session</span>
+                      <span>{t("end_session")}</span>
                     </button>
                   </div>
 
@@ -201,9 +190,9 @@ export default function AvatarAI() {
                         <div className="avatarai-pulse-ring">
                           <MessageSquare size={32} />
                         </div>
-                        <div className="avatarai-transcript-empty-title">Awaiting interaction</div>
+                        <div className="avatarai-transcript-empty-title">{t("awaiting_interaction")}</div>
                         <div className="avatarai-transcript-empty-subtitle">
-                          Your dialogue with {avatarOptions.find(o => o.id === selectedAvatar)?.name} will appear here.
+                          {t("avatar_interaction_desc").replace("{name}", avatarOptions.find(o => o.id === selectedAvatar)?.name)}
                         </div>
                       </div>
                     ) : (
@@ -232,5 +221,6 @@ export default function AvatarAI() {
         )}
       </div>
     </div>
+  </PullToRefresh>
   );
 }

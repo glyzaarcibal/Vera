@@ -9,10 +9,12 @@ import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
 import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
+import { useLanguage } from "../../context/LanguageContext";
 
 import "./SleepTracker.css";
 
 const SleepTracker = () => {
+  const { t, language } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
@@ -40,24 +42,24 @@ const SleepTracker = () => {
   }, [userId]);
 
   const weeklyInsight = useMemo(() => {
-    if (sleepData.length === 0) return "Start logging your sleep to see your weekly performance trends here.";
+    if (sleepData.length === 0) return t('sleep_no_logs');
     
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     
     const thisWeekLogs = sleepData.filter(log => new Date(log.date) >= oneWeekAgo);
     
-    if (thisWeekLogs.length === 0) return "You haven't logged any sleep this week. Regular tracking helps identify healthy patterns.";
+    if (thisWeekLogs.length === 0) return t('sleep_no_logs_week');
     
     const avgMinutes = thisWeekLogs.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0) / thisWeekLogs.length;
     const hours = Math.floor(avgMinutes / 60);
     
     if (avgMinutes >= 420) {
-      return `Amazing! You're averaging ${hours}h of sleep this week. Your REM recovery is likely in the optimal zone.`;
+      return t('sleep_insight_good').replace('{hours}', hours);
     } else {
-      return `You're averaging ${hours}h of sleep. Try to hit the 7-hour mark to boost your cognitive focus tomorrow.`;
+      return t('sleep_insight_bad').replace('{hours}', hours);
     }
-  }, [sleepData]);
+  }, [sleepData, t]);
 
   const loadSleepData = async () => {
     if (!userId) return;
@@ -119,9 +121,9 @@ const SleepTracker = () => {
   const { hours, minutes } = calculateDuration();
 
   const getStatusBadge = (totalMinutes) => {
-    if (totalMinutes >= 420 && totalMinutes <= 540) return "OPTIMAL";
-    if (totalMinutes < 420) return "LOW";
-    return "EXCESSIVE";
+    if (totalMinutes >= 420 && totalMinutes <= 540) return t('sleep_optimal');
+    if (totalMinutes < 420) return t('sleep_low');
+    return t('sleep_excessive');
   };
 
   const saveSleepData = async () => {
@@ -205,9 +207,9 @@ const SleepTracker = () => {
       <div className="sleep-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
          <div className="log-session-card" style={{ textAlign: 'center', maxWidth: '400px' }}>
            <Moon size={48} color="#7c3aed" style={{ marginBottom: '20px' }} />
-           <h2>Login Required</h2>
-           <p style={{ color: '#6b7280', margin: '15px 0 25px' }}>Please log in to track your nocturnal recovery and wake up restored.</p>
-           <button className="save-btn" onClick={() => navigate("/")}>Go to Login</button>
+           <h2>{t('privacy_consent')}</h2>
+           <p style={{ color: '#6b7280', margin: '15px 0 25px' }}>{t('safety_reminder_desc')}</p>
+           <button className="save-btn" onClick={() => navigate("/")}>{t('back')}</button>
          </div>
       </div>
     );
@@ -219,11 +221,11 @@ const SleepTracker = () => {
         
         <header className="sleep-header">
           <button className="nav-btn" onClick={() => navigate(-1)} style={{ marginBottom: '20px' }}>
-            <ArrowLeft size={20} /> Back
+            <ArrowLeft size={20} /> {t('back')}
           </button>
-          <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>Sleep Tracker</motion.h1>
+          <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>{t('sleep_title')}</motion.h1>
           <motion.p initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
-            Monitor your nocturnal recovery and wake up restored.
+            {t('sleep_subtitle')}
           </motion.p>
         </header>
 
@@ -238,11 +240,11 @@ const SleepTracker = () => {
           >
             <div className="card-title">
               <div className="add-icon"><Plus size={16} strokeWidth={3} /></div>
-              Log New Session
+              {t('sleep_log_new')}
             </div>
 
             <div className="calendar-section">
-              <label>Select Date</label>
+              <label>{t('sleep_select_date')}</label>
               <div className="calendar-nav">
                 <button className="nav-btn" onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}>
                   <ChevronLeft size={20} />
@@ -274,7 +276,7 @@ const SleepTracker = () => {
 
             <div className="time-inputs">
               <div className="input-group">
-                <label>Sleep Time</label>
+                <label>{t('sleep_time_label')}</label>
                 <div className="time-box" onClick={() => setShowPicker('sleep')}>
                   <Moon size={18} color="#9ca3af" />
                   <div className="time-value">{sleepTime.hour}:{sleepTime.minute} {sleepTime.period}</div>
@@ -282,7 +284,7 @@ const SleepTracker = () => {
                 </div>
               </div>
               <div className="input-group">
-                <label>Wake Time</label>
+                <label>{t('wake_time_label')}</label>
                 <div className="time-box" onClick={() => setShowPicker('wake')}>
                   <Sun size={18} color="#9ca3af" />
                   <div className="time-value">{wakeTime.hour}:{wakeTime.minute} {wakeTime.period}</div>
@@ -294,8 +296,8 @@ const SleepTracker = () => {
             <div className="duration-card">
               <div className="duration-icon"><Clock size={24} /></div>
               <div className="duration-info">
-                <div className="duration-label">Sleep Duration</div>
-                <div className="duration-value">{hours}h {minutes}m</div>
+                <div className="duration-label">{t('sleep_duration_label')}</div>
+                <div className="duration-value">{hours}{language === 'tl' ? 'o' : 'h'} {minutes}{language === 'tl' ? 'm' : 'm'}</div>
               </div>
               <div className="status-badge">{getStatusBadge(hours * 60 + minutes)}</div>
             </div>
@@ -306,15 +308,15 @@ const SleepTracker = () => {
               disabled={isSaving}
               style={isSaving ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
             >
-              {isSaving ? "Saving..." : "Save Sleep Data"}
+              {isSaving ? (language === 'tl' ? "Inililigtas..." : "Saving...") : t('sleep_save_btn')}
             </button>
           </motion.div>
 
           {/* ── RIGHT: HISTORY & INSIGHTS ── */}
           <div className="history-section">
             <h2>
-              Sleep History
-              <span className="view-all">View All</span>
+              {t('sleep_history_title')}
+              <span className="view-all">{language === 'tl' ? "Tingnan Lahat" : "View All"}</span>
             </h2>
 
             <div className="history-list">
@@ -328,13 +330,13 @@ const SleepTracker = () => {
                 >
                   <div className="mood-icon">😴</div>
                   <div className="log-details">
-                    <div className="log-date">{new Date(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                    <div className="log-duration">{log.duration} Duration</div>
+                    <div className="log-date">{new Date(log.date).toLocaleDateString(language === 'tl' ? 'tl-PH' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    <div className="log-duration">{log.duration} {language === 'tl' ? 'Tagal' : 'Duration'}</div>
                   </div>
                   <div className="log-time-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                     <span className="time-range">{log.sleep_time} — {log.wake_time}</span>
                     <span className={`sleep-quality ${log.totalMinutes > 420 ? 'quality-deep' : 'quality-restless'}`}>
-                      {log.totalMinutes > 420 ? 'DEEP SLEEP' : 'RESTLESS'}
+                      {log.totalMinutes > 420 ? t('sleep_quality_deep') : t('sleep_quality_restless')}
                     </span>
                     <button 
                       onClick={() => setConfirmDeleteId(log.id)} 
@@ -345,7 +347,7 @@ const SleepTracker = () => {
                   </div>
                 </motion.div>
               )) : (
-                <div className="history-item" style={{ justifyContent: 'center', color: '#9ca3af' }}>No logs yet</div>
+                <div className="history-item" style={{ justifyContent: 'center', color: '#9ca3af' }}>{t('sleep_no_logs')}</div>
               )}
             </div>
 
@@ -355,7 +357,7 @@ const SleepTracker = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="insight-label">WEEKLY INSIGHT</div>
+              <div className="insight-label">{language === 'tl' ? 'LINGGUHANG INSIGHT' : 'WEEKLY INSIGHT'}</div>
               <div className="insight-text">
                 {weeklyInsight}
               </div>
@@ -384,7 +386,7 @@ const SleepTracker = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="picker-header">
-                  <div className="picker-title">Set {showPicker === 'sleep' ? 'Sleep' : 'Wake'} Time</div>
+                  <div className="picker-title">{language === 'tl' ? 'I-set ang Oras ng' : 'Set'} {showPicker === 'sleep' ? (language === 'tl' ? 'Pagtulog' : 'Sleep') : (language === 'tl' ? 'Paggising' : 'Wake')}</div>
                   <button className="picker-close" onClick={() => setShowPicker(null)}>×</button>
                 </div>
 
@@ -439,24 +441,24 @@ const SleepTracker = () => {
       <ReusableModal
         isOpen={!!confirmDeleteId}
         onClose={() => setConfirmDeleteId(null)}
-        title="Delete Record"
+        title={language === 'tl' ? "I-delete ang Record" : "Delete Record"}
         type="error"
       >
         <p className="text-slate-500 text-[16px] leading-relaxed font-medium mb-10">
-          Are you sure you want to delete this sleep record?
+          {language === 'tl' ? "Sigurado ka bang gusto mong i-delete ang sleep record na ito?" : "Are you sure you want to delete this sleep record?"}
         </p>
         <div className="flex gap-4">
           <button 
             onClick={() => setConfirmDeleteId(null)}
             className="flex-1 py-4 rounded-[1rem] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
           >
-            Cancel
+            {language === 'tl' ? "Kanselahin" : "Cancel"}
           </button>
           <button 
             onClick={() => confirmDelete(confirmDeleteId)}
             className="flex-1 py-4 rounded-[1rem] font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
           >
-            Delete
+            {language === 'tl' ? "I-delete" : "Delete"}
           </button>
         </div>
       </ReusableModal>
@@ -465,7 +467,7 @@ const SleepTracker = () => {
         isOpen={showRewardModal} 
         onClose={() => setShowRewardModal(false)}
         amount={5}
-        message="Good rest is the foundation of mental clarity. Your sleep habits are now logged and your tokens are earned!"
+        message={t('sleep_reward')}
       />
     </div>
   );

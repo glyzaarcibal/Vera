@@ -18,8 +18,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
+import { useLanguage } from "../../context/LanguageContext";
 
 const WeeklyWellnessReport = () => {
+  const { t, language } = useLanguage();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -238,11 +240,11 @@ const WeeklyWellnessReport = () => {
 
   const getSleepMessage = (duration) => {
     if (duration >= 8 && duration <= 10) {
-      return "Good sleep: 8-10 hours is ideal. Keep it up!";
+      return t('sleep_analysis_good');
     } else if (duration > 10) {
-      return "Oversleeping: More than 10 hours is not healthy. Try to maintain a balanced schedule!";
+      return t('sleep_analysis_over');
     } else {
-      return "Lack of sleep: Less than 8 hours is insufficient. Prioritize your rest for better health!";
+      return t('sleep_analysis_lack');
     }
   };
 
@@ -284,12 +286,12 @@ const WeeklyWellnessReport = () => {
 
   const interpretBreathingData = (count) => {
     if (count === 0)
-      return "Mababang relaxation activity. Maaring hindi mo pa nakasanayan o hindi mo pa kailangan mag-relax ngayon.";
+      return language === 'tl' ? "Mababang relaxation activity. Maaring hindi mo pa nakasanayan o hindi mo pa kailangan mag-relax ngayon." : "Low relaxation activity. You might not be used to it or don't feel the need to relax right now.";
     if (count >= 1 && count <= 4)
-      return "Moderate stress management. Ginagamit mo ito bilang paraan para kumalma sa ilang stressful moments.";
+      return language === 'tl' ? "Moderate stress management. Ginagamit mo ito bilang paraan para kumalma sa ilang stressful moments." : "Moderate stress management. You use this to calm down during stressful moments.";
     if (count >= 5 && count <= 7)
-      return "High stress o intentional relaxation. Marahil ay mataas ang stress level mo o ginagawa mo ito bilang habit.";
-    return "Possible anxiety o extreme relaxation practice. Kung sobra-sobra ito, baka kailangan mong tingnan ang iyong stress levels.";
+      return language === 'tl' ? "High stress o intentional relaxation. Marahil ay mataas ang stress level mo o ginagawa mo ito bilang habit." : "High stress or intentional relaxation. Your stress level might be high or you do this as a habit.";
+    return language === 'tl' ? "Possible anxiety o extreme relaxation practice. Kung sobra-sobra ito, baka kailangan mong tingnan ang iyong stress levels." : "Possible anxiety or extreme relaxation practice. If it's too much, you might need to check your stress levels.";
   };
 
   const downloadPDF = () => {
@@ -297,12 +299,12 @@ const WeeklyWellnessReport = () => {
 
     doc.setFontSize(20);
     doc.setTextColor(102, 126, 234);
-    doc.text("Weekly Wellness Report", 105, 20, { align: "center" });
+    doc.text(t('wellness_title'), 105, 20, { align: "center" });
 
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text(
-      `Generated on: ${new Date().toLocaleDateString("en-US", {
+      `${language === 'tl' ? 'Ginawa noong' : 'Generated on'}: ${new Date().toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -317,7 +319,7 @@ const WeeklyWellnessReport = () => {
 
     doc.setFontSize(14);
     doc.setTextColor(51, 51, 51);
-    doc.text("Mood Distribution (Past 30 Days)", 14, 42);
+    doc.text(t('wellness_mood_dist'), 14, 42);
 
     const moodTableData = pieData.length
       ? pieData.map((item) => [sanitizePdfText(item.name), String(item.value)])
@@ -325,7 +327,7 @@ const WeeklyWellnessReport = () => {
 
     autoTable(doc, {
       startY: 46,
-      head: [["Mood", "Count"]],
+      head: [[language === 'tl' ? 'Mood' : 'Mood', language === 'tl' ? 'Bilang' : 'Count']],
       body: moodTableData,
       theme: "striped",
       headStyles: { fillColor: [102, 126, 234] },
@@ -334,7 +336,7 @@ const WeeklyWellnessReport = () => {
 
     doc.setFontSize(14);
     doc.setTextColor(51, 51, 51);
-    doc.text("Sleep Duration Report", 14, (doc.lastAutoTable?.finalY || 46) + 14);
+    doc.text(t('wellness_sleep_dur'), 14, (doc.lastAutoTable?.finalY || 46) + 14);
 
     const sleepTableData = sleepChartData.length
       ? sleepChartData.map((entry) => [
@@ -347,7 +349,12 @@ const WeeklyWellnessReport = () => {
 
     autoTable(doc, {
       startY: (doc.lastAutoTable?.finalY || 46) + 18,
-      head: [["Date", "Duration", "Sleep Time", "Wake Time"]],
+      head: [[
+        language === 'tl' ? 'Petsa' : 'Date', 
+        language === 'tl' ? 'Tagal' : 'Duration', 
+        language === 'tl' ? 'Oras ng Tulog' : 'Sleep Time', 
+        language === 'tl' ? 'Oras ng Gising' : 'Wake Time'
+      ]],
       body: sleepTableData,
       theme: "striped",
       headStyles: { fillColor: [102, 126, 234] },
@@ -357,14 +364,14 @@ const WeeklyWellnessReport = () => {
     doc.setFontSize(11);
     doc.setTextColor(70, 70, 70);
     doc.text(
-      `Sleep trend: ${sanitizePdfText(analyzeSleepTrend())}`,
+      `${t('wellness_sleep_trend')}: ${sanitizePdfText(analyzeSleepTrend())}`,
       14,
       (doc.lastAutoTable?.finalY || 46) + 10
     );
 
     doc.setFontSize(14);
     doc.setTextColor(51, 51, 51);
-    doc.text("Breathing Sessions Per Day", 14, (doc.lastAutoTable?.finalY || 46) + 22);
+    doc.text(t('wellness_breathing_sessions'), 14, (doc.lastAutoTable?.finalY || 46) + 22);
 
     const breathingTableData = breathingChartData.length
       ? breathingChartData.map((entry) => [sanitizePdfText(entry.date), String(entry.sessions)])
@@ -372,7 +379,7 @@ const WeeklyWellnessReport = () => {
 
     autoTable(doc, {
       startY: (doc.lastAutoTable?.finalY || 46) + 26,
-      head: [["Date", "Sessions"]],
+      head: [[language === 'tl' ? 'Petsa' : 'Date', language === 'tl' ? 'Mga Session' : 'Sessions']],
       body: breathingTableData,
       theme: "striped",
       headStyles: { fillColor: [102, 126, 234] },
@@ -386,7 +393,7 @@ const WeeklyWellnessReport = () => {
     doc.setFontSize(11);
     doc.setTextColor(70, 70, 70);
     doc.text(
-      `Breathing insight: ${sanitizePdfText(interpretBreathingData(maxSessions))}`,
+      `${t('wellness_breathing_insight')}: ${sanitizePdfText(interpretBreathingData(maxSessions))}`,
       14,
       (doc.lastAutoTable?.finalY || 46) + 10,
       { maxWidth: 180 }
@@ -432,7 +439,7 @@ const WeeklyWellnessReport = () => {
               onMouseLeave={() => setIsCloseButtonHovered(false)}
               onClick={onClose}
             >
-              Close
+              {language === 'tl' ? 'Isara' : 'Close'}
             </button>
           </div>
         </div>
@@ -730,13 +737,13 @@ const WeeklyWellnessReport = () => {
           onMouseLeave={() => setIsBackButtonHovered(false)}
           onClick={() => window.history.back()}
         >
-          {windowWidth <= 640 ? "←" : "← Back"}
+          {windowWidth <= 640 ? "←" : `← ${t('back')}`}
         </button>
         <h1 style={{
           ...styles.title,
           fontSize: windowWidth <= 640 ? "1.5rem" : "28px",
           textAlign: "center"
-        }}>Weekly Wellness Report</h1>
+        }}>{t('wellness_title')}</h1>
         <button
           onClick={downloadPDF}
           style={{
@@ -746,7 +753,7 @@ const WeeklyWellnessReport = () => {
           onMouseEnter={() => setIsCloseButtonHovered(true)}
           onMouseLeave={() => setIsCloseButtonHovered(false)}
         >
-          Download PDF
+          {language === 'tl' ? 'I-download ang PDF' : 'Download PDF'}
         </button>
       </div>
 
@@ -765,7 +772,7 @@ const WeeklyWellnessReport = () => {
         <div style={styles.cardsContainer}>
           {/* Mood Distribution Card */}
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>Mood Distribution (Past 30 Days)</h2>
+            <h2 style={styles.sectionTitle}>{t('wellness_mood_dist')}</h2>
             {pieData.length > 0 ? (
               <div style={{ ...styles.chartWrapper, height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
