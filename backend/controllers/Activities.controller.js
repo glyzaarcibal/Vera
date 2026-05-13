@@ -1,4 +1,4 @@
-import { saveActivityToDB, getActivitiesFromDB } from "../service/Activities.service.js";
+import { saveActivityToDB, getActivitiesFromDB, deleteActivityFromDB } from "../service/Activities.service.js";
 import { addTokens } from "../service/Auth/Token.service.js";
 
 // Save activity for a user
@@ -10,7 +10,7 @@ export const saveActivity = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields." });
     }
     await saveActivityToDB(userId, activityType, data);
-    
+
     // Award 5 tokens for completing an activity
     let updatedTokens = null;
     try {
@@ -20,9 +20,9 @@ export const saveActivity = async (req, res) => {
       // Don't fail the request if token awarding fails
     }
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Activity saved successfully and 5 tokens earned!",
-      updatedTokens 
+      updatedTokens
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -35,6 +35,20 @@ export const getActivities = async (req, res) => {
     const userId = req.userId;
     const activities = await getActivitiesFromDB(userId);
     res.status(200).json({ activities });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// Delete activity for a user
+export const deleteActivity = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { activityId } = req.params;
+    if (!userId || !activityId) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+    await deleteActivityFromDB(userId, activityId);
+    res.status(200).json({ message: "Activity deleted successfully!" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

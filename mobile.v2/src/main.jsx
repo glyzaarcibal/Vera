@@ -6,15 +6,18 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "./store/store";
+import { LanguageProvider } from "./context/LanguageContext";
 
 createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <PersistGate loading={null} persistor={persistor}>
-      <Router>
-        <Routes>
-          <Route path="/*" element={<App />} />
-        </Routes>
-      </Router>
+      <LanguageProvider>
+        <Router>
+          <Routes>
+            <Route path="/*" element={<App />} />
+          </Routes>
+        </Router>
+      </LanguageProvider>
     </PersistGate>
   </Provider>
 );

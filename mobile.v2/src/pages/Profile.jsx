@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "../store/slices/authSelectors";
+import { setUser } from "../store/slices/authSlice";
 import axiosInstance from "../utils/axios.instance";
 import { 
   FaUserCircle, 
@@ -10,10 +11,14 @@ import {
   FaEdit
 } from "react-icons/fa";
 import Switch from "../components/Switch";
+import PullToRefresh from "../components/PullToRefresh.jsx";
+import { useLanguage } from "../context/LanguageContext";
 import "./Profile.css";
 
 const Profile = () => {
+  const { t } = useLanguage();
   const user = useSelector(selectUser);
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("privacy");
   const [profile, setProfile] = useState({
     email: "",
@@ -26,6 +31,8 @@ const Profile = () => {
     avatar_url: "",
     permit_store: false,
     permit_analyze: false,
+    guardian_email: "",
+    professional_email: "",
   });
   const [originalProfile, setOriginalProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +74,8 @@ const Profile = () => {
         avatar_url: p.avatar_url || "",
         permit_store: p.permit_store || false,
         permit_analyze: p.permit_analyze || false,
+        guardian_email: p.guardian_email || "",
+        professional_email: p.professional_email || "",
       };
       setProfile(formatted);
       setOriginalProfile(formatted);
@@ -136,9 +145,13 @@ const Profile = () => {
         birthday: profile.birthday,
         gender: profile.gender,
         contact_number: profile.contact_number,
+        guardian_email: profile.guardian_email,
+        professional_email: profile.professional_email,
       });
       setOriginalProfile(profile);
       setIsEditMode(false);
+      // Update Redux store
+      dispatch(setUser({ ...user, ...profile }));
       setMessage({ type: "success", text: "Profile updated successfully!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch {
@@ -163,6 +176,8 @@ const Profile = () => {
       const updated = { ...profile, avatar_url: res.data.profile.avatar_url };
       setProfile(updated);
       setOriginalProfile(updated);
+      // Update Redux store
+      dispatch(setUser(res.data.profile));
       setMessage({ type: "success", text: "Profile picture updated successfully!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch {
@@ -183,6 +198,8 @@ const Profile = () => {
       const updated = { ...profile, [permissionType]: updatedValue };
       setProfile(updated);
       setOriginalProfile(updated);
+      // Update Redux store
+      dispatch(setUser({ ...user, ...updated }));
       setMessage({ type: "success", text: "Privacy preferences updated!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch {
@@ -483,7 +500,8 @@ const Profile = () => {
   };
 
   return (
-    <div className="profile-page-container">
+    <PullToRefresh onRefresh={async () => { await getProfile(); await getChatSessions(); await getAppointments(); }}>
+      <div className="profile-page-container">
       
       {/* ── LEFT SIDEBAR ── */}
       <div className="profile-sidebar">
@@ -513,58 +531,58 @@ const Profile = () => {
 
         <div className="profile-info-section">
           <div className="profile-info-title" style={{justifyContent: "space-between"}}>
-            <span>Profile Information</span>
+            <span>{t("profile_info")}</span>
             {!isEditMode && (
               <button 
                 onClick={handleEdit} 
                 className="sidebar-btn ghost" 
                 style={{padding: "2px 8px", fontSize: "10px", marginLeft:"auto", flexShrink: 0}}
               >
-                Edit
+                {t("edit")}
               </button>
             )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">First Name</span>
+            <span className="sidebar-label">{t("first_name")}</span>
             {isEditMode ? (
                <input type="text" name="first_name" className="sidebar-input" value={profile.first_name} onChange={handleInputChange} />
             ) : ( <div className="sidebar-value">{profile.first_name}</div> )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Last Name</span>
+            <span className="sidebar-label">{t("last_name")}</span>
             {isEditMode ? (
                <input type="text" name="last_name" className="sidebar-input" value={profile.last_name} onChange={handleInputChange} />
             ) : ( <div className="sidebar-value">{profile.last_name}</div> )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Email</span>
+            <span className="sidebar-label">{t("email")}</span>
             {isEditMode ? (
                <input type="email" name="email" className="sidebar-input disabled" style={{opacity: 0.6}} value={profile.email} disabled />
             ) : ( <div className="sidebar-value">{profile.email}</div> )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Username</span>
+            <span className="sidebar-label">{t("username")}</span>
             {isEditMode ? (
                <input type="text" name="username" className="sidebar-input" value={profile.username} onChange={handleInputChange} />
             ) : ( <div className="sidebar-value">{profile.username}</div> )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Birthday</span>
+            <span className="sidebar-label">{t("birthday")}</span>
             {isEditMode ? (
                <input type="date" name="birthday" className="sidebar-input" value={profile.birthday} onChange={handleInputChange} />
             ) : ( <div className="sidebar-value">{profile.birthday || "—"}</div> )}
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Gender</span>
+            <span className="sidebar-label">{t("gender")}</span>
             {isEditMode ? (
                <select name="gender" className="sidebar-input" value={profile.gender} onChange={handleInputChange}>
-                 <option value="">Select Gender</option>
+                 <option value="">{t("gender")}</option>
                  <option value="male">Male</option>
                  <option value="female">Female</option>
                  <option value="other">Other</option>
@@ -574,16 +592,35 @@ const Profile = () => {
           </div>
 
           <div className="sidebar-field">
-            <span className="sidebar-label">Phone No</span>
+            <span className="sidebar-label">{t("phone")}</span>
             {isEditMode ? (
                <input type="tel" name="contact_number" className="sidebar-input" value={profile.contact_number} onChange={handleInputChange} />
             ) : ( <div className="sidebar-value">{profile.contact_number}</div> )}
           </div>
 
+          {/* New Alert Email Fields */}
+          <div className="sidebar-field">
+            <span className="sidebar-label">{t("guardian_email")}</span>
+            {isEditMode ? (
+               <input type="email" name="guardian_email" className="sidebar-input" value={profile.guardian_email} onChange={handleInputChange} placeholder="example@guardian.com" />
+            ) : ( <div className="sidebar-value">{profile.guardian_email || "—"}</div> )}
+          </div>
+
+          <div className="sidebar-field">
+            <span className="sidebar-label">{t("professional_email")}</span>
+            {isEditMode ? (
+               <input type="email" name="professional_email" className="sidebar-input" value={profile.professional_email} onChange={handleInputChange} placeholder="doctor@clinic.com" />
+            ) : ( <div className="sidebar-value">{profile.professional_email || "—"}</div> )}
+          </div>
+
+          <p style={{fontSize: "10px", color: "#6B7280", fontStyle: "italic", marginTop: "4px", padding: "0 4px"}}>
+            {t("risk_alert_desc")}
+          </p>
+
           {isEditMode && (
             <div className="sidebar-actions" style={{flexDirection:"row", marginTop:"8px"}}>
-              <button className="sidebar-btn" style={{flex:1}} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
-              <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>Cancel</button>
+              <button className="sidebar-btn" style={{flex:1}} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : t("save")}</button>
+              <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>{t("cancel")}</button>
             </div>
           )}
 
@@ -620,19 +657,19 @@ const Profile = () => {
             className={`custom-tab ${activeTab === "privacy" ? "active" : ""}`}
             onClick={() => setActiveTab("privacy")}
           >
-            <FaUserShield /> Privacy
+            <FaUserShield /> {t("privacy_tab")}
           </button>
           <button 
             className={`custom-tab ${activeTab === "sessions" ? "active" : ""}`}
             onClick={() => setActiveTab("sessions")}
           >
-            <FaRegCommentDots /> Sessions
+            <FaRegCommentDots /> {t("sessions_tab")}
           </button>
           <button 
             className={`custom-tab ${activeTab === "appointments" ? "active" : ""}`}
             onClick={() => setActiveTab("appointments")}
           >
-            <FaRegClipboard /> Appoinment
+            <FaRegClipboard /> {t("appointment_tab")}
           </button>
         </div>
 
@@ -644,7 +681,8 @@ const Profile = () => {
 
       </div>
 
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 
