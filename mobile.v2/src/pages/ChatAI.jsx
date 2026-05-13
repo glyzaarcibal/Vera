@@ -135,7 +135,7 @@ const ChatAI = () => {
       <div className="chat-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div className="avatar-icon">
-            <img src="/icon.png" alt="Vera" className="avatar-circle" style={{ objectFit: 'cover', borderRadius: '50%' }} />
+            <img src="/icon.png" alt="Vera" className="avatar-circle" style={{ objectFit: 'cover', borderRadius: '24px' }} />
           </div>
           <div className="chat-info" style={{ gap: '0px', flexDirection: 'column', alignItems: 'flex-start' }}>
             <h2>{t("vera_assistant")}</h2>
