@@ -13,6 +13,13 @@ import {
   AreaChart,
   Area
 } from "recharts";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser } from "../../store/slices/authSelectors";
+import TokenRewardModal from "../../components/TokenRewardModal";
+import ReusableModal from "../../components/ReusableModal";
+import { useLanguage } from "../../context/LanguageContext";
+import axiosInstance from "../../utils/axios.instance";
+import { updateTokens } from "../../store/slices/authSlice";
 
 const animationCache = new Map();
 
@@ -24,6 +31,11 @@ const getAnimationData = async (animationPath) => {
   const response = await fetch(animationPath);
   if (!response.ok) {
     throw new Error(`Failed to load animation: ${animationPath}`);
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    throw new Error(`Invalid content type for animation: ${contentType}. Expected JSON.`);
   }
 
   const data = await response.json();
@@ -263,14 +275,8 @@ const MOOD_LEVELS = [
 
 const moods = MOOD_LEVELS;
 
-import axiosInstance from "../../utils/axios.instance";
-import { useSelector, useDispatch } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
-import { selectUser } from "../../store/slices/authSelectors";
-import TokenRewardModal from "../../components/TokenRewardModal";
-import ReusableModal from "../../components/ReusableModal";
-
 const MoodTrackerScreen = ({ navigation }) => {
+  const { t, language } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
@@ -286,6 +292,12 @@ const MoodTrackerScreen = ({ navigation }) => {
   const [rewardData, setRewardData] = useState({ amount: 0, message: "" });
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [feedbackModal, setFeedbackModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success"
+  });
 
   // Group moods for organized display
   const groupedMoods = moods.reduce((acc, mood) => {
@@ -424,7 +436,12 @@ const MoodTrackerScreen = ({ navigation }) => {
       setShowReasonInput(false);
     } catch (error) {
       console.error("Error saving mood:", error);
-      alert("Failed to save mood. Please try again.");
+      setFeedbackModal({
+        isOpen: true,
+        title: language === 'tl' ? "Mali" : "Error",
+        message: language === 'tl' ? "Hindi na-save ang iyong mood. Pakisubukang muli." : "Failed to save mood. Please try again.",
+        type: "error"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -467,10 +484,27 @@ const MoodTrackerScreen = ({ navigation }) => {
     setConfirmDeleteId(id);
   };
 
-  const executeDelete = (id) => {
-    const updatedHistory = moodHistory.filter(entry => entry.id !== id);
-    setMoodHistory(updatedHistory);
-    setConfirmDeleteId(null);
+  const executeDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/activities/${id}`);
+      const updatedHistory = moodHistory.filter(entry => entry.id !== id);
+      setMoodHistory(updatedHistory);
+      setConfirmDeleteId(null);
+      setFeedbackModal({
+        isOpen: true,
+        title: language === 'tl' ? "Tagumpay" : "Success",
+        message: language === 'tl' ? "Tagumpay na nabura ang record!" : "Entry deleted successfully!",
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Failed to delete mood entry:", error);
+      setFeedbackModal({
+        isOpen: true,
+        title: language === 'tl' ? "Mali" : "Error",
+        message: language === 'tl' ? "Hindi nabura ang record. Pakisuri kung running ang backend." : "Error: Failed to delete entry. Make sure your backend server is running.",
+        type: "error"
+      });
+    }
   };
 
   const getFilteredHistory = () => {
@@ -524,9 +558,9 @@ const MoodTrackerScreen = ({ navigation }) => {
     // Date range and filter info
     doc.setFontSize(11);
     doc.setTextColor(100, 100, 100);
-    const filterText = filter === 'all' ? 'All Time' : filter === 'week' ? 'Last 7 Days' : 'Last 30 Days';
-    doc.text(`Period: ${filterText}`, 105, 30, { align: "center" });
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
+    const filterText = filter === 'all' ? (language === 'tl' ? 'Lahat ng Oras' : 'All Time') : filter === 'week' ? (language === 'tl' ? 'Nakaraang 7 Araw' : 'Last 7 Days') : (language === 'tl' ? 'Nakaraang 30 Araw' : 'Last 30 Days');
+    doc.text(`${language === 'tl' ? 'Panahon' : 'Period'}: ${filterText}`, 105, 30, { align: "center" });
+    doc.text(`${language === 'tl' ? 'Ginawa noong' : 'Generated on'}: ${new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -734,7 +768,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             fontWeight: "bold",
           }}
         >
-          Mood Tracker 🌈
+          {t('mood_title')} 🌈
         </h1>
 
         <div style={{ width: "40px" }} /> {/* Spacer */}
@@ -754,15 +788,15 @@ const MoodTrackerScreen = ({ navigation }) => {
                   textAlign: "center",
                 }}
               >
-                How are you feeling today?
+                {t('mood_question')}
               </h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
                 {Object.entries(groupedMoods).map(([category, subcategories]) => (
                   <div key={category} style={{
                     background: category === "Positive" ? "rgba(232, 245, 233, 0.5)" : "rgba(255, 235, 238, 0.5)",
-                    padding: "20px",
-                    borderRadius: "25px",
+                    padding: "15px 12px",
+                    borderRadius: "20px",
                     boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
                   }}>
                     <h3 style={{
@@ -773,7 +807,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       alignItems: "center",
                       gap: "10px"
                     }}>
-                      {category === "Positive" ? "✨ Positive Moods" : "⛈️ Negative Moods"}
+                      {category === "Positive" ? `✨ ${t('mood_positive')}` : `⛈️ ${t('mood_negative')}`}
                     </h3>
 
                     {Object.entries(subcategories).map(([subcategory, subMoods]) => (
@@ -786,13 +820,13 @@ const MoodTrackerScreen = ({ navigation }) => {
                           marginBottom: "10px",
                           paddingLeft: "10px"
                         }}>
-                          {subcategory}
+                          {t(subcategory.toLowerCase().replace(' ', '_')) || subcategory}
                         </h4>
                         <div
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-                            gap: "12px",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                            gap: "10px",
                           }}
                         >
                           {subMoods.map((mood, idx) => {
@@ -808,7 +842,9 @@ const MoodTrackerScreen = ({ navigation }) => {
                                   display: "flex",
                                   flexDirection: "column",
                                   alignItems: "center",
-                                  padding: "15px 10px",
+                                  justifyContent: "center",
+                                  padding: "20px 10px",
+                                  minHeight: "120px",
                                   background: `linear-gradient(135deg, ${mood.bgColor} 0%, white 100%)`,
                                   border: `2px solid ${mood.color}`,
                                   borderRadius: "18px",
@@ -832,9 +868,9 @@ const MoodTrackerScreen = ({ navigation }) => {
                                 />
                                 <span
                                   style={{
-                                    fontSize: "14px",
-                                    fontWeight: "600",
-                                    marginTop: "8px",
+                                    fontSize: "16px",
+                                    fontWeight: "bold",
+                                    marginTop: "5px",
                                     color: mood.color,
                                     textAlign: "center"
                                   }}
@@ -884,18 +920,9 @@ const MoodTrackerScreen = ({ navigation }) => {
               }}
             >
               <div
-                style={{
-                  background: selectedMood.bgColor,
-                  padding: "20px",
-                  borderRadius: "50%",
-                  boxShadow: `0 10px 30px ${selectedMood.color}80`,
-                }}
-              >
-                <div
-                  id="selected-mood-animation"
-                  style={{ width: "80px", height: "80px" }}
-                />
-              </div>
+                id="selected-mood-animation"
+                style={{ width: "80px", height: "80px" }}
+              />
 
               <span
                 style={{
@@ -1434,6 +1461,27 @@ const MoodTrackerScreen = ({ navigation }) => {
             className="flex-1 py-4 rounded-[1rem] font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
           >
             Delete
+          </button>
+        </div>
+      </ReusableModal>
+
+      <ReusableModal
+        isOpen={feedbackModal.isOpen}
+        onClose={() => setFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+        title={feedbackModal.title}
+        type={feedbackModal.type}
+      >
+        <p className="text-slate-500 text-[16px] leading-relaxed font-medium mb-10">
+          {feedbackModal.message}
+        </p>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setFeedbackModal(prev => ({ ...prev, isOpen: false }))}
+            className={`flex-1 py-4 rounded-[1rem] font-bold text-white transition-colors ${
+              feedbackModal.type === 'error' ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600'
+            }`}
+          >
+            OK
           </button>
         </div>
       </ReusableModal>

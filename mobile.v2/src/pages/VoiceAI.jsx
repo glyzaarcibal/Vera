@@ -3,6 +3,8 @@ import axiosInstance from "../utils/axios.instance";
 import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
+import PullToRefresh from "../components/PullToRefresh.jsx";
+import { useLanguage } from "../context/LanguageContext";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -12,7 +14,7 @@ const VOICES = [
     name: "Atlas",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     gradient: "from-indigo-500 to-purple-600",
-    desc: "Calm & mature, specializing in serious, structured advice."
+    desc: "voice_atlas_desc"
   },
   {
     id: "EXAVITQu4vr4xnSDxMaL",
@@ -20,7 +22,7 @@ const VOICES = [
     name: "Nova",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg",
     gradient: "from-pink-500 to-rose-600",
-    desc: "Warm & empathetic, focusing on emotional support and care."
+    desc: "voice_nova_desc"
   },
   {
     id: "CwhRBWXzGAHq8TQ4Fs17",
@@ -28,7 +30,7 @@ const VOICES = [
     name: "Orion",
     avatar: "https://randomuser.me/api/portraits/men/46.jpg",
     gradient: "from-blue-500 to-cyan-600",
-    desc: "Supportive & trustworthy, a relatable voice for daily check-ins."
+    desc: "voice_orion_desc"
   },
   {
     id: "SAz9YHcvj6GT2YYXdXww",
@@ -36,7 +38,7 @@ const VOICES = [
     name: "Luna",
     avatar: "https://randomuser.me/api/portraits/women/17.jpg",
     gradient: "from-purple-500 to-fuchsia-600",
-    desc: "Serene & gentle, perfect for relaxation and mindfulness."
+    desc: "voice_luna_desc"
   },
   {
     id: "TX3LPaxmHKxFdv7VOQHJ",
@@ -44,7 +46,7 @@ const VOICES = [
     name: "Sage",
     avatar: "https://randomuser.me/api/portraits/men/62.jpg",
     gradient: "from-green-500 to-emerald-600",
-    desc: "Wise & mentor-like, providing deep philosophical insights."
+    desc: "voice_sage_desc"
   },
   {
     id: "cgSgspJ2msm6clMCkdW9",
@@ -52,11 +54,12 @@ const VOICES = [
     name: "Ember",
     avatar: "https://randomuser.me/api/portraits/women/31.jpg",
     gradient: "from-orange-500 to-red-600",
-    desc: "Energetic & friendly, your optimistic partner for life coaching."
+    desc: "voice_ember_desc"
   },
 ];
 
 const VoiceAI = () => {
+  const { t } = useLanguage();
   const [isCallActive, setIsCallActive] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -494,9 +497,9 @@ const VoiceAI = () => {
   };
 
   const modeLabel = {
-    listening: "Listening…",
-    thinking: "Processing…",
-    speaking: "Speaking…",
+    listening: t("listening"),
+    thinking: t("processing"),
+    speaking: t("speaking"),
   };
 
   const user = useSelector((state) => state.auth.user);
@@ -505,17 +508,18 @@ const VoiceAI = () => {
   const hasEnoughTokens = tokens >= SESSION_COST;
 
   return (
-    <div className="voice-ai-container">
+    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
+      <div className="voice-ai-container">
       {/* ── Page Header ── */}
       <div className="voice-ai-page-header">
         <div className="page-eyebrow">
-          <span>🎙️</span> AI Voice Companion
+          <span>🎙️</span> {t("voice_companion")}
         </div>
         <h1>
-          Your Journey to <em>Inner Peace</em>
+          {t("home")} <em>{t("inner_peace")}</em>
         </h1>
         <p className="page-subtitle">
-          Connect with a natural AI personality tailored to your needs.
+          {t("connect_voice")}
         </p>
       </div>
 
@@ -526,14 +530,11 @@ const VoiceAI = () => {
             <div className="gate-icon">
               <Zap size={48} className="zap-icon" />
             </div>
-            <h2 className="gate-title">Tokens Required</h2>
-            <p className="gate-text">
-              You need at least <strong>{SESSION_COST} tokens</strong> to start a voice session. 
-              You currently have <strong>{tokens} tokens</strong>.
-            </p>
+            <h2 className="gate-title">{t("tokens_required")}</h2>
+            <p className="gate-text" dangerouslySetInnerHTML={{ __html: t("tokens_gate_desc").replace("{cost}", SESSION_COST).replace("{tokens}", tokens) }} />
             <div className="gate-actions">
               <button className="earn-tokens-btn" onClick={() => window.location.href = "/activities"}>
-                <span>Go to Activities</span>
+                <span>{t("go_activities")}</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                   <polyline points="12 5 19 12 12 19"></polyline>
@@ -546,7 +547,7 @@ const VoiceAI = () => {
           /* ── Voice Selection Grid ── */
           <div className="voice-selection-layout">
             <div className="section-title-wrap">
-              <h2 className="section-title">Select Your Companion</h2>
+              <h2 className="section-title">{t("select_companion")}</h2>
               <div className="title-divider"></div>
             </div>
             
@@ -559,14 +560,14 @@ const VoiceAI = () => {
                 >
                   <div className="card-avatar-wrap">
                     <img src={voice.avatar} alt={voice.name} />
-                    {selectedVoiceIndex === index && <div className="active-badge">Selected</div>}
+                    {selectedVoiceIndex === index && <div className="active-badge">{t("selected")}</div>}
                   </div>
                   <div className="card-info">
                     <div className="card-header">
                       <h3>{voice.name}</h3>
                       <span className="gender-tag">{voice.gender}</span>
                     </div>
-                    <p className="card-desc">{voice.desc}</p>
+                    <p className="card-desc">{t(voice.desc)}</p>
                   </div>
                 </div>
               ))}
@@ -579,7 +580,7 @@ const VoiceAI = () => {
                     <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 12H8.5L7 14V10l1.5-2H11l1.5 2v4l-1.5 2zm7-3h-1v1h1v2h-2v-2h1v-1h-1V9h2v2h-1v1h1v2z"/>
                   </svg>
                 </div>
-                <span>Start Voice Session</span>
+                <span>{t("start_voice_session")}</span>
               </button>
             </div>
           </div>
@@ -588,12 +589,12 @@ const VoiceAI = () => {
           <div className="immersive-call-view">
             <div className="call-header">
               <div className="call-info">
-                <div className="live-tag">LIVE SESSION</div>
+                <div className="live-tag">{t("live_session")}</div>
                 <div className="call-timer">{formatDuration(callDuration)}</div>
               </div>
               <button className="end-session-btn" onClick={handleCallToggle}>
                 <PhoneOff size={18} />
-                <span>End Session</span>
+                <span>{t("end_session")}</span>
               </button>
             </div>
 
@@ -622,7 +623,7 @@ const VoiceAI = () => {
                 {detectedEmotion?.emotion && (
                   <div className="live-emotion-indicator">
                     <span className="emotion-icon">✨</span>
-                    <span className="emotion-text">Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                    <span className="emotion-text">{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
                   </div>
                 )}
               </div>
@@ -636,7 +637,7 @@ const VoiceAI = () => {
                       <p className="active-transcript">{transcript}</p>
                     ) : (
                       <p className="transcript-placeholder">
-                        {conversationMode === "thinking" ? "V.E.R.A is thinking..." : "Listening for your voice..."}
+                        {conversationMode === "thinking" ? t("processing") : t("listening")}
                       </p>
                     )}
                   </div>
@@ -691,6 +692,7 @@ const VoiceAI = () => {
         )}
       </div>
     </div>
+  </PullToRefresh>
   );
 };
 

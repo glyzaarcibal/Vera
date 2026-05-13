@@ -5,10 +5,12 @@ import { Menu, X, Bell, LogOut, User, Activity, LayoutDashboard, Sparkles, Chevr
 import axiosInstance from "../utils/axios.instance";
 import { selectIsAuthenticated, selectUser } from "../store/slices/authSelectors";
 import { clearUser } from "../store/slices/authSlice";
+import { useLanguage } from "../context/LanguageContext";
 import logoImg from "../assets/logo.png";
 import "./Header.css";
 
 const Header = () => {
+  const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -59,8 +61,6 @@ const Header = () => {
       ];
 
       const all = [...appointmentNotifications, ...staticNotifications];
-      
-      // Filter out cleared notifications
       const clearedIds = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
       const filtered = all.filter(n => !clearedIds.includes(n.id));
       
@@ -95,14 +95,12 @@ const Header = () => {
   return (
     <header className="header">
       <nav className="header-nav">
-        {/* LEFT: Logo */}
         <div className="header-left">
           <Link to="/" className="header-logo">
             <img src={logoImg} alt="V.E.R.A. Logo" className="logo-img" />
           </Link>
         </div>
 
-        {/* CENTER: Navigation (Desktop/Mobile Menu) */}
         <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
           <div className="mobile-only mobile-menu-header">
             <div 
@@ -139,53 +137,61 @@ const Header = () => {
 
           <Link to="/" className={`header-link ${isActive("/") ? "active" : ""}`}>
              <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-             <span>Home</span>
+             <span>{t("home")}</span>
           </Link>
 
-          {/* AI DROPDOWN */}
           <div className="desktop-ai-dropdown">
             <div className="header-link dropdown-trigger">
               <span className="header-link-icon mobile-only"><Sparkles size={18} /></span>
-              <span>AI Features</span>
+              <span>{t("ai_features")}</span>
               <ChevronDown size={14} className="dropdown-arrow-icon" />
             </div>
             <div className="desktop-ai-menu">
               <Link to="/voice" className="ai-menu-item">
-                <Mic size={16} /> <span>Voice AI</span>
+                <Mic size={16} /> <span>{t("voice_ai")}</span>
               </Link>
               <Link to="/avatar" className="ai-menu-item">
-                <UserCircle size={16} /> <span>Avatar AI</span>
+                <UserCircle size={16} /> <span>{t("avatar_ai")}</span>
               </Link>
               <Link to="/chat" className="ai-menu-item">
-                <MessageSquare size={16} /> <span>Chat AI</span>
+                <MessageSquare size={16} /> <span>{t("chat_ai")}</span>
               </Link>
             </div>
           </div>
 
           <Link to="/activities" className={`header-link ${isActive("/activities") ? "active" : ""}`}>
             <span className="header-link-icon mobile-only"><Activity size={18} /></span>
-            <span>Activities</span>
+            <span>{t("activities")}</span>
           </Link>
 
           {user?.role?.toLowerCase() === "admin" && (
             <Link to="/admin" className={`header-link ${location.pathname.startsWith("/admin") ? "active" : ""}`}>
               <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-              <span>Admin</span>
+              <span>{t("admin")}</span>
             </Link>
           )}
 
           {user?.role?.toLowerCase() === "psychology" && (
             <Link to="/psychology" className={`header-link ${location.pathname.startsWith("/psychology") ? "active" : ""}`}>
               <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-              <span>Psychology</span>
+              <span>{t("psychology")}</span>
             </Link>
           )}
+
+          <div className="mobile-only language-switcher-mobile">
+            <div className="header-divider"></div>
+            <p className="mobile-section-label">{t("language")}</p>
+            <div className="lang-btn-group">
+               <button className={`lang-btn ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>{t("english")}</button>
+               <button className={`lang-btn ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>{t("tagalog")}</button>
+            </div>
+          </div>
 
           {isAuthenticated && (
             <div className="mobile-only mobile-notifications-link">
                <button onClick={toggleNotifications} className="header-link">
                  <span className="header-link-icon"><Bell size={18} /></span>
-                 <span>Notifications</span>
+                 <span>{t("notifications")}</span>
                  {unreadCount > 0 && <span className="mobile-notif-badge">{unreadCount}</span>}
                </button>
             </div>
@@ -196,16 +202,20 @@ const Header = () => {
              {isAuthenticated ? (
                <button onClick={handleLogout} className="header-link header-logout-btn">
                  <LogOut size={18} />
-                 <span>Logout</span>
+                 <span>{t("logout")}</span>
                </button>
              ) : (
-                <Link to="/register" className="header-link get-started-link">Get Started</Link>
+                <Link to="/register" className="header-link get-started-link">{t("get_started")}</Link>
              )}
           </div>
         </div>
 
-        {/* RIGHT: Actions */}
         <div className="header-right">
+          <div className="desktop-only language-switcher-pill">
+             <button className={`lang-pill ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>EN</button>
+             <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>TL</button>
+          </div>
+
           {isAuthenticated ? (
             <>
               <div className="notification-container" ref={notificationRef}>
@@ -223,7 +233,7 @@ const Header = () => {
                 {isNotificationOpen && (
                   <div className="notification-dropdown">
                     <div className="notification-header">
-                      <h3>Notifications</h3>
+                      <h3>{t("notifications")}</h3>
                       <button className="mark-read-btn" onClick={() => {
                         const currentIds = notifications.map(n => n.id);
                         const clearedIds = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
@@ -276,9 +286,9 @@ const Header = () => {
                     </div>
                   </div>
                   <div className="dropdown-menu">
-                    <Link to="/profile" className="dropdown-item">Profile</Link>
-                    <Link to="/feedback" className="dropdown-item">Feedback & Support</Link>
-                    <button onClick={handleLogout} className="dropdown-item text-red">Logout</button>
+                    <Link to="/profile" className="dropdown-item">{t("profile")}</Link>
+                    <Link to="/feedback" className="dropdown-item">{t("feedback")}</Link>
+                    <button onClick={handleLogout} className="dropdown-item text-red">{t("logout")}</button>
                   </div>
                 </div>
               )}

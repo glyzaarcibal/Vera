@@ -185,7 +185,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
           <div className="didagent-guide-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', maxWidth: '900px', margin: '0 auto 80px' }}>
             {ANIMAL_GUIDES.map((guide) => (
               <div key={guide.id} className="didagent-guide-card">
-                <div className="didagent-guide-avatar-wrap" style={{ borderRadius: '40px' }}>
+                <div className="didagent-guide-avatar-wrap" style={{ borderRadius: '24px' }}>
                   <img src={guide.image} alt={guide.name} className="didagent-guide-avatar" />
                 </div>
                 <h3 className="didagent-guide-name">{guide.name}</h3>
@@ -252,20 +252,22 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             </div>
 
             {error && <div className="didagent-error-toast">{error}</div>}
+
+            {/* Floating Controls inside video wrap */}
+            <div className="didagent-floating-controls">
+              <button
+                onClick={toggleListening}
+                disabled={isProcessing || isSpeaking}
+                className={`didagent-mic-btn ${isListening ? 'active' : ''}`}
+              >
+                {isListening ? <Mic size={24} /> : <MicOff size={24} />}
+              </button>
+              <button onClick={() => { onEnd?.(); setAnimalType(null); }} className="didagent-end-btn">
+                <PhoneOff size={24} />
+              </button>
+            </div>
           </div>
 
-          <div className="didagent-controls">
-            <button
-              onClick={toggleListening}
-              disabled={isProcessing || isSpeaking}
-              className={`didagent-mic-btn ${isListening ? 'active' : ''}`}
-            >
-              {isListening ? <Mic size={32} /> : <MicOff size={32} />}
-            </button>
-            <button onClick={() => { onEnd?.(); setAnimalType(null); }} className="didagent-end-btn">
-              <PhoneOff size={32} />
-            </button>
-          </div>
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>
       )}

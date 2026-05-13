@@ -10,6 +10,7 @@ import voiceWaveImg from "../assets/voice-wave.png";
 import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
+import PullToRefresh from "../components/PullToRefresh.jsx";
 import "./Welcome.css";
 
 /* ─── Icons ─────────────────────────────────────────────────────── */
@@ -211,7 +212,8 @@ const Welcome = () => {
   if (loading) return <Loader />;
 
   return (
-    <div className="v-welcome-page">
+    <PullToRefresh onRefresh={fetchData}>
+      <div className="v-welcome-page">
       {/* ══ HERO SECTION ══════════════════════════════════ */}
       <section className="v-hero-wrap">
         <div className="v-hero-container">
@@ -360,63 +362,7 @@ const Welcome = () => {
         </div>
       </section>
 
-      {/* ══ MOBILE PROMO ═══════════════════════════════════ */}
-      <section className="v-promo-section">
-        <div className="v-promo-glass-card sa sa-up">
-          <div className="v-phone-mockup-wrapper">
-             <div className="v-phone-bg-glow" />
-             <div className="v-phone-secondary">
-               <div className="v-phone-inner-bg" />
-             </div>
-             <div className="v-phone-primary">
-               {/* Elias UI Mockup */}
-               <div className="v-elias-ui">
-                 <div className="v-elias-header">
-                   <div className="v-ui-menu"><span></span><span></span></div>
-                   <div className="v-ui-logo">V.E.R.A.</div>
-                   <div className="v-ui-profile"></div>
-                 </div>
-                 <div className="v-elias-hero-card">
-                   <div className="v-ui-skeleton-line short"></div>
-                   <div className="v-ui-skeleton-bar">
-                      <div className="v-ui-dot"></div>
-                   </div>
-                 </div>
-                 <div className="v-elias-greeting">
-                   <h3>Good morning, Elias</h3>
-                 </div>
-                 <div className="v-elias-actions">
-                   <div className="v-ui-action-card green">
-                     <SpaIcon />
-                     <strong>Breathe</strong>
-                   </div>
-                   <div className="v-ui-action-card pink">
-                      <AnalyticsIcon />
-                      <strong>Check-in</strong>
-                   </div>
-                 </div>
-                 <div className="v-ui-mic-fab">
-                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
-                 </div>
-               </div>
-             </div>
-          </div>
-          
-          <div className="v-promo-text-content">
-            <h2 className="v-promo-title">Take Your Sanctuary <br /><span className="v-text-purple">Anywhere.</span></h2>
-            <p className="v-promo-desc">Healing doesn't just happen at home. Experience real-time Voice Recognition, Daily Emotional Check-ins, and personalized guidance wherever life takes you.</p>
-            
-            <div className="v-download-grid-centered">
-              <div className="v-qr-card">
-                <div className="v-qr-img">
-                  <img src={mobileScanImg} alt="Scan to Download" />
-                </div>
-                <span className="v-qr-label">Scan to Download</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
       {/* ══ RESOURCES (Existing Logic) ══════════════════════ */}
       {(user?.id && assignedResourceDetails.length > 0) && (
@@ -485,6 +431,7 @@ const Welcome = () => {
         </div>
       </footer>
     </div>
+    </PullToRefresh>
   );
 };
 

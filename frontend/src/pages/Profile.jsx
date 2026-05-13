@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import { 
@@ -10,9 +10,12 @@ import {
   FaEdit
 } from "react-icons/fa";
 import Switch from "../components/Switch";
+import PullToRefresh from "../components/PullToRefresh.jsx";
+import { useLanguage } from "../context/LanguageContext";
 import "./Profile.css";
 
 const Profile = () => {
+  const { t } = useLanguage();
   const user = useSelector(selectUser);
   const [activeTab, setActiveTab] = useState("privacy");
   const [profile, setProfile] = useState({
@@ -26,6 +29,8 @@ const Profile = () => {
     avatar_url: "",
     permit_store: false,
     permit_analyze: false,
+    guardian_email: "",
+    professional_email: "",
   });
   const [originalProfile, setOriginalProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,8 @@ const Profile = () => {
         avatar_url: p.avatar_url || "",
         permit_store: p.permit_store || false,
         permit_analyze: p.permit_analyze || false,
+        guardian_email: p.guardian_email || "",
+        professional_email: p.professional_email || "",
       };
       setProfile(formatted);
       setOriginalProfile(formatted);
@@ -136,6 +143,8 @@ const Profile = () => {
         birthday: profile.birthday,
         gender: profile.gender,
         contact_number: profile.contact_number,
+        guardian_email: profile.guardian_email,
+        professional_email: profile.professional_email,
       });
       setOriginalProfile(profile);
       setIsEditMode(false);
@@ -190,7 +199,6 @@ const Profile = () => {
     }
   };
 
-  /* ── Helpers ── */
   const formatDate = (dateString, useTime = true) => {
     if (!dateString) return "—";
     const options = {
@@ -208,7 +216,7 @@ const Profile = () => {
   const getRiskRiskText = (riskLevel, score) => {
     if (!riskLevel) return null;
     let label = riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
-    if (score) label += `(${score})`;
+    if (score) label += ` (${score})`;
     return label;
   };
 
@@ -227,23 +235,16 @@ const Profile = () => {
     );
   }
 
-  /* ────────────────────────────
-     PRIVACY TAB
-  ──────────────────────────── */
   const renderPrivacyTab = () => (
     <div className="tab-content">
-      <h2 className="content-title">Privacy &amp; Consent</h2>
+      <h2 className="content-title">{t("privacy_tab")}</h2>
       <Toast />
 
-      {/* Store Conversations */}
       <div className="privacy-card-new">
-        <div className="privacy-card-header">Store Conversations</div>
+        <div className="privacy-card-header">{t("store_conversations")}</div>
         <div className="privacy-card-body">
           <p>
-            Allow V.E.R.A. to store your conversations with the AI (chat/voice).
-            This data will only be accessible to our staff and licensed doctors to
-            help them better understand your situation and provide more personalized
-            support and care.
+            {t("store_desc")}
           </p>
           <Switch
             id="permit_store"
@@ -253,16 +254,11 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* AI Analysis */}
       <div className="privacy-card-new">
-        <div className="privacy-card-header">AI Analysis of Conversations</div>
+        <div className="privacy-card-header">{t("ai_analysis")}</div>
         <div className="privacy-card-body">
           <p>
-            Consent to V.E.R.A. using AI to analyse your conversations for patterns
-            in emotional state, mental well-being, and potential risk indicators.
-            This analysis helps provide early detection of emotional distress,
-            generate personalised recommendations, and improve the quality of
-            support you receive.
+            {t("analysis_desc")}
           </p>
           <Switch
             id="permit_analyze"
@@ -272,45 +268,32 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Emergency & Detection Services Reminder */}
       <div className="privacy-card-new reminder">
-        <div className="privacy-card-header">Safety & Emergency Reminder</div>
+        <div className="privacy-card-header">{t("safety_reminder")}</div>
         <div className="privacy-card-body">
           <p>
-            <strong>Privacy and Consent:</strong> V.E.R.A. is equipped with advanced emotional detection 
-            and emergency response protocols. Please be reminded that these safety features 
-            are <strong>not optional</strong> and serve as a mandatory safeguard for all users. 
-            This section serves as a permanent reminder of our commitment to your immediate safety.
+            <strong>{t("privacy_consent")}:</strong> {t("safety_reminder_desc")}
           </p>
           <div style={{ marginTop: "12px", fontSize: "11px", color: "#EF4444", fontWeight: "600" }}>
-            * Detection and emergency services are mandatory for user safety.
+            * {t("mandatory_detection")}
           </div>
         </div>
       </div>
     </div>
   );
 
-  /* ────────────────────────────
-     SESSIONS TAB
-  ──────────────────────────── */
   const renderSessionsTab = () => {
     if (loadingSessions) {
       return <div className="loading-box">Loading sessions...</div>;
     }
 
     let filteredSessions = chatSessions;
-
-    // Filter by Type
     if (sessionTypeFilter !== "all") {
       filteredSessions = filteredSessions.filter(s => s.type?.toLowerCase() === sessionTypeFilter);
     }
-
-    // Filter by Risk
     if (sessionRiskFilter !== "all") {
       filteredSessions = filteredSessions.filter(s => s.risk_level?.toLowerCase() === sessionRiskFilter);
     }
-
-    // Sort by Date
     filteredSessions = [...filteredSessions].sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
@@ -320,32 +303,17 @@ const Profile = () => {
     return (
       <div className="tab-content">
         <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", flexShrink: 0 }}>
-          <select 
-            value={sessionSortOrder} 
-            onChange={(e) => setSessionSortOrder(e.target.value)} 
-            className="sidebar-input"
-            style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}
-          >
+          <select value={sessionSortOrder} onChange={(e) => setSessionSortOrder(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>
           </select>
-          <select 
-            value={sessionTypeFilter} 
-            onChange={(e) => setSessionTypeFilter(e.target.value)} 
-            className="sidebar-input"
-            style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}
-          >
+          <select value={sessionTypeFilter} onChange={(e) => setSessionTypeFilter(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
             <option value="all">All AI Types</option>
             <option value="text">Text</option>
             <option value="voice">Voice</option>
             <option value="avatar">Avatar</option>
           </select>
-          <select 
-            value={sessionRiskFilter} 
-            onChange={(e) => setSessionRiskFilter(e.target.value)} 
-            className="sidebar-input"
-            style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}
-          >
+          <select value={sessionRiskFilter} onChange={(e) => setSessionRiskFilter(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
             <option value="all">All Risk Levels</option>
             <option value="low">Low</option>
             <option value="moderate">Moderate</option>
@@ -354,28 +322,19 @@ const Profile = () => {
         </div>
 
         <div className={`sessions-layout-new ${showSessionList ? 'show-list' : 'show-detail'}`}>
-          {/* Mobile Toggle Button */}
-          <button 
-            className="session-mobile-toggle"
-            onClick={() => setShowSessionList(!showSessionList)}
-          >
+          <button className="session-mobile-toggle" onClick={() => setShowSessionList(!showSessionList)}>
             {showSessionList ? "View Conversation" : "Back to Session List"}
           </button>
           
-          {/* List */}
           <div className={`session-list-new ${!showSessionList ? 'mobile-hidden' : ''}`}>
             {filteredSessions.length === 0 ? (
               <p style={{fontFamily:"'DM Sans', sans-serif", fontSize:"12px"}}>No sessions found.</p>
             ) : (
               filteredSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`session-item-new ${selectedSession?.id === session.id ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedSession(session);
-                    if (window.innerWidth <= 768) setShowSessionList(false);
-                  }}
-                >
+                <div key={session.id} className={`session-item-new ${selectedSession?.id === session.id ? 'active' : ''}`} onClick={() => {
+                  setSelectedSession(session);
+                  if (window.innerWidth <= 768) setShowSessionList(false);
+                }}>
                   <div className="session-badges-new">
                     <span className={`badge-new ${session.type === 'text' ? 'text' : session.type === 'voice' ? 'voice' : 'avatar'}`}>
                       {session.type ? session.type.charAt(0).toUpperCase() + session.type.slice(1) : 'Unknown'}
@@ -394,9 +353,8 @@ const Profile = () => {
             )}
           </div>
 
-          {/* Details */}
           <div className={`session-detail-new ${showSessionList ? 'mobile-hidden' : ''}`}>
-            <h2 className="content-title" style={{marginBottom: "12px"}}>Session Details</h2>
+            <h2 className="content-title" style={{marginBottom: "12px"}}>{t("session_details")}</h2>
             {selectedSession ? (
               <>
                 <div className="session-detail-header-row">
@@ -414,31 +372,24 @@ const Profile = () => {
                     </span>
                   </div>
                 </div>
-
                 <div className="session-detail-summary">
-                  <div className="session-detail-summary-title">Summary:</div>
-                  {selectedSession.summary || "No summary available."}
+                  <div className="session-detail-summary-title">{t("summary")}:</div>
+                  {selectedSession.summary || t("no_summary")}
                 </div>
-
                 <div className="conversation-box-new">
-                  <div className="conversation-title-new">Conversation</div>
-                  
+                  <div className="conversation-title-new">{t("conversation")}</div>
                   {selectedSession.chat_messages && selectedSession.chat_messages.length > 0 ? (
                     <div className="conversation-messages-list">
                       {selectedSession.chat_messages.map((msg) => (
                         <div key={msg.id} className={`msg-new ${msg.sent_by === 'user' ? 'user' : 'bot'}`}>
-                          <div className="msg-sender-new">
-                            {msg.sent_by === 'user' ? 'YOU' : 'V.E.R.A.'}
-                          </div>
+                          <div className="msg-sender-new">{msg.sent_by === 'user' ? 'YOU' : 'V.E.R.A.'}</div>
                           <div>{msg.content}</div>
                           <div className="msg-time-new">{formatDate(msg.created_at)}</div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"11px", color:"#9CA3AF", textAlign:"center", padding:"20px"}}>
-                      No messages recorded.
-                    </div>
+                    <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"11px", color:"#9CA3AF", textAlign:"center", padding:"20px"}}>No messages recorded.</div>
                   )}
                 </div>
               </>
@@ -446,19 +397,15 @@ const Profile = () => {
               <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"13px"}}>Select a session to view details</div>
             )}
           </div>
-
         </div>
       </div>
     );
   };
 
-  /* ────────────────────────────
-     APPOINTMENT TAB
-  ──────────────────────────── */
   const renderAppointmentTab = () => {
     return (
       <div className="tab-content">
-        <h2 className="content-title">Appointment</h2>
+        <h2 className="content-title">{t("appointment_tab")}</h2>
         <div className="appointment-box-new">
           {loadingAppointments ? (
              <div className="loading-box">Loading...</div>
@@ -483,168 +430,140 @@ const Profile = () => {
   };
 
   return (
-    <div className="profile-page-container">
-      
-      {/* ── LEFT SIDEBAR ── */}
-      <div className="profile-sidebar">
-        <div className="avatar-card">
-          {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt="Profile" className="profile-avatar-img" />
-          ) : (
-            <FaUserCircle className="avatar-icon-placeholder" />
-          )}
-          
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-          />
-          <button 
-            className="avatar-edit-btn" 
-            onClick={handleFileSelect}
-            title="Change Picture"
-            disabled={uploadingAvatar}
-          >
-            <FaEdit />
-          </button>
-        </div>
+    <PullToRefresh onRefresh={getProfile}>
+      <div className="profile-page-container">
+        <div className="profile-sidebar">
+          <div className="avatar-card">
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt="Profile" className="profile-avatar-img" />
+            ) : (
+              <FaUserCircle className="avatar-icon-placeholder" />
+            )}
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+            <button className="avatar-edit-btn" onClick={handleFileSelect} title="Change Picture" disabled={uploadingAvatar}>
+              <FaEdit />
+            </button>
+          </div>
 
-        <div className="profile-info-section">
-          <div className="profile-info-title" style={{justifyContent: "space-between"}}>
-            <span>Profile Information</span>
-            {!isEditMode && (
-              <button 
-                onClick={handleEdit} 
-                className="sidebar-btn ghost" 
-                style={{padding: "2px 8px", fontSize: "10px", marginLeft:"auto", flexShrink: 0}}
-              >
-                Edit
-              </button>
+          <div className="profile-info-section">
+            <div className="profile-info-title" style={{justifyContent: "space-between"}}>
+              <span>{t("profile_info")}</span>
+              {!isEditMode && (
+                <button onClick={handleEdit} className="sidebar-btn ghost" style={{padding: "2px 8px", fontSize: "10px", marginLeft:"auto", flexShrink: 0}}>
+                  {t("edit")}
+                </button>
+              )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("first_name")}</span>
+              {isEditMode ? (
+                <input type="text" name="first_name" className="sidebar-input" value={profile.first_name} onChange={handleInputChange} />
+              ) : ( <div className="sidebar-value">{profile.first_name}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("last_name")}</span>
+              {isEditMode ? (
+                <input type="text" name="last_name" className="sidebar-input" value={profile.last_name} onChange={handleInputChange} />
+              ) : ( <div className="sidebar-value">{profile.last_name}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("email")}</span>
+              {isEditMode ? (
+                <input type="email" name="email" className="sidebar-input disabled" style={{opacity: 0.6}} value={profile.email} disabled />
+              ) : ( <div className="sidebar-value">{profile.email}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("username")}</span>
+              {isEditMode ? (
+                <input type="text" name="username" className="sidebar-input" value={profile.username} onChange={handleInputChange} />
+              ) : ( <div className="sidebar-value">{profile.username}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("birthday")}</span>
+              {isEditMode ? (
+                <input type="date" name="birthday" className="sidebar-input" value={profile.birthday} onChange={handleInputChange} />
+              ) : ( <div className="sidebar-value">{profile.birthday || "—"}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("gender")}</span>
+              {isEditMode ? (
+                <select name="gender" className="sidebar-input" value={profile.gender} onChange={handleInputChange}>
+                  <option value="">{t("gender")}</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              ) : ( <div className="sidebar-value">{profile.gender}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("phone")}</span>
+              {isEditMode ? (
+                <input type="tel" name="contact_number" className="sidebar-input" value={profile.contact_number} onChange={handleInputChange} />
+              ) : ( <div className="sidebar-value">{profile.contact_number}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("guardian_email")}</span>
+              {isEditMode ? (
+                <input type="email" name="guardian_email" className="sidebar-input" value={profile.guardian_email} onChange={handleInputChange} placeholder="example@guardian.com" />
+              ) : ( <div className="sidebar-value">{profile.guardian_email || "—"}</div> )}
+            </div>
+
+            <div className="sidebar-field">
+              <span className="sidebar-label">{t("professional_email")}</span>
+              {isEditMode ? (
+                <input type="email" name="professional_email" className="sidebar-input" value={profile.professional_email} onChange={handleInputChange} placeholder="doctor@clinic.com" />
+              ) : ( <div className="sidebar-value">{profile.professional_email || "—"}</div> )}
+            </div>
+
+            <p style={{fontSize: "10px", color: "#6B7280", fontStyle: "italic", marginTop: "4px", padding: "0 4px"}}>
+              {t("risk_alert_desc")}
+            </p>
+
+            {isEditMode && (
+              <div className="sidebar-actions" style={{flexDirection:"row", marginTop:"8px"}}>
+                <button className="sidebar-btn" style={{flex:1}} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : t("save")}</button>
+                <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>{t("cancel")}</button>
+              </div>
             )}
           </div>
+        </div>
 
-          <div className="sidebar-field">
-            <span className="sidebar-label">First Name</span>
-            {isEditMode ? (
-               <input type="text" name="first_name" className="sidebar-input" value={profile.first_name} onChange={handleInputChange} />
-            ) : ( <div className="sidebar-value">{profile.first_name}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Last Name</span>
-            {isEditMode ? (
-               <input type="text" name="last_name" className="sidebar-input" value={profile.last_name} onChange={handleInputChange} />
-            ) : ( <div className="sidebar-value">{profile.last_name}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Email</span>
-            {isEditMode ? (
-               <input type="email" name="email" className="sidebar-input disabled" style={{opacity: 0.6}} value={profile.email} disabled />
-            ) : ( <div className="sidebar-value">{profile.email}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Username</span>
-            {isEditMode ? (
-               <input type="text" name="username" className="sidebar-input" value={profile.username} onChange={handleInputChange} />
-            ) : ( <div className="sidebar-value">{profile.username}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Birthday</span>
-            {isEditMode ? (
-               <input type="date" name="birthday" className="sidebar-input" value={profile.birthday} onChange={handleInputChange} />
-            ) : ( <div className="sidebar-value">{profile.birthday || "—"}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Gender</span>
-            {isEditMode ? (
-               <select name="gender" className="sidebar-input" value={profile.gender} onChange={handleInputChange}>
-                 <option value="">Select Gender</option>
-                 <option value="male">Male</option>
-                 <option value="female">Female</option>
-                 <option value="other">Other</option>
-                 <option value="prefer_not_to_say">Prefer not to say</option>
-               </select>
-            ) : ( <div className="sidebar-value">{profile.gender}</div> )}
-          </div>
-
-          <div className="sidebar-field">
-            <span className="sidebar-label">Phone No</span>
-            {isEditMode ? (
-               <input type="tel" name="contact_number" className="sidebar-input" value={profile.contact_number} onChange={handleInputChange} />
-            ) : ( <div className="sidebar-value">{profile.contact_number}</div> )}
-          </div>
-
-          {isEditMode && (
-            <div className="sidebar-actions" style={{flexDirection:"row", marginTop:"8px"}}>
-              <button className="sidebar-btn" style={{flex:1}} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
-              <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>Cancel</button>
+        <div className="profile-main">
+          <div className="profile-main-header">
+            <h1 className="profile-name">{profile.first_name} {profile.last_name}</h1>
+            <div className="privacy-settings-box">
+              <span className="ps-title">PRIVACY SETTINGS</span>
+              <div className="ps-toggles">
+                <span>STORE: {profile.permit_store ? "ON" : "OFF"}</span>
+                <span>ANALYZE: {profile.permit_analyze ? "ON" : "OFF"}</span>
+                <span style={{ color: "var(--text-gray)", opacity: 0.8 }}>DETECTION: ALWAYS ON</span>
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* Safety Notice per User Request */}
-          <div className="sidebar-safety-note" style={{marginTop: "24px", padding: "16px", background: "rgba(239, 68, 68, 0.05)", borderRadius: "12px", border: "1px solid rgba(239, 68, 68, 0.1)"}}>
-            <h4 style={{fontSize: "12px", fontWeight: "700", color: "#EF4444", marginBottom: "4px"}}>Privacy & Consent Reminder</h4>
-            <p style={{fontSize: "11px", color: "#6B7280", lineHeight: "1.4"}}>
-              Early detection and emergency services are active and mandatory. This is for your safety and protection.
-            </p>
+          <div className="custom-tabs">
+            <button className={`custom-tab ${activeTab === "privacy" ? "active" : ""}`} onClick={() => setActiveTab("privacy")}><FaUserShield /> {t("privacy_tab")}</button>
+            <button className={`custom-tab ${activeTab === "sessions" ? "active" : ""}`} onClick={() => setActiveTab("sessions")}><FaRegCommentDots /> {t("sessions_tab")}</button>
+            <button className={`custom-tab ${activeTab === "appointments" ? "active" : ""}`} onClick={() => setActiveTab("appointments")}><FaRegClipboard /> {t("appointment_tab")}</button>
+          </div>
+
+          <div className="profile-tab-content">
+            {activeTab === "privacy" && renderPrivacyTab()}
+            {activeTab === "sessions" && renderSessionsTab()}
+            {activeTab === "appointments" && renderAppointmentTab()}
           </div>
         </div>
       </div>
-
-      {/* ── MAIN CONTENT ── */}
-      <div className="profile-main">
-        
-        <div className="profile-main-header">
-          <h1 className="profile-name">
-            {profile.first_name} {profile.last_name}
-          </h1>
-          
-          <div className="privacy-settings-box">
-            <span className="ps-title">PRIVACY SETTINGS</span>
-            <div className="ps-toggles">
-              <span>STORE: {profile.permit_store ? "ON" : "OFF"}</span>
-              <span>ANALYZE: {profile.permit_analyze ? "ON" : "OFF"}</span>
-              <span style={{ color: "var(--text-gray)", opacity: 0.8 }}>DETECTION: ALWAYS ON</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="custom-tabs">
-          <button 
-            className={`custom-tab ${activeTab === "privacy" ? "active" : ""}`}
-            onClick={() => setActiveTab("privacy")}
-          >
-            <FaUserShield /> Privacy
-          </button>
-          <button 
-            className={`custom-tab ${activeTab === "sessions" ? "active" : ""}`}
-            onClick={() => setActiveTab("sessions")}
-          >
-            <FaRegCommentDots /> Sessions
-          </button>
-          <button 
-            className={`custom-tab ${activeTab === "appointments" ? "active" : ""}`}
-            onClick={() => setActiveTab("appointments")}
-          >
-            <FaRegClipboard /> Appoinment
-          </button>
-        </div>
-
-        <div className="profile-tab-content">
-          {activeTab === "privacy" && renderPrivacyTab()}
-          {activeTab === "sessions" && renderSessionsTab()}
-          {activeTab === "appointments" && renderAppointmentTab()}
-        </div>
-
-      </div>
-
-    </div>
+    </PullToRefresh>
   );
 };
 

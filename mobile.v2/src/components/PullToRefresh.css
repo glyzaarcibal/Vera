@@ -1,0 +1,44 @@
+.ptr-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  /* Prevent horizontal scroll during pull */
+  overflow-x: hidden; 
+  background: transparent;
+}
+
+.ptr-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.ptr-icon-box {
+  background: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2), 
+              0 0 0 1px rgba(124, 58, 237, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.ptr-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  /* Ensure the content spans full height to allow pulling at bottom too if needed, 
+     but ptr only works at top scroll */
+  min-height: 100vh;
+}

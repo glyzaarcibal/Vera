@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosInstance from "../utils/axios.instance";
+import PullToRefresh from "../components/PullToRefresh.jsx";
 import "./Admin/UserManagement.css";
 
 const Notifications = () => {
@@ -77,10 +78,11 @@ const Notifications = () => {
     };
 
     return (
-        <div
-            className="user-management-container"
-            style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 0" }}
-        >
+        <PullToRefresh onRefresh={fetchNotifications}>
+            <div
+                className="user-management-container"
+                style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 0" }}
+            >
             <div className="page-header" style={{ marginBottom: 32 }}>
                 <h1
                     className="page-title"
@@ -212,6 +214,7 @@ const Notifications = () => {
                 )}
             </div>
         </div>
+        </PullToRefresh>
     );
 };
 

@@ -5,6 +5,7 @@ import { selectUser } from "../store/slices/authSelectors";
 import { motion } from "framer-motion";
 import { Sparkles, Moon, Brain, Wind, Edit3, Activity as ActivityIcon, ChevronRight, Zap, Smile, Pill, BarChart } from "lucide-react";
 import axiosInstance from "../utils/axios.instance.js";
+import { useLanguage } from "../context/LanguageContext";
 
 // Import images
 import clipcardImg from "../assets/images/clipcard_new.png";
@@ -18,13 +19,14 @@ import reportImg from "../assets/images/wellness_report.png";
 import "./Activities.css";
 
 const Activities = () => {
+  const { t } = useLanguage();
   const user = useSelector(selectUser);
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("All");
   const [wellnessMetrics, setWellnessMetrics] = useState({
     vitalityScore: 0,
     averageSleep: 0,
-    sleepStatus: "No Data",
+    sleepStatus: t("sleep_status_none"),
     loading: true
   });
 
@@ -38,7 +40,7 @@ const Activities = () => {
         setWellnessMetrics({
           vitalityScore: 0,
           averageSleep: 0,
-          sleepStatus: "No Data",
+          sleepStatus: t("sleep_status_none"),
           loading: false
         });
         return;
@@ -69,7 +71,7 @@ const Activities = () => {
       setWellnessMetrics({
         vitalityScore: vitality,
         averageSleep: avgSleepHours,
-        sleepStatus: avgSleepHours >= 7 ? "Deep Rest" : avgSleepHours > 0 ? "Resting" : "No Data",
+        sleepStatus: avgSleepHours >= 7 ? t("sleep_status_deep") : avgSleepHours > 0 ? t("sleep_status_resting") : t("sleep_status_none"),
         loading: false
       });
     } catch (e) {
@@ -87,79 +89,79 @@ const Activities = () => {
   const wellnessActivities = [
     {
       id: 1,
-      name: "Clipcard Game",
-      description: "Enhance your cognitive focus with this quick-play memory challenge.",
-      category: "Mind Exercise",
+      name: t("clipcard_game"),
+      description: t("clipcard_desc"),
+      category: t("mind_exercise"),
       type: "Games",
       path: "/activities/clipcard",
       color: "#10B981",
-      buttonText: "Play Now",
+      buttonText: t("play_now"),
       image: clipcardImg
     },
     {
       id: 2,
-      name: "Breathe Deeply",
-      description: "A guided 5-minute session to center your nervous system.",
-      category: "Relaxation",
+      name: t("deep_breath"),
+      description: t("breath_desc"),
+      category: t("relaxation"),
       type: "Breathing",
       path: "/activities/take-a-breath",
       color: "#7C3AED",
-      buttonText: "Start Breathwork",
+      buttonText: t("start_breathwork"),
       image: breatheImg
     },
     {
       id: 3,
-      name: "Digital Diary",
-      description: "Release your thoughts. Private, encrypted journaling for your peace.",
-      category: "Reflection",
+      name: t("digital_diary"),
+      description: t("diary_desc"),
+      category: t("reflection"),
       type: "Journaling",
       path: "/activities/diary",
       color: "#6B7280",
-      buttonText: "Write Today",
+      buttonText: t("write_today"),
       image: diaryImg
     },
     {
       id: 4,
-      name: "Sleep Tracker",
-      description: "Deep dive into your rest patterns and circadian rhythm optimization.",
-      category: "Insight",
+      name: t("sleep_tracker"),
+      description: t("sleep_desc"),
+      category: t("insight"),
       type: "Sleep",
       path: "/activities/sleep-tracker",
       color: "#1E1B4B",
-      buttonText: "View History",
+      buttonText: t("view_history"),
       image: sleepImg
     },
     {
       id: 5,
-      name: "Mood Tracker",
-      description: "Log your daily emotional state and discover mood patterns.",
-      category: "Reflection",
+      name: t("mood_tracker"),
+      description: t("mood_desc"),
+      category: t("reflection"),
       type: "Tracker",
       path: "/activities/mood-tracker",
       color: "#10B981", 
-      buttonText: "Log Mood",
+      buttonText: t("log_mood"),
       image: moodImg
     },
     {
       id: 6,
-      name: "Medication Tracker",
-      description: "Securely log your medication schedule to stay consistent.",
-      category: "Insight",
+      name: t("med_tracker"),
+      description: t("med_desc"),
+      category: t("insight"),
       type: "Tracker",
       path: "/activities/medication-history",
       color: "#EF4444", 
-      buttonText: "View Schedule",
+      buttonText: t("view_schedule"),
       image: medicationImg
     },
     {
       id: 7,
-      name: "Wellness Report",
-      description: "A comprehensive weekly overview of your activities and progress.",
-      category: "Insight",
+      name: t("wellness_report"),
+      description: t("report_desc"),
+      category: t("insight"),
       type: "Report",
       path: "/activities/weekly-wellness-report",
       color: "#F59E0B", 
-      buttonText: "View Report",
+      buttonText: t("view_report"),
       image: reportImg
     }
   ];
@@ -177,11 +179,10 @@ const Activities = () => {
           animate={{ opacity: 1, y: 0 }}
           className="act-v2-title"
         >
-          Wellness Activities
+          {t("wellness_activities")}
         </motion.h1>
         <p className="act-v2-subtitle">
-          Take a moment for yourself today. Explore curated exercises designed 
-          to nurture your mind, body, and spirit.
+          {t("explore_exercises")}
         </p>
       </header>
 
@@ -193,13 +194,13 @@ const Activities = () => {
           whileHover={{ y: -5 }}
         >
           <div className="stat-info">
-            <span className="stat-label">CURRENT VITALITY</span>
+            <span className="stat-label">{t("current_vitality")}</span>
             <div className="stat-value-group">
               <span className="stat-number">{wellnessMetrics.vitalityScore}</span>
               <span className="stat-total">/100</span>
             </div>
             <p className="stat-desc">
-              You're doing excellent today! Your energy levels are 12% higher than yesterday.
+              {t("vitality_desc")}
             </p>
           </div>
           <div className="stat-visual">
@@ -225,14 +226,14 @@ const Activities = () => {
           whileHover={{ y: -5 }}
         >
           <div className="stat-info">
-            <span className="stat-label">SLEEP QUALITY</span>
+            <span className="stat-label">{t("sleep_quality")}</span>
             <div className="sleep-status-row">
               <div className="sleep-icon-box">
                 <Moon size={18} fill="currentColor" />
               </div>
               <div className="sleep-text">
                 <h3>{wellnessMetrics.loading ? "..." : wellnessMetrics.sleepStatus}</h3>
-                <span>{wellnessMetrics.loading ? "..." : `${wellnessMetrics.averageSleep}h total`}</span>
+                <span>{wellnessMetrics.loading ? "..." : t("total_hours").replace("{hours}", wellnessMetrics.averageSleep)}</span>
               </div>
             </div>
             <div className="sleep-bar-chart">
@@ -251,7 +252,7 @@ const Activities = () => {
 
       {/* FILTERS */}
       <div className="act-v2-filters">
-        <span className="filter-label">FILTER BY</span>
+        <span className="filter-label">{t("filter_by")}</span>
         <div className="filter-pills">
           {filters.map(f => (
             <button 
@@ -259,7 +260,7 @@ const Activities = () => {
               className={`filter-pill ${activeFilter === f ? 'active' : ''}`}
               onClick={() => setActiveFilter(f)}
             >
-              {f}
+              {t(`filter_${f.toLowerCase()}`)}
             </button>
           ))}
         </div>
@@ -313,13 +314,12 @@ const Activities = () => {
              <Sparkles size={20} color="#7C3AED" fill="#7C3AED" />
           </div>
         </div>
-        <h2 className="cta-title">The Evening Wind-Down</h2>
+        <h2 className="cta-title">{t("evening_wind_down")}</h2>
         <p className="cta-desc">
-          V.E.R.A. suggests a 10-minute mindfulness session before bed to 
-          increase your REM sleep quality by up to 20% tonight.
+          {t("evening_desc")}
         </p>
         <button className="cta-btn" onClick={() => navigate("/activities/take-a-breath")}>
-          Begin Ritual
+          {t("begin_ritual")}
         </button>
       </motion.div>
     </div>
