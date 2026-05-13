@@ -126,7 +126,7 @@ const Welcome = () => {
       fetchResources(),
       user?.id ? fetchAssignedResources() : Promise.resolve()
     ]);
-    const timerPromise = new Promise(resolve => setTimeout(resolve, 2000));
+    const timerPromise = new Promise(resolve => setTimeout(resolve, 3000));
     
     await Promise.all([dataPromise, timerPromise]);
     setLoading(false); 

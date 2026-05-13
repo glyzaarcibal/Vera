@@ -41,10 +41,12 @@ import TakeABreath from "./pages/Activities/TakeABreath.jsx";
 import MedicationTracker from "./pages/Activities/MedicationTracker.jsx";
 import Feedback from "./pages/Feedback.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
+import Loader from "./components/Loader.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+  const [appLoading, setAppLoading] = React.useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -55,18 +57,15 @@ const App = () => {
         }
       } catch (e) {
         console.error("Error refreshing profile:", e);
-        // If profile fetch fails (e.g., token expired), interceptor will handle it
+      } finally {
+        setTimeout(() => setAppLoading(false), 1500);
       }
     };
 
-    if (user) {
-      fetchProfile();
-    }
+    fetchProfile();
   }, [dispatch]);
 
-  useEffect(() => {
-    console.log("App mounted, user:", user);
-  }, [user]);
+  if (appLoading) return <Loader text="Synchronizing your sanctuary..." />;
 
   return (
     <Routes>
