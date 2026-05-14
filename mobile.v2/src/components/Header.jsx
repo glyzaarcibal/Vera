@@ -98,9 +98,16 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    dispatch(clearUser());
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      dispatch(clearUser());
+      localStorage.removeItem("persist:auth");
+      navigate("/");
+    }
   };
 
   return (

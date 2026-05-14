@@ -86,20 +86,39 @@
   border-radius: 2px;
 }
 
-.avatarai-back-link {
-  display: flex;
+.avatarai-back-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--vera-text-muted);
+  gap: 10px;
+  background: white;
+  color: var(--vera-text);
+  border: 1px solid var(--vera-border);
+  padding: 10px 20px;
+  border-radius: 99px;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.05em;
-  transition: color 0.2s;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  text-transform: uppercase;
 }
 
-.avatarai-back-link:hover {
+.avatarai-back-btn:hover {
+  background: var(--vera-bg);
+  border-color: var(--vera-primary);
   color: var(--vera-primary);
+  transform: translateX(-5px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.avatarai-back-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.avatarai-back-btn:hover svg {
+  transform: translateX(-3px);
 }
 
 .avatarai-header-content {
@@ -841,18 +860,18 @@
 
 .didagent-floating-controls {
   position: absolute;
-  bottom: 24px;
+  bottom: 60px; /* Moved higher */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.15);
+  gap: 20px;
+  background: rgba(15, 23, 42, 0.95); /* Even darker for maximum contrast */
   backdrop-filter: blur(20px);
-  padding: 8px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  z-index: 10;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  padding: 14px;
+  border-radius: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  z-index: 9999; /* Force to top */
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
 }
 
 .didagent-mic-btn, .didagent-end-btn {
@@ -869,8 +888,9 @@
 
 .didagent-mic-btn {
   background: white;
-  color: #64748b;
+  color: #1e293b;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
 }
 
 .didagent-mic-btn.active {
@@ -1031,7 +1051,7 @@
   }
 
   .didagent-controls {
-    display: none; /* Hide the old container if it still exists */
+    display: none;
   }
 
   .didagent-floating-controls {

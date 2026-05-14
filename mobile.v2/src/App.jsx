@@ -57,6 +57,7 @@ const App = () => {
         }
       } catch (e) {
         console.error("Error refreshing profile:", e);
+        dispatch(clearUser());
       } finally {
         setTimeout(() => setAppLoading(false), 1500);
       }

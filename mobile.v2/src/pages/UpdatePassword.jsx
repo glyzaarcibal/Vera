@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../utils/axios.instance";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import "./Auth.css";
 
 const UpdatePassword = () => {
@@ -12,6 +13,8 @@ const UpdatePassword = () => {
     password: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -57,28 +60,46 @@ const UpdatePassword = () => {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field">
             <label className="auth-label">New Password</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter new password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
+            <div className="auth-password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Enter new password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="auth-input"
+              />
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           <div className="auth-field">
             <label className="auth-label">Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm new password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="auth-input"
-            />
+            <div className="auth-password-wrapper">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm new password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className="auth-input"
+              />
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="auth-btn">
