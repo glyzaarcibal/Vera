@@ -36,9 +36,6 @@ axiosInstance.interceptors.response.use(
     ) {
       // Clear Redux state
       store.dispatch(clearUser());
-
-      // Redirect to login page
-      window.location.href = "/";
     }
 
     return Promise.reject(error);

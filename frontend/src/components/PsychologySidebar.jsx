@@ -26,17 +26,26 @@ const PsychologySidebar = ({ isOpen, onClose }) => {
   const { user } = useSelector((state) => state.auth);
 
   const handleLogout = async () => {
+    // 1. Clear Redux and Local State Immediately
+    dispatch(clearUser());
+    
     try {
+      // 2. Clear all related local storage items
+      localStorage.removeItem("persist:auth");
+      localStorage.clear(); // Nuclear local clear
+      
+      if (persistor) {
+        await persistor.purge();
+      }
+
+      if (onClose) onClose();
+
+      // 3. Call backend to clear cookies
       await axiosInstance.post("/auth/logout");
     } catch (e) {
       console.error("Logout error:", e);
     } finally {
-      dispatch(clearUser());
-      if (persistor) {
-        await persistor.purge();
-      }
-      localStorage.removeItem("persist:auth");
-      if (onClose) onClose();
+      // 4. Force hard redirect to landing page
       window.location.href = "/";
     }
   };
