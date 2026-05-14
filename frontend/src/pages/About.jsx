@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import "./About.css";
 import arcibalPhoto from "../assets/team/arcibal.jpg";
 import cervantesPhoto from "../assets/team/cervantes.jpg";
-import mendozaPhoto from "../assets/team/mendoza.png";
-import baloloyPhoto from "../assets/baloloy.jpg";
+import mendozaPhoto from "../assets/team/mendoza.jpg";
+import baloloyPhoto from "../assets/team/baloloy.png";
 import { useLanguage } from "../context/LanguageContext";
 
 

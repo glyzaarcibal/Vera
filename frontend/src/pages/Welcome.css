@@ -179,6 +179,34 @@
   padding-left: 4px;
 }
 
+.v-password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.v-password-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #7b7487;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 2;
+  border-radius: 50%;
+}
+
+.v-password-toggle:hover {
+  color: var(--primary);
+  background: rgba(124, 58, 237, 0.05);
+}
+
 .v-input-group input {
   width: 100%;
   background: rgba(0,0,0,0.03);

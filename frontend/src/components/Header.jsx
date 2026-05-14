@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Menu, X, Bell, LogOut, User, Activity, LayoutDashboard, Sparkles, ChevronDown, Mic, MessageSquare, UserCircle, Calendar, Clock, Zap } from "lucide-react";
 import axiosInstance from "../utils/axios.instance";
 import { selectIsAuthenticated, selectUser } from "../store/slices/authSelectors";
+import { store, persistor } from "../store/store";
 import { clearUser } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
 import logoImg from "../assets/logo.png";
@@ -87,9 +88,19 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    dispatch(clearUser());
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      dispatch(clearUser());
+      if (persistor) {
+        await persistor.purge();
+      }
+      localStorage.removeItem("persist:auth");
+      window.location.href = "/";
+    }
   };
 
   return (

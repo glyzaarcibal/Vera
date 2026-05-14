@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, PawPrint, Heart, Sparkles } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, PawPrint, Heart, Sparkles, MoveLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import './AvatarAI.css';
@@ -169,9 +169,13 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const toggleListening = () => isListening ? stopRecording() : startRecording();
 
   return (
-    <div className="animal-wrapper">
+    <div className="didagent-wrapper">
       {!animalType ? (
         <div className="didagent-selection-container">
+          <button className="avatarai-back-btn" onClick={onEnd}>
+            <MoveLeft size={16} />
+            <span>Back to Selection</span>
+          </button>
           <div className="didagent-selection-header">
             <h1 className="didagent-selection-title">
               Select Your <span className="didagent-accent">Animal Companion</span>
@@ -254,7 +258,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             {error && <div className="didagent-error-toast">{error}</div>}
 
             {/* Floating Controls inside video wrap */}
-            <div className="didagent-floating-controls">
+            <div className="didagent-floating-controls" style={{ zIndex: 100 }}>
               <button
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}

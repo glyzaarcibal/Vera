@@ -94,3 +94,41 @@ export const signIn = async (req, res) => {
     return res.status(statusCode).json({ message, error: e.message, code: e.code });
   }
 };
+
+export const signOut = async (req, res) => {
+  try {
+    const baseOptions = {
+      httpOnly: true,
+      path: "/",
+    };
+
+    // Clear with all possible combinations to ensure deletion
+    const sameSiteOptions = ["Lax", "None", "Strict"];
+    const secureOptions = [true, false];
+
+    sameSiteOptions.forEach(sameSite => {
+      secureOptions.forEach(secure => {
+        const opt = { ...baseOptions, sameSite, secure };
+        res.clearCookie("access_token", opt);
+        res.clearCookie("refresh_token", opt);
+        res.cookie("access_token", "", { ...opt, expires: new Date(0), maxAge: 0 });
+        res.cookie("refresh_token", "", { ...opt, expires: new Date(0), maxAge: 0 });
+      });
+    });
+
+    // Also clear without any options just in case
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+
+    console.log("[LOGOUT] Nuclear cookie clear executed");
+
+    return res.status(200).json({
+      message: "success",
+    });
+  } catch (e) {
+    console.error("[LOGOUT] Error during logout:", e);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};

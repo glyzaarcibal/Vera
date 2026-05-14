@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
+import { persistor } from "../store/store";
+import axiosInstance from "../utils/axios.instance";
 import {
   MdDashboard,
   MdPeople,
@@ -23,10 +25,20 @@ const PsychologySidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
 
-  const handleLogout = () => {
-    dispatch(clearUser());
-    if (onClose) onClose();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      dispatch(clearUser());
+      if (persistor) {
+        await persistor.purge();
+      }
+      localStorage.removeItem("persist:auth");
+      if (onClose) onClose();
+      window.location.href = "/";
+    }
   };
 
   // Close sidebar when clicking links on mobile

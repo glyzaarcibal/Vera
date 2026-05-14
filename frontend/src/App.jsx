@@ -57,6 +57,7 @@ const App = () => {
         }
       } catch (e) {
         console.error("Error refreshing profile:", e);
+        dispatch(clearUser());
       } finally {
         // Add a slight delay for smooth transition
         setTimeout(() => setAppLoading(false), 1500);

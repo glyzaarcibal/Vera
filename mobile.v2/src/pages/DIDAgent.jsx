@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, PhoneOff, ShieldCheck, Heart, Sparkles, User, Shirt, Check } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, ShieldCheck, Heart, Sparkles, User, Shirt, Check, MoveLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import './AvatarAI.css';
@@ -251,6 +251,10 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     <div className="didagent-wrapper">
       {!isSessionActive ? (
         <div className="didagent-selection-container">
+          <button className="avatarai-back-btn" onClick={onEnd}>
+            <MoveLeft size={16} />
+            <span>Back to Selection</span>
+          </button>
           <div className="didagent-selection-header">
             <h1 className="didagent-selection-title">
               Select Your <span className="didagent-accent">Guide</span>
@@ -373,7 +377,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
 
             {error && <div className="didagent-error-toast">{error}</div>}
             
-            <div className="didagent-floating-controls">
+            <div className="didagent-floating-controls" style={{ zIndex: 100 }}>
               <button
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
