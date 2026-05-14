@@ -1,20 +1,33 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ChatAI.css";
 import axiosInstance from "../utils/axios.instance";
+import { useLanguage } from "../context/LanguageContext";
 
 const ChatAI = () => {
-  const [sessionId, setSessionId] = useState(null);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      type: "bot",
-      text: "Hello! I'm here to listen and support you. How are you feeling today?",
-      timestamp: new Date(),
-    },
-  ]);
+  const { t } = useLanguage();
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem("chatSessionId") || null);
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem("chatMessages");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map(msg => ({ ...msg, timestamp: new Date(msg.timestamp) }));
+      } catch (e) { }
+    }
+    return [
+      {
+        id: 1,
+        type: "bot",
+        text: t("welcome_back"),
+        timestamp: new Date(),
+      },
+    ];
+  });
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,6 +36,27 @@ const ChatAI = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+    if (sessionId) {
+      localStorage.setItem("chatSessionId", sessionId);
+    } else {
+      localStorage.removeItem("chatSessionId");
+    }
+  }, [messages, sessionId]);
+
+  const handleNewConversation = () => {
+    setSessionId(null);
+    setMessages([
+      {
+        id: 1,
+        type: "bot",
+        text: t("welcome_back"),
+        timestamp: new Date(),
+      },
+    ]);
+  };
 
   const initializeSession = async () => {
     try {
@@ -93,42 +127,53 @@ const ChatAI = () => {
     }
   };
 
+
   return (
     <div className="chat-ai-container">
       <div className="chat-header">
-        <div className="avatar-icon">
-          <div className="avatar-circle">V</div>
-        </div>
-        <div className="chat-info">
-          <h2>Vera Assistant</h2>
-          <div className="header-status">
-            <span className="status-indicator">● Online</span>
-            {sessionId && (
-              <span className="session-id">Session: {sessionId}</span>
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="avatar-icon">
+            <img src="/icon.png" alt="Vera" className="avatar-circle" style={{ objectFit: 'cover', borderRadius: '24px' }} />
+          </div>
+          <div className="chat-info" style={{ gap: '0px', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <h2>{t("vera_assistant")}</h2>
+            <div className="header-status">
+              <span className="status-indicator">● {t("online")}</span>
+              {sessionId && (
+                <span className="session-id">Session: {sessionId}</span>
+              )}
+            </div>
           </div>
         </div>
+        <button className="new-chat-btn" onClick={handleNewConversation}>
+          {t("new_chat")}
+        </button>
       </div>
 
       <div className="chat-messages">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message ${
-              message.type === "user" ? "user-message" : "bot-message"
-            }`}
-          >
-            <div className="message-content">
-              <p>{message.text}</p>
-              <span className="message-time">
-                {message.timestamp.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+        {messages.map((message) => {
+          const isBot = message.type === "bot" || message.type === "bot-message";
+          
+          return (
+            <div
+              key={message.id}
+              className={`message ${
+                message.type === "user" ? "user-message" : "bot-message"
+              }`}
+            >
+              <div className="message-content">
+                <p>{message.text}</p>
+                
+                <span className="message-time">
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {isTyping && (
           <div className="message bot-message">
             <div className="message-content typing-indicator">
@@ -146,7 +191,7 @@ const ChatAI = () => {
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Share what's on your mind..."
+          placeholder={t("share_mind")}
           rows="1"
         />
         <button onClick={handleSend} disabled={inputValue.trim() === ""}>

@@ -57,8 +57,27 @@ export const signIn = async (req, res) => {
       message = "Please verify your email to login (We sent you a link on your email)";
       statusCode = 403;
     } else if (e.code === "invalid_credentials") {
-      message = "Please check your email and password";
-      statusCode = 401;
+      // Check if this user exists in pending_users (registered but not yet verified)
+      try {
+        const { data: pendingUser } = await supabaseAnon
+          .from("pending_users")
+          .select("id, email")
+          .eq("email", req.body.email)
+          .maybeSingle();
+        
+        if (pendingUser) {
+          console.log("[LOGIN] User found in pending_users, needs verification:", pendingUser.email);
+          message = "Please verify your email first. Check your inbox for the verification code.";
+          statusCode = 403;
+        } else {
+          message = "Please check your email and password";
+          statusCode = 401;
+        }
+      } catch (pendingErr) {
+        console.log("[LOGIN] Error checking pending_users:", pendingErr);
+        message = "Please check your email and password";
+        statusCode = 401;
+      }
     } else if (e.message === "account_inactive") {
       message = "Your account is inactive. Please contact support.";
       statusCode = 403;

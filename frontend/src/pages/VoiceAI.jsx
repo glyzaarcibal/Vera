@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../utils/axios.instance";
+import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { updateTokens } from "../store/slices/authSlice";
+import { useLanguage } from "../context/LanguageContext";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -7,47 +11,54 @@ const VOICES = [
     id: "JBFqnCBsd6RMkjVDRZzb",
     gender: "Man",
     name: "Atlas",
-    avatar: "🎙️",
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
     gradient: "from-indigo-500 to-purple-600",
+    desc: "voice_atlas_desc"
   },
   {
     id: "EXAVITQu4vr4xnSDxMaL",
     gender: "Woman",
     name: "Nova",
-    avatar: "✨",
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
     gradient: "from-pink-500 to-rose-600",
+    desc: "voice_nova_desc"
   },
   {
     id: "CwhRBWXzGAHq8TQ4Fs17",
     gender: "Man",
     name: "Orion",
-    avatar: "🔮",
+    avatar: "https://randomuser.me/api/portraits/men/46.jpg",
     gradient: "from-blue-500 to-cyan-600",
+    desc: "voice_orion_desc"
   },
   {
     id: "SAz9YHcvj6GT2YYXdXww",
     gender: "Woman",
     name: "Luna",
-    avatar: "🌙",
+    avatar: "https://randomuser.me/api/portraits/women/17.jpg",
     gradient: "from-purple-500 to-fuchsia-600",
+    desc: "voice_luna_desc"
   },
   {
     id: "TX3LPaxmHKxFdv7VOQHJ",
     gender: "Man",
     name: "Sage",
-    avatar: "🍃",
+    avatar: "https://randomuser.me/api/portraits/men/62.jpg",
     gradient: "from-green-500 to-emerald-600",
+    desc: "voice_sage_desc"
   },
   {
     id: "cgSgspJ2msm6clMCkdW9",
     gender: "Woman",
     name: "Ember",
-    avatar: "🔥",
+    avatar: "https://randomuser.me/api/portraits/women/31.jpg",
     gradient: "from-orange-500 to-red-600",
+    desc: "voice_ember_desc"
   },
 ];
 
 const VoiceAI = () => {
+  const { t } = useLanguage();
   const [isCallActive, setIsCallActive] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -62,6 +73,7 @@ const VoiceAI = () => {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+  const dispatch = useDispatch();
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -144,7 +156,12 @@ const VoiceAI = () => {
         `/sessions/start-session/${"voice"}`,
         { voice: VOICES[selectedVoiceIndex] }
       );
-      const { session } = res.data;
+      const { session, updatedTokens } = res.data;
+      
+      if (updatedTokens !== null) {
+        dispatch(updateTokens(updatedTokens));
+      }
+
       setSessionId(session.id);
       return session;
     } catch (e) {
@@ -153,7 +170,7 @@ const VoiceAI = () => {
       const status = e.response?.status;
       if (status === 401) {
         alert("Your session has expired or you are not logged in. Please log in to continue.");
-        window.location.href = "/login";
+        window.location.href = "/";
       } else if (status === 503) {
         alert("Service temporarily unavailable. " + message);
       } else {
@@ -219,6 +236,9 @@ const VoiceAI = () => {
         if (response.status === 401) {
           throw new Error("ElevenLabs API key is invalid or unauthorized.");
         }
+        if (response.status === 402) {
+          throw new Error("ElevenLabs quota exceeded");
+        }
         throw new Error("Failed to generate speech");
       }
 
@@ -235,8 +255,29 @@ const VoiceAI = () => {
 
       audio.play();
     } catch (error) {
-      alert(error.message || "Failed to generate speech");
-      setConversationMode("listening");
+      console.error('Voice AI TTS error:', error);
+      
+      // Native Browser TTS Fallback if ElevenLabs fails
+      if ('speechSynthesis' in window) {
+          console.log("ElevenLabs failed, falling back to browser Web Speech API...");
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voiceDef = VOICES[selectedVoiceIndex];
+          
+          if (voiceDef.gender === 'Woman') {
+              utterance.pitch = 1.2;
+          } else {
+              utterance.pitch = 0.9;
+          }
+          
+          utterance.onend = () => {
+              setConversationMode("listening");
+          };
+          
+          window.speechSynthesis.speak(utterance);
+      } else {
+          alert(error.message === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : error.message || "Failed to generate speech");
+          setConversationMode("listening");
+      }
     }
   };
 
@@ -455,366 +496,196 @@ const VoiceAI = () => {
   };
 
   const modeLabel = {
-    listening: "Listening…",
-    thinking: "Processing…",
-    speaking: "Speaking…",
+    listening: t("listening"),
+    thinking: t("processing"),
+    speaking: t("speaking"),
   };
 
+  const user = useSelector((state) => state.auth.user);
+  const tokens = user?.tokens ?? 0;
+  const SESSION_COST = 2;
+  const hasEnoughTokens = tokens >= SESSION_COST;
+
   return (
-    <div className="voice-ai-container flex flex-col items-center">
+    <div className="voice-ai-container">
       {/* ── Page Header ── */}
-      <div className="voice-ai-page-header w-full">
+      <div className="voice-ai-page-header">
         <div className="page-eyebrow">
-          <span>🎙️</span> Voice Companion
+          <span>🎙️</span> {t("voice_companion")}
         </div>
         <h1>
-          Talk with your <em>AI therapist</em>
+          {t("home")} <em>{t("inner_peace")}</em>
         </h1>
         <p className="page-subtitle">
-          Choose a voice and start a natural, private conversation
+          {t("connect_voice")}
         </p>
       </div>
 
-      <div className="w-full flex flex-col items-center gap-8">
-        {/* ── Main Card ── */}
-        <div className="w-full">
-          {!isCallActive ? (
-            /* ── Voice Carousel ── */
-            <div className="design-section voice-carousel-card w-full p-8 sm:p-12">
-              <p className="text-center text-xs font-bold tracking-widest uppercase text-purple-400 mb-8">
-                Select a Voice
-              </p>
-              <div className="relative w-full flex items-center justify-center">
-                {/* Left Arrow */}
-                <button
-                  onClick={() => handleCarouselScroll("left")}
-                  disabled={selectedVoiceIndex === 0}
-                  className={`absolute left-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${selectedVoiceIndex === 0
-                    ? "opacity-30 cursor-not-allowed"
-                    : "hover:scale-110 hover:shadow-lg text-purple-600"
-                    }`}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                </button>
-
-                {/* Carousel */}
-                <div className="relative w-full h-80 flex items-center justify-center overflow-hidden">
-                  <div
-                    ref={carouselRef}
-                    className="absolute flex items-center gap-10 transition-transform duration-500 ease-out"
-                    style={{
-                      transform: `translateX(calc(50% - ${selectedVoiceIndex * 232 + 96
-                        }px))`,
-                    }}
-                  >
-                    {VOICES.map((voice, index) => {
-                      const isActive = index === selectedVoiceIndex;
-                      return (
-                        <div
-                          key={voice.id}
-                          onClick={() => handleVoiceSelect(index)}
-                          className={`relative flex-shrink-0 w-44 h-60 rounded-3xl cursor-pointer flex flex-col items-center justify-center gap-4 transition-all duration-500 ${isActive
-                            ? "voice-card-active scale-110"
-                            : "voice-card-inactive scale-90 opacity-40 blur-[1px] hover:opacity-60"
-                            }`}
-                        >
-                          <div
-                            className={`w-18 h-18 w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-3xl shadow-md ${isActive
-                              ? "bg-white/20"
-                              : "bg-gray-50 border border-gray-100"
-                              }`}
-                          >
-                            {voice.avatar}
-                          </div>
-                          <div className="text-center">
-                            <p
-                              className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isActive ? "text-white/60" : "text-gray-400"
-                                }`}
-                            >
-                              {voice.gender}
-                            </p>
-                            <p
-                              className={`text-base font-bold ${isActive ? "text-white" : "text-gray-700"
-                                }`}
-                            >
-                              {voice.name}
-                            </p>
-                          </div>
-                          {isActive && (
-                            <div className="absolute top-4 right-4">
-                              <div className="w-2 h-2 rounded-full bg-white/80 animate-pulse" />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right Arrow */}
-                <button
-                  onClick={() => handleCarouselScroll("right")}
-                  disabled={selectedVoiceIndex === VOICES.length - 1}
-                  className={`absolute right-0 z-20 w-11 h-11 rounded-2xl bg-white shadow-md flex items-center justify-center transition-all border border-gray-100 ${selectedVoiceIndex === VOICES.length - 1
-                    ? "opacity-30 cursor-not-allowed"
-                    : "hover:scale-110 hover:shadow-lg text-purple-600"
-                    }`}
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Voice name + dot indicators */}
-              <div className="flex flex-col items-center gap-3 mt-6">
-                <p className="text-sm font-semibold text-gray-600">
-                  {VOICES[selectedVoiceIndex].name} ·{" "}
-                  <span className="text-purple-500">
-                    {VOICES[selectedVoiceIndex].gender}
-                  </span>
-                </p>
-                <div className="flex gap-2">
-                  {VOICES.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleVoiceSelect(i)}
-                      className={`rounded-full transition-all duration-300 ${i === selectedVoiceIndex
-                        ? "w-5 h-2 bg-purple-500"
-                        : "w-2 h-2 bg-gray-200 hover:bg-gray-300"
-                        }`}
-                    />
-                  ))}
-                </div>
-              </div>
+      <div className="voice-ai-content-main">
+        {!hasEnoughTokens && !isCallActive ? (
+          /* ── Insufficient Tokens Screen ── */
+          <div className="insufficient-tokens-gate">
+            <div className="gate-icon">
+              <Zap size={48} className="zap-icon" />
             </div>
-          ) : (
-            /* ── Active Call View ── */
-            <div className="design-section active-call-section w-full max-w-2xl mx-auto py-12 px-8 flex flex-col items-center gap-8">
-              {/* Progress bar */}
-              <div className="absolute top-0 left-0 w-full call-progress-bar rounded-t-3xl">
-                <div className="bar-fill" />
-              </div>
-
-              {/* Avatar */}
-              <div
-                className={`voice-avatar-orb w-36 h-36 rounded-full flex items-center justify-center text-5xl relative ${conversationMode === "speaking" ? "speaking" : ""
-                  }`}
-              >
-                {VOICES[selectedVoiceIndex].avatar}
-                {conversationMode === "speaking" && (
-                  <div className="ping-ring absolute inset-0 rounded-full" />
-                )}
-              </div>
-
-              {/* Name + timer */}
-              <div className="text-center flex flex-col items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-800">
-                  {VOICES[selectedVoiceIndex].name}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <div className="status-dot" />
-                  <span className="text-xs font-bold tracking-widest uppercase text-gray-400">
-                    {formatDuration(callDuration)}
-                  </span>
-                </div>
-                <span className="text-xs text-purple-500 font-medium">
-                  {modeLabel[conversationMode] || "Active"}
-                </span>
-              </div>
-
-              {/* Detected emotion */}
-              {detectedEmotion?.emotion && (
-                <div className="emotion-badge">
-                  <span>💫</span>
-                  <span>
-                    {detectedEmotion.emotion}
-                    {detectedEmotion.score
-                      ? ` · ${Math.round(detectedEmotion.score * 100)}%`
-                      : ""}
-                  </span>
-                </div>
-              )}
-
-              {/* Transcript */}
-              <div className="transcript-box w-full p-6 min-h-[96px] flex flex-col items-center justify-center text-center">
-                <p
-                  className={`text-base leading-relaxed ${transcript ? "text-gray-800 font-medium" : "text-gray-400 italic"
-                    }`}
-                >
-                  {transcript ||
-                    (conversationMode === "thinking"
-                      ? "Processing your message…"
-                      : "Listening for your voice…")}
-                </p>
-                {conversationMode === "thinking" && (
-                  <div className="flex gap-1.5 mt-4">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="thinking-dot"
-                        style={{ animationDelay: `${i * 0.2}s` }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Error */}
-              {speechError && (
-                <p className="text-xs text-rose-500 text-center px-4">
-                  ⚠️ {speechError}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ── Controls ── */}
-        <div className="flex gap-4 items-center">
-          {isCallActive && (
-            <div className="call-controls-bar">
-              {/* Mute */}
-              <button
-                onClick={handleMuteToggle}
-                className={`ctrl-btn ${isMuted ? "muted" : "unmuted"}`}
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  {isMuted ? (
-                    <>
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                      <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                      <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    </>
-                  )}
+            <h2 className="gate-title">{t("tokens_required")}</h2>
+            <p className="gate-text" dangerouslySetInnerHTML={{ __html: t("tokens_gate_desc").replace("{cost}", SESSION_COST).replace("{tokens}", tokens) }} />
+            <div className="gate-actions">
+              <button className="earn-tokens-btn" onClick={() => window.location.href = "/activities"}>
+                <span>{t("go_activities")}</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
                 </svg>
               </button>
+            </div>
+            <p className="gate-hint">Complete daily activities like Breathing exercises or Mood tracking to earn more tokens!</p>
+          </div>
+        ) : !isCallActive ? (
+          /* ── Voice Selection Grid ── */
+          <div className="voice-selection-layout">
+            <div className="section-title-wrap">
+              <h2 className="section-title">{t("select_companion")}</h2>
+              <div className="title-divider"></div>
+            </div>
+            
+            <div className="voice-grid">
+              {VOICES.map((voice, index) => (
+                <div 
+                  key={voice.id}
+                  className={`voice-selection-card ${selectedVoiceIndex === index ? 'active' : ''}`}
+                  onClick={() => setSelectedVoiceIndex(index)}
+                >
+                  <div className="card-avatar-wrap">
+                    <img src={voice.avatar} alt={voice.name} />
+                    {selectedVoiceIndex === index && <div className="active-badge">{t("selected")}</div>}
+                  </div>
+                  <div className="card-info">
+                    <div className="card-header">
+                      <h3>{voice.name}</h3>
+                      <span className="gender-tag">{voice.gender}</span>
+                    </div>
+                    <p className="card-desc">{t(voice.desc)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-              {/* Record toggle */}
-              <button
-                onClick={handleRecordingToggle}
-                disabled={
-                  conversationMode === "thinking" ||
-                  conversationMode === "speaking"
-                }
-                className={`ctrl-btn ${isRecording ? "recording" : "idle-record"}`}
-                title={isRecording ? "Send message" : "Start speaking"}
-              >
-                {isRecording ? (
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <rect x="6" y="6" width="12" height="12" rx="2" />
+            <div className="start-call-footer">
+              <button className="premium-start-btn" onClick={handleCallToggle}>
+                <div className="btn-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 12H8.5L7 14V10l1.5-2H11l1.5 2v4l-1.5 2zm7-3h-1v1h1v2h-2v-2h1v-1h-1V9h2v2h-1v1h1v2z"/>
                   </svg>
-                ) : (
-                  <div className="w-3.5 h-3.5 rounded-full bg-gray-400" />
-                )}
+                </div>
+                <span>{t("start_voice_session")}</span>
               </button>
             </div>
-          )}
-
-          {/* Main call button */}
-          <button
-            onClick={handleCallToggle}
-            className={`call-btn ${isCallActive ? "end" : "start"}`}
-            title={isCallActive ? "End call" : "Start call"}
-          >
-            {isCallActive ? (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
-              </svg>
-            ) : (
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        {/* ── Debug transcript ── */}
-        {isTesting && isCallActive && (
-          <div className="debug-section design-section p-6">
-            <p className="debug-label">Speech-to-Text Debug Output</p>
-            <textarea
-              className="debug-textarea"
-              value={transcript}
-              readOnly
-              placeholder="Real-time transcription will appear here…"
-              rows="4"
-            />
           </div>
-        )}
+        ) : (
+          /* ── Immersive Call View ── */
+          <div className="immersive-call-view">
+            <div className="call-header">
+              <div className="call-info">
+                <div className="live-tag">{t("live_session")}</div>
+                <div className="call-timer">{formatDuration(callDuration)}</div>
+              </div>
+              <button className="end-session-btn" onClick={handleCallToggle}>
+                <PhoneOff size={18} />
+                <span>{t("end_session")}</span>
+              </button>
+            </div>
 
-        {/* ── Feature Cards ── */}
-        {!isCallActive && (
-          <div className="feature-grid">
-            {[
-              {
-                icon: "🎙️",
-                title: "Voice Chat",
-                desc: "Natural voice conversation with your AI",
-              },
-              {
-                icon: "💡",
-                title: "Live Support",
-                desc: "Real-time guidance & emotional support",
-              },
-              {
-                icon: "🛡️",
-                title: "Private",
-                desc: "Secure, confidential interactions",
-              },
-            ].map((f, i) => (
-              <div key={i} className="design-section feature-card">
-                <div className="icon-wrap">{f.icon}</div>
-                <div>
-                  <p className="feat-title">{f.title}</p>
-                  <p className="feat-desc">{f.desc}</p>
+            <div className="call-main-content">
+              {/* Avatar Section */}
+              <div className="avatar-interaction-zone">
+                <div className={`avatar-container ${conversationMode === "speaking" ? "is-speaking" : ""}`}>
+                  <div className="avatar-glow"></div>
+                  <div className="avatar-image-mask">
+                    <img src={VOICES[selectedVoiceIndex].avatar} alt={VOICES[selectedVoiceIndex].name} />
+                  </div>
+                  {conversationMode === "speaking" && (
+                    <div className="voice-waves">
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="companion-meta">
+                  <h2 className="companion-name">{VOICES[selectedVoiceIndex].name}</h2>
+                  <p className="companion-status">
+                    {modeLabel[conversationMode] || "Connected"}
+                  </p>
+                </div>
+
+                {detectedEmotion?.emotion && (
+                  <div className="live-emotion-indicator">
+                    <span className="emotion-icon">✨</span>
+                    <span className="emotion-text">{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
+                  </div>
+                )}
+              </div>
+
+              {/* Interaction Panel */}
+              <div className="interaction-panel">
+                <div className="transcript-container">
+                  <div className="transcript-label">Live Transcription</div>
+                  <div className="transcript-content">
+                    {transcript ? (
+                      <p className="active-transcript">{transcript}</p>
+                    ) : (
+                      <p className="transcript-placeholder">
+                        {conversationMode === "thinking" ? t("processing") : t("listening")}
+                      </p>
+                    )}
+                  </div>
+                  {conversationMode === "thinking" && (
+                    <div className="thinking-loader">
+                      <span></span><span></span><span></span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="call-controls">
+                  <button 
+                    className={`circle-btn mute ${isMuted ? 'active' : ''}`} 
+                    onClick={handleMuteToggle}
+                    title={isMuted ? "Unmute" : "Mute"}
+                  >
+                    {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  </button>
+
+                  <button 
+                    className={`main-action-btn ${isRecording ? 'is-recording' : ''}`}
+                    onClick={handleRecordingToggle}
+                    disabled={conversationMode === "thinking" || conversationMode === "speaking"}
+                  >
+                    <div className="btn-inner">
+                      {isRecording ? (
+                        <div className="stop-square"></div>
+                      ) : (
+                        <div className="mic-pulse">
+                          <Mic size={32} />
+                        </div>
+                      )}
+                    </div>
+                    <span className="btn-label">{isRecording ? t("stop_process") : t("tap_to_speak")}</span>
+                  </button>
+
+                  <div className="volume-indicator">
+                    <div className="vol-bar"></div>
+                    <div className="vol-bar"></div>
+                    <div className="vol-bar"></div>
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {speechError && (
+              <div className="call-error-toast">
+                <span>⚠️</span> {speechError}
+              </div>
+            )}
           </div>
         )}
       </div>

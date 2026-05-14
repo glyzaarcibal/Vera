@@ -1,309 +1,327 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectUser } from "../store/slices/authSelectors";
+import { motion } from "framer-motion";
+import { Sparkles, Moon, Brain, Wind, Edit3, Activity as ActivityIcon, ChevronRight, Zap, Smile, Pill, BarChart } from "lucide-react";
 import axiosInstance from "../utils/axios.instance.js";
+import { useLanguage } from "../context/LanguageContext";
+
+// Import images
+import clipcardImg from "../assets/images/clipcard_new.png";
+import diaryImg from "../assets/images/diary.png";
+import sleepImg from "../assets/images/sleep.png";
+import breatheImg from "../assets/images/breathe_deeply.png";
+import moodImg from "../assets/images/mood_tracker.png";
+import medicationImg from "../assets/images/medication_tracker.png";
+import reportImg from "../assets/images/wellness_report.png";
+
 import "./Activities.css";
 
 const Activities = () => {
+  const { t } = useLanguage();
+  const user = useSelector(selectUser);
   const navigate = useNavigate();
-  const location = useLocation();
-  const [userRecords, setUserRecords] = useState([]);
-  const [recordsLoading, setRecordsLoading] = useState(false);
-  const [recordsError, setRecordsError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [wellnessMetrics, setWellnessMetrics] = useState({
+    vitalityScore: 0,
+    averageSleep: 0,
+    sleepStatus: t("sleep_status_none"),
+    loading: true
+  });
 
-  const isReportsMode = useMemo(() => {
-    const searchParams = new URLSearchParams(location.search);
-    return searchParams.get("reports") === "1" || Boolean(location.state?.showUserRecords);
-  }, [location.search, location.state]);
+  const fetchWellnessData = async () => {
+    try {
+      setWellnessMetrics(prev => ({ ...prev, loading: true }));
+      const response = await axiosInstance.get("/activities");
+      const logs = response.data.activities || [];
+      
+      if (!logs || logs.length === 0) {
+        setWellnessMetrics({
+          vitalityScore: 0,
+          averageSleep: 0,
+          sleepStatus: t("sleep_status_none"),
+          loading: false
+        });
+        return;
+      }
+      
+      // Calculate Sleep Metrics
+      const sleepLogs = logs.filter(a => a.activity_type === 'sleep');
+      const recentSleep = sleepLogs.slice(0, 7);
+      let totalMinutes = 0;
+      recentSleep.forEach(log => {
+        const durationStr = log.data?.duration || "0h 0m";
+        const hMatch = durationStr.match(/(\d+)h/);
+        const mMatch = durationStr.match(/(\d+)m/);
+        const h = hMatch ? parseInt(hMatch[1]) : 0;
+        const m = mMatch ? parseInt(mMatch[1]) : 0;
+        totalMinutes += (h * 60) + m;
+      });
+      const avgSleepMinutes = recentSleep.length > 0 ? totalMinutes / recentSleep.length : 0;
+      const avgSleepHours = parseFloat((avgSleepMinutes / 60).toFixed(1));
+      
+      // Calculate Vitality Score (Robust logic for diversity/engagement)
+      const activityTypes = logs.map(a => (a.activity_type || a.activityType || "").toLowerCase()).filter(t => t !== "");
+      const uniqueTypes = new Set(activityTypes).size;
+      const diversityScore = Math.min((uniqueTypes / 6) * 50, 50);
+      const engagementScore = Math.min((logs.length / 10) * 50, 50);
+      const vitality = Math.round(diversityScore + engagementScore);
+
+      setWellnessMetrics({
+        vitalityScore: vitality,
+        averageSleep: avgSleepHours,
+        sleepStatus: avgSleepHours >= 7 ? t("sleep_status_deep") : avgSleepHours > 0 ? t("sleep_status_resting") : t("sleep_status_none"),
+        loading: false
+      });
+    } catch (e) {
+      console.error(e);
+      setWellnessMetrics(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   useEffect(() => {
-    if (!isReportsMode) {
-      return;
-    }
+    fetchWellnessData();
+  }, []);
 
-    const fetchAllUsers = async () => {
-      try {
-        setRecordsLoading(true);
-        setRecordsError(null);
+  const filters = ["All", "Games", "Breathing", "Journaling", "Sleep", "Tracker", "Report"];
 
-        let page = 1;
-        const limit = 200;
-        let hasNext = true;
-        const users = [];
-
-        while (hasNext) {
-          const response = await axiosInstance.get("/admin/users/get-all-users", {
-            params: { page, limit },
-          });
-
-          const pageUsers = response.data?.users || [];
-          const pagination = response.data?.pagination || {};
-
-          users.push(...pageUsers);
-          hasNext = Boolean(pagination.hasNext) && pageUsers.length > 0;
-          page += 1;
-        }
-
-        const normalized = users
-          .map((user) => ({
-            id: user.id,
-            email: user.email || "Unknown",
-            username: user.profile?.username || user.email || "Unknown",
-            createdAt: user.created_at ? new Date(user.created_at) : null,
-            dateLabel: user.created_at
-              ? new Date(user.created_at).toISOString().split("T")[0]
-              : "Unknown",
-            status: user.is_anonymous ? "Inactive" : "Active",
-          }))
-          .sort((a, b) => {
-            const dateA = a.createdAt ? a.createdAt.getTime() : 0;
-            const dateB = b.createdAt ? b.createdAt.getTime() : 0;
-            return dateA - dateB;
-          });
-
-        setUserRecords(normalized);
-      } catch (error) {
-        console.error("Failed to fetch user records:", error);
-        setRecordsError(
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to load user records"
-        );
-      } finally {
-        setRecordsLoading(false);
-      }
-    };
-
-    fetchAllUsers();
-  }, [isReportsMode]);
-
-  const registrationsByDate = useMemo(() => {
-    const dateMap = userRecords.reduce((accumulator, record) => {
-      const key = record.dateLabel;
-      accumulator[key] = (accumulator[key] || 0) + 1;
-      return accumulator;
-    }, {});
-
-    return Object.entries(dateMap)
-      .map(([date, count]) => ({ date, count }))
-      .sort((left, right) => left.date.localeCompare(right.date));
-  }, [userRecords]);
-
-  const cumulativeRegistrations = useMemo(() => {
-    let runningTotal = 0;
-    return registrationsByDate.map((item) => {
-      runningTotal += item.count;
-      return {
-        ...item,
-        total: runningTotal,
-      };
-    });
-  }, [registrationsByDate]);
-
-  const statusDistribution = useMemo(() => {
-    const statusMap = userRecords.reduce(
-      (accumulator, record) => {
-        accumulator[record.status] = (accumulator[record.status] || 0) + 1;
-        return accumulator;
-      },
-      { Active: 0, Inactive: 0 }
-    );
-
-    return [
-      { name: "Active", value: statusMap.Active || 0 },
-      { name: "Inactive", value: statusMap.Inactive || 0 },
-    ];
-  }, [userRecords]);
-
-  const chartColors = ["#667eea", "#e53e3e"];
-
-  const activities = [
+  const wellnessActivities = [
     {
       id: 1,
-      name: "Clipcard Game",
-      description: "Test your memory with matching cards",
-      icon: "🎮",
+      name: t("clipcard_game"),
+      description: t("clipcard_desc"),
+      category: t("mind_exercise"),
+      type: "Games",
       path: "/activities/clipcard",
+      color: "#10B981",
+      buttonText: t("play_now"),
+      image: clipcardImg
     },
     {
       id: 2,
-      name: "Diary",
-      description: "Write and track your daily thoughts",
-      icon: "📔",
+      name: t("deep_breath"),
+      description: t("breath_desc"),
+      category: t("relaxation"),
+      type: "Breathing",
+      path: "/activities/take-a-breath",
+      color: "#7C3AED",
+      buttonText: t("start_breathwork"),
+      image: breatheImg
+    },
+    {
+      id: 3,
+      name: t("digital_diary"),
+      description: t("diary_desc"),
+      category: t("reflection"),
+      type: "Journaling",
       path: "/activities/diary",
+      color: "#6B7280",
+      buttonText: t("write_today"),
+      image: diaryImg
     },
     {
       id: 4,
-      name: "Mood Tracker",
-      description: "Track and monitor your mood",
-      icon: "😊",
-      path: "/activities/mood-tracker",
+      name: t("sleep_tracker"),
+      description: t("sleep_desc"),
+      category: t("insight"),
+      type: "Sleep",
+      path: "/activities/sleep-tracker",
+      color: "#1E1B4B",
+      buttonText: t("view_history"),
+      image: sleepImg
     },
     {
       id: 5,
-      name: "Sleep Tracker",
-      description: "Monitor your sleep patterns",
-      icon: "😴",
-      path: "/activities/sleep-tracker",
+      name: t("mood_tracker"),
+      description: t("mood_desc"),
+      category: t("reflection"),
+      type: "Tracker",
+      path: "/activities/mood-tracker",
+      color: "#10B981", 
+      buttonText: t("log_mood"),
+      image: moodImg
     },
     {
       id: 6,
-      name: "Weekly Wellness Report",
-      description: "View your weekly mood, sleep, and breathing insights",
-      icon: "📊",
-      path: "/activities/weekly-wellness-report",
+      name: t("med_tracker"),
+      description: t("med_desc"),
+      category: t("insight"),
+      type: "Tracker",
+      path: "/activities/medication-history",
+      color: "#EF4444", 
+      buttonText: t("view_schedule"),
+      image: medicationImg
     },
     {
       id: 7,
-      name: "Take a Breath",
-      description: "Guided breathing exercise for quick relaxation",
-      icon: "🌬️",
-      path: "/activities/take-a-breath",
-    },
-    {
-      id: 8,
-      name: "Medication History",
-      description: "Log and track your medication records",
-      icon: "💊",
-      path: "/activities/medication-history",
-    },
+      name: t("wellness_report"),
+      description: t("report_desc"),
+      category: t("insight"),
+      type: "Report",
+      path: "/activities/weekly-wellness-report",
+      color: "#F59E0B", 
+      buttonText: t("view_report"),
+      image: reportImg
+    }
   ];
 
+  const filteredActivities = activeFilter === "All" 
+    ? wellnessActivities 
+    : wellnessActivities.filter(a => a.type === activeFilter);
+
   return (
-    <div className="activities-container">
-      <h1>Activities</h1>
-      <p className="activities-subtitle">
-        Explore and engage with our wellness activities
-      </p>
+    <div className="act-v2-container">
+      {/* HEADER SECTION */}
+      <header className="act-v2-header">
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="act-v2-title"
+        >
+          {t("wellness_activities")}
+        </motion.h1>
+        <p className="act-v2-subtitle">
+          {t("explore_exercises")}
+        </p>
+      </header>
 
-      {isReportsMode && (
-        <div className="reports-section">
-          <div className="reports-header">
-            <h2>Overall User Activity Reports</h2>
-            <p>All user records visualized in different graph types.</p>
+      {/* STATS SECTION */}
+      <div className="act-v2-stats-grid">
+        {/* Vitality Card */}
+        <motion.div 
+          className="act-v2-stat-card vitality"
+          whileHover={{ y: -5 }}
+        >
+          <div className="stat-info">
+            <span className="stat-label">{t("current_vitality")}</span>
+            <div className="stat-value-group">
+              <span className="stat-number">{wellnessMetrics.vitalityScore}</span>
+              <span className="stat-total">/100</span>
+            </div>
+            <p className="stat-desc">
+              {t("vitality_desc")}
+            </p>
           </div>
-
-          {recordsError && <p className="reports-error">{recordsError}</p>}
-
-          {recordsLoading ? (
-            <div className="reports-loading">Loading report data...</div>
-          ) : (
-            <>
-              <div className="reports-summary">
-                <div className="reports-summary-card">
-                  <span>Total Users</span>
-                  <strong>{userRecords.length}</strong>
-                </div>
-                <div className="reports-summary-card">
-                  <span>Active Users</span>
-                  <strong>{statusDistribution[0]?.value || 0}</strong>
-                </div>
-                <div className="reports-summary-card">
-                  <span>Inactive Users</span>
-                  <strong>{statusDistribution[1]?.value || 0}</strong>
-                </div>
+          <div className="stat-visual">
+            <div className="vitality-ring">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" className="ring-bg" />
+                <circle 
+                  cx="50" cy="50" r="45" 
+                  className="ring-fill" 
+                  style={{ strokeDashoffset: 282 - (282 * wellnessMetrics.vitalityScore) / 100 }} 
+                />
+              </svg>
+              <div className="ring-center">
+                <Zap size={20} fill="currentColor" />
               </div>
-
-              <div className="reports-charts-grid">
-                <div className="report-chart-card">
-                  <h3>Registrations by Date (Bar)</h3>
-                  <div className="report-chart-wrapper">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={registrationsByDate}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="count" name="Registrations" fill="#667eea" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="report-chart-card">
-                  <h3>Cumulative Registrations (Line)</h3>
-                  <div className="report-chart-wrapper">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={cumulativeRegistrations}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="total"
-                          name="Total Users"
-                          stroke="#764ba2"
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="report-chart-card">
-                  <h3>User Status Distribution (Pie)</h3>
-                  <div className="report-chart-wrapper">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={statusDistribution}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                          label
-                        >
-                          {statusDistribution.map((entry, index) => (
-                            <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      <div className="activities-grid">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="activity-card"
-            onClick={() => navigate(activity.path)}
-          >
-            <div className="activity-icon">{activity.icon}</div>
-            <h3>{activity.name}</h3>
-            <p>{activity.description}</p>
-            <div className="activity-footer">
-              <span className="activity-arrow">→</span>
             </div>
           </div>
+        </motion.div>
+
+        {/* Sleep Card */}
+        <motion.div 
+          className="act-v2-stat-card sleep"
+          whileHover={{ y: -5 }}
+        >
+          <div className="stat-info">
+            <span className="stat-label">{t("sleep_quality")}</span>
+            <div className="sleep-status-row">
+              <div className="sleep-icon-box">
+                <Moon size={18} fill="currentColor" />
+              </div>
+              <div className="sleep-text">
+                <h3>{wellnessMetrics.loading ? "..." : wellnessMetrics.sleepStatus}</h3>
+                <span>{wellnessMetrics.loading ? "..." : t("total_hours").replace("{hours}", wellnessMetrics.averageSleep)}</span>
+              </div>
+            </div>
+            <div className="sleep-bar-chart">
+              {[40, 60, 80, 100, 60, 80].map((h, i) => (
+                <div key={i} className="sleep-bar-wrapper">
+                  <div 
+                    className={`sleep-bar ${i === 3 ? 'active' : ''}`} 
+                    style={{ height: `${h}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* FILTERS */}
+      <div className="act-v2-filters">
+        <span className="filter-label">{t("filter_by")}</span>
+        <div className="filter-pills">
+          {filters.map(f => (
+            <button 
+              key={f}
+              className={`filter-pill ${activeFilter === f ? 'active' : ''}`}
+              onClick={() => setActiveFilter(f)}
+            >
+              {t(`filter_${f.toLowerCase()}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ACTIVITY GRID */}
+      <div className="act-v2-grid">
+        {filteredActivities.map((activity, index) => (
+          <motion.div 
+            key={activity.id}
+            className="act-v2-card"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.1 }}
+            onClick={() => navigate(activity.path)}
+          >
+            <div className="card-image-section">
+              <img src={activity.image} alt={activity.name} className="card-img" />
+            </div>
+            <div className="card-body">
+              <div className="card-meta">
+                {activity.category === "Mind Exercise" && <Brain size={14} color="#10B981" />}
+                {activity.category === "Relaxation" && <Sparkles size={14} color="#7C3AED" />}
+                {activity.category === "Reflection" && <Edit3 size={14} color="#6B7280" />}
+                {activity.category === "Insight" && <ActivityIcon size={14} color="#1E1B4B" />}
+                <span className="card-category" style={{ color: activity.color }}>{activity.category.toUpperCase()}</span>
+              </div>
+              <h4 className="card-name">{activity.name}</h4>
+              <p className="card-description">{activity.description}</p>
+              <button 
+                className="card-action-btn"
+                style={{ backgroundColor: activity.color, color: 'white' }}
+                onClick={() => navigate(activity.path)}
+              >
+                {activity.buttonText}
+              </button>
+            </div>
+          </motion.div>
         ))}
       </div>
+
+      {/* BOTTOM CTA */}
+      <motion.div 
+        className="act-v2-cta-card"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+      >
+        <div className="cta-icon-outer">
+          <div className="cta-icon-inner">
+             <Sparkles size={20} color="#7C3AED" fill="#7C3AED" />
+          </div>
+        </div>
+        <h2 className="cta-title">{t("evening_wind_down")}</h2>
+        <p className="cta-desc">
+          {t("evening_desc")}
+        </p>
+        <button className="cta-btn" onClick={() => navigate("/activities/take-a-breath")}>
+          {t("begin_ritual")}
+        </button>
+      </motion.div>
     </div>
   );
 };

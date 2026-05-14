@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, resendVerification, verifyAccount } from "../../controllers/Auth/Register.controller.js";
+import { registerUser, resendVerification, verifyAccount, sendGuardianVerification, verifyGuardianConsent } from "../../controllers/Auth/Register.controller.js";
 import { signIn } from "../../controllers/Auth/Login.controller.js";
 import {
   requestPasswordReset,
@@ -19,6 +19,8 @@ router.post("/resend-verification", resendVerification);
 router.post("/login", signIn);
 router.post("/forgot-password", requestPasswordReset);
 router.post("/reset-password", confirmPasswordReset);
+router.post("/send-guardian-verification", sendGuardianVerification);
+router.post("/verify-guardian-consent", verifyGuardianConsent);
 router.get("/fetch-profile", setSupabaseSession, retrieveProfileInformation);
 router.put("/update-profile", setSupabaseSession, updateProfileInformation);
 router.put(

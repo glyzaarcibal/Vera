@@ -1,11 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, PawPrint, MessageSquare, PhoneOff } from 'lucide-react';
+import { User, PawPrint, MessageSquare, PhoneOff, Zap, ArrowRight, CheckCircle2, MoveLeft } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
+import { useLanguage } from '../context/LanguageContext';
 import './AvatarAI.css';
 
+// Import local images
+import HumanGuideImg from '../assets/human_guide.png';
+import AnimalCompanionImg from '../assets/animal_companion.png';
+
 export default function AvatarAI() {
+  const { t } = useLanguage();
+  const user = useSelector((state) => state.auth.user);
+  const tokens = user?.tokens ?? 0;
+  const SESSION_COST = 3;
+  const hasEnoughTokens = tokens >= SESSION_COST;
+
   const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [isSessionStarted, setIsSessionStarted] = useState(false);
   const [transcripts, setTranscripts] = useState([]);
 
   const handleTranscript = (text, meta) => {
@@ -21,16 +35,32 @@ export default function AvatarAI() {
   const avatarOptions = [
     {
       id: 'human',
-      name: 'Human Agent',
+      name: t("human_guide"),
+      badge: 'CLINICAL WISDOM',
       icon: User,
-      description: 'Realistic human avatar with voice emotion detection via Hume AI Prosody model',
+      image: HumanGuideImg,
+      description: t("human_desc"),
+      features: [
+        t("human_feature_1"),
+        t("human_feature_2")
+      ],
+      buttonText: t("select_human"),
+      colorTheme: 'purple',
       component: DIDAgent
     },
     {
       id: 'animal',
-      name: 'Animal Avatar',
+      name: t("animal_companion"),
+      badge: 'SENSORY GROUNDING',
       icon: PawPrint,
-      description: 'Cute animal character AI assistant',
+      image: AnimalCompanionImg,
+      description: t("animal_desc"),
+      features: [
+        t("animal_feature_1"),
+        t("animal_feature_2")
+      ],
+      buttonText: t("select_animal"),
+      colorTheme: 'green',
       component: AnimalAI
     }
   ];
@@ -39,6 +69,7 @@ export default function AvatarAI() {
 
   const endCall = () => {
     setSelectedAvatar(null);
+    setIsSessionStarted(false);
     setTranscripts([]);
   };
 
@@ -48,109 +79,144 @@ export default function AvatarAI() {
   }, [transcripts]);
 
   return (
-    <div className="avatarai-outer-container">
-
-      {/* ── Page Header ── */}
-      <div className="avatarai-page-header">
-        <div className="avatarai-eyebrow">🤖 Avatar AI</div>
-        <h1 className="avatarai-title">
-          Avatar <span className="avatarai-title-accent">Selection</span>
-        </h1>
-        <p className="avatarai-subtitle">
-          Choose your AI companion and start a conversation
-        </p>
-      </div>
-
-      {/* ── Avatar Type Picker ── */}
-      <div className="avatarai-options">
-        {avatarOptions.map((option) => {
-          const Icon = option.icon;
-          const isSelected = selectedAvatar === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setSelectedAvatar(option.id)}
-              className={`avatarai-option${isSelected ? ' selected' : ''}`}
-            >
-              <div className="avatarai-option-icon">
-                <Icon size={22} />
-              </div>
-              <div className="avatarai-option-name">{option.name}</div>
-              <div className="avatarai-option-desc">{option.description}</div>
-              <div className={`avatarai-option-status${isSelected ? ' is-selected' : ''}`}>
-                {isSelected ? '● Active Selection' : 'Click to Select'}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+    <div className={`avatarai-outer-container ${isSessionStarted ? 'session-active' : ''}`}>
+      
+      {!selectedAvatar && (
+        <div className="avatarai-selection-header">
+            <div className="avatarai-header-content">
+            <h1 className="avatarai-main-title">
+              {t("choose_guide")}
+            </h1>
+            <p className="avatarai-main-subtitle">
+              {t("personalize_env")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── Content Area ── */}
-      <div className="avatarai-content-panel">
-
-        {/* Left — Agent shell */}
-        {selectedAvatar && SelectedComponent ? (
-          <div className="avatarai-agent-shell">
-            <SelectedComponent onTranscript={handleTranscript} onEnd={endCall} />
-          </div>
-        ) : (
-          <div className="avatarai-placeholder">
-            <div className="avatarai-placeholder-icon">🤖</div>
-            <span>Select an avatar above to get started</span>
-          </div>
-        )}
-
-        {/* Right — Conversation panel */}
-        <div className="avatarai-transcripts">
-          <div className="avatarai-conversation-header">
-            <div className="avatarai-conversation-title-wrap">
-              <MessageSquare size={17} className="avatarai-conversation-icon" />
-              <span className="avatarai-conversation-title">Conversation</span>
-            </div>
-            {selectedAvatar && (
-              <button className="avatarai-clear-btn" onClick={endCall}>
-                <PhoneOff size={12} />
-                <span>End</span>
-              </button>
-            )}
-          </div>
-
-          <div className="avatarai-transcript-list">
-            {transcripts.length === 0 ? (
-              <div className="avatarai-transcript-empty">
-                <MessageSquare size={28} className="avatarai-transcript-empty-icon" />
-                <div className="avatarai-transcript-empty-title">Awaiting interaction</div>
-                <div className="avatarai-transcript-empty-subtitle">
-                  Your chat history will appear here
+      <div className="avatarai-main-view">
+        
+        {!selectedAvatar ? (
+          <>
+            {!hasEnoughTokens ? (
+              <div className="avatarai-token-gate">
+                <div className="avatarai-gate-icon">
+                  <Zap size={40} />
                 </div>
+                <h2 className="avatarai-gate-title">{t("tokens_required")}</h2>
+                <p className="avatarai-gate-text" dangerouslySetInnerHTML={{ __html: t("tokens_gate_desc").replace("{cost}", SESSION_COST).replace("{tokens}", tokens) }} />
+                <button className="avatarai-earn-btn" onClick={() => window.location.href = "/activities"}>
+                  {t("go_activities")}
+                </button>
               </div>
             ) : (
-              transcripts.map((transcript) => (
-                <div key={transcript.id} className="avatarai-transcript-item">
-                  <div className="avatarai-transcript-meta">
-                    <span style={{
-                      fontWeight: 700,
-                      color: transcript.author === 'User' ? '#7c3aed' : '#4a4568'
-                    }}>
-                      {transcript.author}
-                    </span>
-                    <span>·</span>
-                    <span>{transcript.timestamp}</span>
-                  </div>
-                  <div className="avatarai-transcript-text">{transcript.text}</div>
-                </div>
-              ))
-            )}
-            <div ref={conversationEndRef} />
-          </div>
+              <div className="avatarai-guide-grid">
+                {avatarOptions.map((option) => (
+                  <div key={option.id} className={`avatarai-guide-card ${option.colorTheme}`}>
+                    <div className="avatarai-card-image-wrap">
+                      <img src={option.image} alt={option.name} className="avatarai-card-image" />
+                      <div className="avatarai-card-badge">{option.badge}</div>
+                    </div>
+                    <div className="avatarai-card-body">
+                      <h2 className="avatarai-card-title">{option.name}</h2>
+                      <p className="avatarai-card-description">{option.description}</p>
+                      
+                      <div className="avatarai-feature-list">
+                        {option.features.map((feature, idx) => (
+                          <div key={idx} className="avatarai-feature-item">
+                            <div className="avatarai-feature-icon-wrap">
+                              {option.id === 'human' ? (
+                                <MessageSquare size={16} className="avatarai-feature-icon" />
+                              ) : (
+                                <Zap size={16} className="avatarai-feature-icon" />
+                              )}
+                            </div>
+                            <p className="avatarai-feature-text">{feature}</p>
+                          </div>
+                        ))}
+                      </div>
 
-          {transcripts.length > 0 && (
-            <div className="avatarai-message-count">
-              {transcripts.length} message{transcripts.length !== 1 ? 's' : ''}
+                      <button 
+                        className={`avatarai-select-btn ${option.colorTheme}`}
+                        onClick={() => setSelectedAvatar(option.id)}
+                      >
+                        <span>{option.buttonText}</span>
+                        <ArrowRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="avatarai-footer-note">
+              {t("avatar_switch_note")}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className={`avatarai-session-container ${!isSessionStarted ? 'selection-mode' : ''}`}>
+            {/* Left — Agent shell */}
+            <div className="avatarai-agent-column">
+              <div className="avatarai-agent-shell">
+                <SelectedComponent 
+                  onTranscript={handleTranscript} 
+                  onEnd={endCall} 
+                  setSessionStarted={setIsSessionStarted}
+                />
+              </div>
+            </div>
+
+            {/* Right — Conversation panel (Only shown if session started) */}
+            {isSessionStarted && (
+              <div className="avatarai-transcripts-column">
+                <div className="avatarai-transcripts">
+                  <div className="avatarai-conversation-header">
+                    <div className="avatarai-conversation-title-wrap">
+                      <MessageSquare size={17} className="avatarai-conversation-icon" />
+                      <span className="avatarai-conversation-title">{t("conversation_history")}</span>
+                    </div>
+                    <button className="avatarai-end-call-btn" onClick={endCall}>
+                      <PhoneOff size={14} />
+                      <span>{t("end_session")}</span>
+                    </button>
+                  </div>
+
+                  <div className="avatarai-transcript-list">
+                    {transcripts.length === 0 ? (
+                      <div className="avatarai-transcript-empty">
+                        <div className="avatarai-pulse-ring">
+                          <MessageSquare size={32} />
+                        </div>
+                        <div className="avatarai-transcript-empty-title">{t("awaiting_interaction")}</div>
+                        <div className="avatarai-transcript-empty-subtitle">
+                          {t("avatar_interaction_desc").replace("{name}", avatarOptions.find(o => o.id === selectedAvatar)?.name)}
+                        </div>
+                      </div>
+                    ) : (
+                      transcripts.map((transcript) => (
+                        <div key={transcript.id} className={`avatarai-transcript-item ${transcript.author === 'User' ? 'user' : 'ai'}`}>
+                          <div className="avatarai-transcript-meta">
+                            <span className="author-name">{transcript.author}</span>
+                            <span className="timestamp">{transcript.timestamp}</span>
+                          </div>
+                          <div className="avatarai-transcript-text">{transcript.text}</div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={conversationEndRef} />
+                  </div>
+
+                  {transcripts.length > 0 && (
+                    <div className="avatarai-session-stats">
+                      Total messages: {transcripts.length}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

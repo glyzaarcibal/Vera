@@ -3,6 +3,8 @@ import {
   getProfile,
   resendVerificationLink,
   verifyUserRegistration,
+  createGuardianVerification,
+  verifyGuardianConsentCode
 } from "../../service/Auth/Auth.service.js";
 import {
   isValidPassword,
@@ -58,6 +60,7 @@ export const verifyAccount = async (req, res) => {
 };
 
 export const registerUser = async (req, res) => {
+  console.log("[AUTH] Registration request received:", req.body.email);
   const { email, password, username, contactNumber, birthDate } = req.body;
 
   if (!email || !password || !username) {
@@ -65,45 +68,69 @@ export const registerUser = async (req, res) => {
       .status(400)
       .json({ message: "Please fill all the required fields." });
   }
-  const isUserExisting = await userExists(email);
-  const isPasswordValid = isValidPassword(password);
 
-  if (isUserExisting) {
-    const { data, error } = await supabaseAnon.auth.signInWithPassword({
-      email,
-      password,
-    });
+  try {
+    console.log("[AUTH] Validating user existence...");
+    const isUserExisting = await userExists(email);
+    console.log("[AUTH] User exists check result:", isUserExisting);
 
-    if (!error && data?.session && data?.user) {
-      const profile = await getProfile(data.user.id);
+    const isPasswordValid = isValidPassword(password);
 
-      res.cookie("access_token", data.session.access_token, cookieConfig);
-      res.cookie("refresh_token", data.session.refresh_token, refreshCookieConfig);
-
-      return res.status(200).json({
-        message: "Success",
-        profile,
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+    if (isUserExisting) {
+      console.log("[AUTH] User already exists, attempting sign-in check...");
+      const { data, error } = await supabaseAnon.auth.signInWithPassword({
+        email,
+        password,
       });
+
+      if (!error && data?.session && data?.user) {
+        console.log("[AUTH] User exists and password correct, logging in...");
+        const profile = await getProfile(data.user.id);
+
+        res.cookie("access_token", data.session.access_token, cookieConfig);
+        res.cookie("refresh_token", data.session.refresh_token, refreshCookieConfig);
+
+        return res.status(200).json({
+          message: "Success",
+          profile,
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      console.log("[AUTH] User exists but sign-in failed or incomplete.");
+      return res.status(409).json({ message: "User already exists." });
     }
 
-    return res.status(409).json({ message: "User already exists." });
-  }
-  if (!isPasswordValid)
-    return res.status(422).json({ message: "Password is invalid." });
+    if (!isPasswordValid) {
+      return res.status(422).json({ message: "Password is invalid." });
+    }
 
-  const formData = { email, password, username, contactNumber, birthDate };
-  try {
+    const formData = { email, password, username, contactNumber, birthDate };
+    console.log("[AUTH] Creating new user in pending_users...");
     const result = await createUsers(formData);
+    console.log("[AUTH] createUsers result:", result);
+
     return res.status(200).json({
       message: result.message || "Please check your email for the verification code."
     });
   } catch (e) {
-    console.error("Detailed Registration Error:", e);
+    console.error("CRITICAL REGISTRATION ERROR:", e);
+    
+    // Better error message for the client
+    let clientMessage = "Registration failed";
+    let details = e.message || "No error message provided";
+    
+    if (details.includes("Supabase")) {
+      clientMessage = "Database connection error. Please try again later.";
+    } else if (details.includes("email") || details.includes("Email")) {
+      clientMessage = "Registration recorded, but email delivery failed.";
+    }
+
     return res.status(500).json({
-      message: "Internal Server Error during registration",
-      details: e.message
+      message: clientMessage,
+      details: details,
+      error: process.env.NODE_ENV === 'development' ? e : undefined,
     });
   }
 };
@@ -115,10 +142,45 @@ export const resendVerification = async (req, res) => {
   }
 
   try {
-    await resendVerificationLink(email);
-    return res.status(200).json({ message: "Verification code sent to your email." });
+    const result = await resendVerificationLink(email);
+    return res.status(200).json({ 
+      message: result?.message || "Verification code sent to your email.",
+      devMode: result?.devMode
+    });
   } catch (e) {
     console.error("Resend verification error:", e);
-    return res.status(500).json({ message: "Failed to send verification code." });
+    return res.status(500).json({ 
+      message: "Failed to send verification code.",
+      error: e.message 
+    });
+  }
+};
+export const sendGuardianVerification = async (req, res) => {
+  const { childEmail, guardianEmail, childName } = req.body;
+  if (!childEmail || !guardianEmail || !childName) {
+    return res.status(400).json({ message: "Please fill all required fields for consent." });
+  }
+
+  try {
+    const result = await createGuardianVerification(childEmail, guardianEmail, childName);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Guardian verification error:", e);
+    return res.status(500).json({ message: "Failed to send guardian verification." });
+  }
+};
+
+export const verifyGuardianConsent = async (req, res) => {
+  const { childEmail, verificationCode } = req.body;
+  if (!childEmail || !verificationCode) {
+    return res.status(400).json({ message: "Missing verification details." });
+  }
+
+  try {
+    const result = await verifyGuardianConsentCode(childEmail, verificationCode);
+    return res.status(200).json(result);
+  } catch (e) {
+    console.error("Consent verification error:", e);
+    return res.status(401).json({ message: e.message || "Invalid or expired code." });
   }
 };

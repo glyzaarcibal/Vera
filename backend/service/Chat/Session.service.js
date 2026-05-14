@@ -62,7 +62,7 @@ export async function updateSessionAnalysis(sessionId) {
 }
 
 export async function fetchSessionsByUserId(userId, params = {}) {
-  const { page = 1, limit = 10, type = "all", riskLevels = [] } = params;
+  const { page = 1, limit = 10, type = "all", riskLevels = [], sortBy = "created_at", sortOrder = "desc" } = params;
 
   // Build the query
   let query = supabaseAdmin
@@ -80,10 +80,14 @@ export async function fetchSessionsByUserId(userId, params = {}) {
     query = query.in("risk_level", riskLevels);
   }
 
-  // Execute query with pagination
+  // Determine sort column
+  const sortColumn = sortBy === "risk" ? "risk_score" : "created_at";
+  const ascending = sortOrder === "asc";
+
+  // Execute query with pagination and sorting
   const offset = (page - 1) * limit;
   const { data, error, count } = await query
-    .order("created_at", { ascending: false })
+    .order(sortColumn, { ascending, nullsFirst: false })
     .range(offset, offset + limit - 1);
 
   if (error) throw error;

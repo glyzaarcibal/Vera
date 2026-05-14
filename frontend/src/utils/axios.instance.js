@@ -10,8 +10,10 @@ const normalizeApiBaseUrl = (url) => {
 const baseApiUrl = normalizeApiBaseUrl(configuredApiUrl || "http://localhost:5000/api");
 
 const axiosInstance = axios.create({
+
+  //baseURL: "http://localhost:5000/api",
   baseURL: baseApiUrl,
-  
+
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -37,7 +39,7 @@ axiosInstance.interceptors.response.use(
       store.dispatch(clearUser());
 
       // Redirect to login page
-      window.location.href = "/login";
+      window.location.href = "/";
     }
 
     return Promise.reject(error);

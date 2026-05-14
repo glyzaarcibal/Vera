@@ -21,7 +21,11 @@ const getAnimationData = async (animationPath) => {
     return animationCache.get(animationPath);
   }
 
-  const response = await fetch(animationPath);
+  // Ensure we fetch from the correct origin
+  const baseUrl = window.location.origin;
+  const targetUrl = animationPath.startsWith("http") ? animationPath : `${baseUrl}${animationPath.startsWith("/") ? "" : "/"}${animationPath}`;
+  
+  const response = await fetch(targetUrl);
   if (!response.ok) {
     throw new Error(`Failed to load animation: ${animationPath}`);
   }
@@ -263,13 +267,22 @@ const MOOD_LEVELS = [
 
 const moods = MOOD_LEVELS;
 
-import axiosInstance from "../../utils/axios.instance";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "../../store/slices/authSelectors";
+import TokenRewardModal from "../../components/TokenRewardModal";
+import ReusableModal from "../../components/ReusableModal";
+import { useLanguage } from "../../context/LanguageContext";
+import axiosInstance from "../../utils/axios.instance.js";
+import { updateTokens } from "../../store/slices/authSlice";
+
+// Use a local api constant to avoid scope issues
+const api = axiosInstance;
 
 const MoodTrackerScreen = ({ navigation }) => {
+  const { t, language } = useLanguage();
   const user = useSelector(selectUser);
   const userId = user?.id;
+  const dispatch = useDispatch();
 
   const [selectedMood, setSelectedMood] = useState(null);
   const [reason, setReason] = useState("");
@@ -278,6 +291,10 @@ const MoodTrackerScreen = ({ navigation }) => {
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [filter, setFilter] = useState("all"); // 'all', 'week', 'month'
   const [isLoading, setIsLoading] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+  const [rewardData, setRewardData] = useState({ amount: 0, message: "" });
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // Group moods for organized display
   const groupedMoods = moods.reduce((acc, mood) => {
@@ -397,10 +414,16 @@ const MoodTrackerScreen = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      await axiosInstance.post("/activities/save", {
+      const res = await api.post("/activities/save", {
         activityType: "mood",
         data: newEntry
       });
+
+      if (res.data?.updatedTokens !== null) {
+        dispatch(updateTokens(res.data.updatedTokens));
+        setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
+        setShowRewardModal(true);
+      }
 
       // Refetch history after saving
       await loadMoodHistory();
@@ -420,7 +443,7 @@ const MoodTrackerScreen = ({ navigation }) => {
     if (!userId) return;
     try {
       setIsLoading(true);
-      const response = await axiosInstance.get("/activities");
+      const response = await api.get("/activities");
       const activities = response.data.activities || [];
 
       // Filter only mood activities and extract the data
@@ -441,9 +464,7 @@ const MoodTrackerScreen = ({ navigation }) => {
   };
 
   const confirmClearHistory = () => {
-    if (window.confirm("Are you sure you want to clear your mood history? (This will only clear your local view, database entries require admin intervention)")) {
-      clearHistory();
-    }
+    setShowClearConfirm(true);
   };
 
   const clearHistory = async () => {
@@ -452,12 +473,13 @@ const MoodTrackerScreen = ({ navigation }) => {
   };
 
   const deleteEntry = (id) => {
-    // Note: The backend activities API doesn't seem to have a specific delete by ID endpoint yet.
-    // We'll just filter from local state for now if we can't delete from DB.
-    if (window.confirm("Delete this mood entry from view?")) {
-      const updatedHistory = moodHistory.filter(entry => entry.id !== id);
-      setMoodHistory(updatedHistory);
-    }
+    setConfirmDeleteId(id);
+  };
+
+  const executeDelete = (id) => {
+    const updatedHistory = moodHistory.filter(entry => entry.id !== id);
+    setMoodHistory(updatedHistory);
+    setConfirmDeleteId(null);
   };
 
   const getFilteredHistory = () => {
@@ -511,9 +533,9 @@ const MoodTrackerScreen = ({ navigation }) => {
     // Date range and filter info
     doc.setFontSize(11);
     doc.setTextColor(100, 100, 100);
-    const filterText = filter === 'all' ? 'All Time' : filter === 'week' ? 'Last 7 Days' : 'Last 30 Days';
-    doc.text(`Period: ${filterText}`, 105, 30, { align: "center" });
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
+    const filterText = filter === 'all' ? (language === 'tl' ? 'Lahat ng Oras' : 'All Time') : filter === 'week' ? (language === 'tl' ? 'Nakaraang 7 Araw' : 'Last 7 Days') : (language === 'tl' ? 'Nakaraang 30 Araw' : 'Last 30 Days');
+    doc.text(`${language === 'tl' ? 'Panahon' : 'Period'}: ${filterText}`, 105, 30, { align: "center" });
+    doc.text(`${language === 'tl' ? 'Ginawa noong' : 'Generated on'}: ${new Date().toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -721,7 +743,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             fontWeight: "bold",
           }}
         >
-          Mood Tracker 🌈
+          {t('mood_title')} 🌈
         </h1>
 
         <div style={{ width: "40px" }} /> {/* Spacer */}
@@ -741,7 +763,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                   textAlign: "center",
                 }}
               >
-                How are you feeling today?
+                {t('mood_question')}
               </h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
@@ -760,7 +782,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       alignItems: "center",
                       gap: "10px"
                     }}>
-                      {category === "Positive" ? "✨ Positive Moods" : "⛈️ Negative Moods"}
+                      {category === "Positive" ? `✨ ${t('mood_positive')}` : `⛈️ ${t('mood_negative')}`}
                     </h3>
 
                     {Object.entries(subcategories).map(([subcategory, subMoods]) => (
@@ -773,7 +795,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                           marginBottom: "10px",
                           paddingLeft: "10px"
                         }}>
-                          {subcategory}
+                          {t(subcategory.toLowerCase().replace(' ', '_')) || subcategory}
                         </h4>
                         <div
                           style={{
@@ -1365,6 +1387,65 @@ const MoodTrackerScreen = ({ navigation }) => {
           )}
         </div>
       </div>
+      <TokenRewardModal 
+        isOpen={showRewardModal} 
+        onClose={() => setShowRewardModal(false)}
+        amount={rewardData.amount}
+        message={rewardData.message}
+      />
+
+      <ReusableModal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear History"
+        type="error"
+      >
+        <p className="text-slate-500 text-[16px] leading-relaxed font-medium mb-10">
+          Are you sure you want to clear your mood history? (This will only clear your local view, database entries require admin intervention)
+        </p>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setShowClearConfirm(false)}
+            className="flex-1 py-4 rounded-[1rem] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => {
+              clearHistory();
+              setShowClearConfirm(false);
+            }}
+            className="flex-1 py-4 rounded-[1rem] font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
+          >
+            Clear History
+          </button>
+        </div>
+      </ReusableModal>
+
+      <ReusableModal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        title="Delete Entry"
+        type="error"
+      >
+        <p className="text-slate-500 text-[16px] leading-relaxed font-medium mb-10">
+          Delete this mood entry from view?
+        </p>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setConfirmDeleteId(null)}
+            className="flex-1 py-4 rounded-[1rem] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => executeDelete(confirmDeleteId)}
+            className="flex-1 py-4 rounded-[1rem] font-bold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </ReusableModal>
     </div>
   );
 };

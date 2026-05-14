@@ -8,6 +8,7 @@ import ProfileRoutes from "./Profile.routes.js";
 import MoodsRoutes from "./Moods.routes.js";
 import DoctorRoutes from "./Doctor.routes.js";
 import ResourceRoutes from "./Resource.routes.js";
+import FeedbackRoutes from "./Feedback/Feedback.route.js";
 
 export default function registerRoutes(app) {
   app.use("/api/auth", AuthRoutes);
@@ -20,6 +21,7 @@ export default function registerRoutes(app) {
   app.use("/api/moods", MoodsRoutes);
   app.use("/api/doctor", DoctorRoutes);
   app.use("/api/resources", ResourceRoutes);
+  app.use("/api/feedback", FeedbackRoutes);
 
   app.use("/", (req, res) => {
     res.send("Server is Up!");

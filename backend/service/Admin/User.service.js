@@ -7,6 +7,7 @@ export async function getAllUsers(params = {}) {
     search = "",
     role = "all",
     status = "all",
+    exclude_roles = "",
   } = params;
 
   // Fetch all users from auth
@@ -49,11 +50,18 @@ export async function getAllUsers(params = {}) {
     );
   }
 
-  // Role filter
   if (role !== "all") {
     filteredUsers = filteredUsers.filter(
       (user) =>
         (user.profile?.role || "user").toLowerCase() === role.toLowerCase()
+    );
+  }
+
+  // Exclude roles filter
+  if (exclude_roles) {
+    const rolesToExclude = exclude_roles.split(",").map(r => r.toLowerCase().trim());
+    filteredUsers = filteredUsers.filter(
+      (user) => !rolesToExclude.includes((user.profile?.role || "user").toLowerCase())
     );
   }
 
@@ -166,16 +174,32 @@ export async function deleteUser(userId) {
 export async function detectEmotionWords(userId) {
   // Emotion word dictionaries
   const emotionWords = {
-    sad: ['sad', 'depressed', 'unhappy', 'down', 'miserable', 'lonely', 'empty', 'hopeless', 'crying', 'tears', 'hurt', 'pain', 'sorrow', 'grief', 'disappointed', 'upset'],
-    angry: ['angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'resent', 'bitter', 'hostile', 'aggressive', 'outraged'],
-    happy: ['happy', 'joy', 'excited', 'glad', 'pleased', 'delighted', 'cheerful', 'ecstatic', 'thrilled', 'elated', 'content', 'satisfied', 'grateful'],
-    fearful: ['afraid', 'scared', 'fear', 'anxious', 'worried', 'nervous', 'panic', 'terrified', 'dread', 'apprehensive', 'uneasy', 'frightened'],
-    surprised: ['surprised', 'shocked', 'amazed', 'astonished', 'stunned'],
-    disgust: ['disgusted', 'revolted', 'sickened', 'repulsed', 'appalled', 'horrified'],
-    doubt: ['doubt', 'doubtful', 'uncertain', 'uncertainty', 'unsure', 'questioning', 'skeptical', 'hesitant', 'suspicious', 'suspicion'],
-    confusion: ['confused', 'confusion', 'perplexed', 'bewildered', 'puzzled', 'muddled', 'disoriented', 'lost', 'baffled'],
-    calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'composed', 'at ease', 'content'],
-    neutral: ['okay', 'fine', 'alright', 'normal', 'regular', 'usual']
+    critical: [
+      'suicide', 'suicidal', 'kill myself', 'end my life', 'end it all', 'self-harm', 'cutting', 'worthless', 'goodbye', 'no reason to live', 'death', 'dying', 'overdose',
+      'magpakamatay', 'kitilin ang sarili', 'tapusin ang buhay', 'saktan ang sarili', 'walang kwenta', 'paalam', 'mamatay', 'kamatayan'
+    ],
+    sad: [
+      'sad', 'depressed', 'unhappy', 'down', 'miserable', 'lonely', 'empty', 'hopeless', 'crying', 'tears', 'hurt', 'pain', 'sorrow', 'grief', 'disappointed', 'upset',
+      'malungkot', 'depres', 'iyak', 'luha', 'sakit', 'pighati', 'bigo', 'sawis'
+    ],
+    angry: [
+      'angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'resent', 'bitter', 'hostile', 'aggressive', 'outraged',
+      'galit', 'inis', 'poot', 'suklam', 'yamot', 'gigil'
+    ],
+    happy: [
+      'happy', 'joy', 'excited', 'glad', 'pleased', 'delighted', 'cheerful', 'ecstatic', 'thrilled', 'elated', 'content', 'satisfied', 'grateful',
+      'masaya', 'galak', 'tuwa', 'ligaya', 'aliw', 'salamat'
+    ],
+    fearful: [
+      'afraid', 'scared', 'fear', 'anxious', 'worried', 'nervous', 'panic', 'terrified', 'dread', 'apprehensive', 'uneasy', 'frightened',
+      'takot', 'kaba', 'nerbyos', 'balisa', 'sindak', 'hilakbot'
+    ],
+    surprised: ['surprised', 'shocked', 'amazed', 'astonished', 'stunned', 'gulat', 'mangha'],
+    disgust: ['disgusted', 'revolted', 'sickened', 'repulsed', 'appalled', 'horrified', 'diri', 'suka'],
+    doubt: ['doubt', 'doubtful', 'uncertain', 'uncertainty', 'unsure', 'questioning', 'skeptical', 'hesitant', 'suspicious', 'suspicion', 'duda', 'alinlangan'],
+    confusion: ['confused', 'confusion', 'perplexed', 'bewildered', 'puzzled', 'muddled', 'disoriented', 'lost', 'baffled', 'lito', 'tarant'],
+    calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'composed', 'at ease', 'content', 'kalmado', 'payapa', 'pahinga'],
+    neutral: ['okay', 'fine', 'alright', 'normal', 'regular', 'usual', 'ayos', 'tama']
   };
 
   // Get all sessions for the user

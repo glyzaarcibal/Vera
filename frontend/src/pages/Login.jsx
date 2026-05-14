@@ -3,194 +3,218 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { IoArrowBack, IoMail, IoLockClosed } from "react-icons/io5";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { Mic, BarChart2, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 import axiosInstance from "../utils/axios.instance";
 import { setUser } from "../store/slices/authSlice";
-import "./Auth.css";
+import ReusableModal from "../components/ReusableModal";
+import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errorModal, setErrorModal] = useState({ 
+    isOpen: false, 
+    title: "", 
+    message: "", 
+    type: "error" 
+  });
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error for this field when user starts typing
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: "",
-      });
-    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: "" });
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
+    if (!formData.email) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email address";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 6) newErrors.password = "At least 6 characters";
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate form
     const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
     setIsLoading(true);
     try {
       const res = await axiosInstance.post("/auth/login", formData);
-      const { profile } = res.data;
-      dispatch(setUser(profile));
-      navigate("/");
+      dispatch(setUser(res.data.profile));
+      navigate("/dashboard");
     } catch (e) {
       const message = e.response?.data?.message || "Internal Server Error";
-
-      // If user needs to verify email, redirect them to the OTP page
-      if (e.response?.status === 403 && (message.includes("verify") || message.includes("confirm"))) {
+      const status = e.response?.status;
+      if ((status === 401 || status === 403) && (message.includes("verify") || message.includes("confirm") || message.includes("pending"))) {
         navigate("/email-verified", { state: { email: formData.email } });
       } else {
-        alert(message);
+        setErrorModal({
+          isOpen: true,
+          title: "Access Restricted",
+          message,
+          type: "error"
+        });
       }
-      console.log(e);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      {/* Background decoration */}
-      <div className="auth-bg-decoration">
-        <div className="auth-circle auth-circle-1"></div>
-        <div className="auth-circle auth-circle-2"></div>
-        <div className="auth-circle auth-circle-3"></div>
-      </div>
+    <div className="log-shell">
+      {/* Animated blobs */}
+      <div className="log-blob log-blob-1" />
+      <div className="log-blob log-blob-2" />
+      <div className="log-blob log-blob-3" />
 
-      <div className="auth-card">
-        <button
-          onClick={() => navigate(-1)}
-          className="auth-back-btn"
-          aria-label="Go back"
-        >
-          <IoArrowBack />
-          <span>Back</span>
-        </button>
+      <motion.div 
+        className="log-card"
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
 
-        <div className="auth-header">
-          <div className="auth-logo">
-            <span className="auth-logo-text">✨</span>
+        {/* ── LEFT: Branding Panel ── */}
+        <div className="log-panel-brand">
+          <button className="log-back-btn" onClick={() => navigate("/")}>
+            <IoArrowBack />
+            <span>Back</span>
+          </button>
+
+          <div className="log-brand">
+            <h1 className="log-brand-title">
+              Welcome to <span className="log-brand-accent">Vera</span>
+            </h1>
+            <p className="log-brand-subtitle">
+              Your AI-powered mental wellness companion. Sign in to continue your emotional journey.
+            </p>
           </div>
-          <h1 className="auth-title">Welcome Back</h1>
-          <p className="auth-subtitle">Sign in to continue your journey</p>
+
+          <div className="log-features">
+            {[
+              { icon: <Mic size={18} />, label: "Voice Emotion Analysis" },
+              { icon: <BarChart2 size={18} />, label: "Mood & Wellness Tracking" },
+              { icon: <ShieldCheck size={18} />, label: "Private & Secure" },
+            ].map((f, i) => (
+              <div className="log-feature-chip" key={i}>
+                <span className="log-feature-icon">{f.icon}</span>
+                <span>{f.label}</span>
+              </div>
+            ))}
+          </div>
+
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="email">
-              <IoMail className="auth-field-icon" />
-              Email Address
-            </label>
-            <div className="auth-input-wrapper">
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`auth-input ${errors.email ? "auth-input-error" : ""}`}
-                disabled={isLoading}
-              />
+        {/* ── RIGHT: Form Panel ── */}
+        <div className="log-panel-form">
+          <div className="log-form-header">
+            <h2 className="log-form-title">Sign In</h2>
+            <p className="log-form-subtitle">Enter your credentials to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="log-form" noValidate>
+            {/* Email */}
+            <div className="log-field">
+              <label className="log-label" htmlFor="email">
+                <IoMail className="log-label-icon" />
+                Email Address
+              </label>
+              <div className="log-input-wrap">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  className={`log-input ${errors.email ? "log-input-err" : ""}`}
+                />
+              </div>
+              {errors.email && <span className="log-err">{errors.email}</span>}
             </div>
-            {errors.email && (
-              <span className="auth-error-message">{errors.email}</span>
-            )}
-          </div>
 
-          <div className="auth-field">
-            <label className="auth-label" htmlFor="password">
-              <IoLockClosed className="auth-field-icon" />
-              Password
-            </label>
-            <div className="auth-input-wrapper auth-password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`auth-input ${errors.password ? "auth-input-error" : ""}`}
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
-              </button>
+            {/* Password */}
+            <div className="log-field">
+              <label className="log-label" htmlFor="password">
+                <IoLockClosed className="log-label-icon" />
+                Password
+              </label>
+              <div className="log-input-wrap log-pw-wrap">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  className={`log-input ${errors.password ? "log-input-err" : ""}`}
+                />
+                <button
+                  type="button"
+                  className="log-pw-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label="Toggle password"
+                >
+                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                </button>
+              </div>
+              {errors.password && <span className="log-err">{errors.password}</span>}
             </div>
-            {errors.password && (
-              <span className="auth-error-message">{errors.password}</span>
-            )}
-          </div>
 
-          <div className="auth-options">
-            <label className="auth-checkbox">
-              <input type="checkbox" />
-              <span>Remember me</span>
-            </label>
-            <Link to="/forgot-password" className="auth-link">
-              Forgot password?
-            </Link>
-          </div>
+            {/* Options row row */}
+            <div className="log-options">
+              <label className="log-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span>Remember me</span>
+              </label>
+              <Link to="/forgot-password" className="log-link">Forgot password?</Link>
+            </div>
 
-          <button
-            type="submit"
-            className={`auth-btn ${isLoading ? "auth-btn-loading" : ""}`}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="auth-spinner"></span>
-                Signing in...
-              </>
-            ) : (
-              "Sign in"
-            )}
-          </button>
-        </form>
+            {/* Submit */}
+            <button
+              type="submit"
+              id="login-submit"
+              className={`log-submit ${isLoading ? "log-submit-loading" : ""}`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="log-spinner" />
+                  Signing in…
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </button>
 
-        <p className="auth-footer-text">
-          Don't have an account?{" "}
-          <Link to="/register" className="auth-link auth-link-bold">
-            Sign up now
-          </Link>
-        </p>
-      </div>
+            <p className="log-signup-link">
+              Don't have an account?{" "}
+              <Link to="/register" className="log-link log-link-bold">Sign up</Link>
+            </p>
+          </form>
+        </div>
+
+      </motion.div>
+
+      <ReusableModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+        type={errorModal.type}
+      />
     </div>
   );
 };

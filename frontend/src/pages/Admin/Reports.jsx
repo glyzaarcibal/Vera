@@ -16,9 +16,12 @@ import {
   Area,
   Legend,
 } from "recharts";
+import { MdPsychology, MdTimeline, MdAccessTime, MdPeople, MdBarChart, MdNightsStay, MdWarning, MdNotificationsNone, MdTrendingUp, MdPerson } from "react-icons/md";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
+import ReusableModal from "../../components/ReusableModal";
+import PullToRefresh from "../../components/PullToRefresh.jsx";
 import "./Reports.css";
 
 const CHART_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
@@ -35,9 +38,26 @@ const getWeekdayLabel = (dateValue) => {
   return date.toLocaleString("default", { weekday: "short" });
 };
 
-const Reports = () => {
+const parseSleepHours = (val) => {
+  if (!val) return 0;
+  if (typeof val === "number") return val;
+  if (typeof val === "string") {
+    const hMatch = val.match(/(\d+)\s*h/i);
+    const mMatch = val.match(/(\d+)\s*m/i);
+    let total = 0;
+    if (hMatch) total += parseInt(hMatch[1], 10);
+    if (mMatch) total += parseInt(mMatch[1], 10) / 60;
+    if (total > 0) return total;
+    const num = parseFloat(val);
+    return Number.isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
+
+const AdminReports = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, title: "", message: "" });
   const [error, setError] = useState("");
   const [aggregateReport, setAggregateReport] = useState({
     loaded: false,
@@ -52,6 +72,14 @@ const Reports = () => {
     riskLevelData: [],
     weeklyActivityData: [],
     topUsersData: [],
+    engagementScore: 0,
+    dau: 0,
+    wau: 0,
+    avgSleep: 0,
+    peakHour: "12:00 PM",
+    mostUsedFeature: "N/A",
+    genderDemographics: [],
+    criticalUsersData: [],
   });
 
   useEffect(() => {
@@ -59,10 +87,7 @@ const Reports = () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get("/admin/users/get-all-users", {
-          params: {
-            page: 1,
-            limit: 1000,
-          },
+          params: { page: 1, limit: 1000, exclude_roles: "admin" },
         });
 
         const fetchedUsers = response.data?.users || [];
@@ -72,63 +97,98 @@ const Reports = () => {
           fetchedUsers.map(async (user) => {
             const [activitiesRes, sessionsRes] = await Promise.all([
               axiosInstance.get(`/admin/users/get-user-activities/${user.id}`),
-              axiosInstance.get(
-                `/admin/users/get-sessions-by-user/${user.id}?page=1&limit=200&type=all`
-              ),
+              axiosInstance.get(`/admin/users/get-sessions-by-user/${user.id}?page=1&limit=200&type=all`),
             ]);
-
             return {
               user,
               activities: activitiesRes?.data?.activities || [],
-              totalSessions:
-                sessionsRes?.data?.pagination?.totalSessions ||
-                sessionsRes?.data?.sessions?.length ||
-                0,
+              sessions: sessionsRes?.data?.sessions || [],
+              totalSessions: sessionsRes?.data?.pagination?.totalSessions || sessionsRes?.data?.sessions?.length || 0,
             };
           })
         );
 
-        const riskStatsRes = await axiosInstance.get("/admin/users/avatar-risk-stats");
+        const riskStatsRes = await axiosInstance.get("/admin/users/risk-stats");
         const riskStats = riskStatsRes?.data || {};
 
         let totalActivities = 0;
         let totalSessions = 0;
         let usersWithActivities = 0;
         let skippedUsers = 0;
-
         const activityTypeCounts = {};
         const weeklyActivityCounts = {};
         const userSessionTotals = [];
+        let totalSleep = 0;
+        let sleepEntries = 0;
+        const hourCounts = {};
+        let activeToday = new Set();
+        let activeThisWeek = new Set();
+        const genderCounts = {};
+        const dynamicRiskLevels = { low: 0, moderate: 0, high: 0, critical: 0 };
+        let totalAssessedSessions = 0;
+        let totalRiskScoreSum = 0;
+        const criticalUsersData = [];
+
+        const now = new Date();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const sevenDays = 7 * oneDay;
 
         userReports.forEach((entry) => {
-          if (entry.status !== "fulfilled") {
-            skippedUsers += 1;
-            return;
-          }
+          if (entry.status !== "fulfilled") { skippedUsers += 1; return; }
 
-          const { user, activities, totalSessions: userSessions } = entry.value;
+          const { user, activities, sessions: userSessionsList, totalSessions: userSessionsCount } = entry.value;
           totalActivities += activities.length;
-          totalSessions += userSessions;
+          totalSessions += userSessionsCount;
+          userSessionTotals.push({ name: user.profile?.username || user.email || "Unknown", value: userSessionsCount });
+          if (activities.length > 0) usersWithActivities += 1;
 
-          userSessionTotals.push({
-            name: user.profile?.username || user.email || "Unknown",
-            value: userSessions,
+          const gender = user.profile?.gender || "Unknown";
+          genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+
+          let maxUserRiskScore = 0;
+          let userCriticalCount = 0;
+          userSessionsList.forEach(session => {
+            if (session.risk_level) {
+              const level = session.risk_level.toLowerCase();
+              if (dynamicRiskLevels[level] !== undefined) dynamicRiskLevels[level]++;
+              if (level === 'critical') userCriticalCount++;
+            }
+            if (session.risk_score != null) {
+              totalAssessedSessions++;
+              totalRiskScoreSum += Number(session.risk_score);
+              if (session.risk_score > maxUserRiskScore) maxUserRiskScore = session.risk_score;
+            }
+            if (session.created_at) {
+              const sessDate = new Date(session.created_at);
+              const diff = now - sessDate;
+              if (diff <= oneDay) activeToday.add(user.id);
+              if (diff <= sevenDays) activeThisWeek.add(user.id);
+            }
           });
 
-          if (activities.length > 0) {
-            usersWithActivities += 1;
+          if (userCriticalCount > 0) {
+            criticalUsersData.push({ name: user.profile?.username || user.email || "Unknown", sessions: userCriticalCount, score: maxUserRiskScore });
           }
 
           activities.forEach((activity) => {
             const activityType = activity.activity_type || "other";
             activityTypeCounts[activityType] = (activityTypeCounts[activityType] || 0) + 1;
 
-            const activityDate = activity.created_at
-              ? new Date(activity.created_at).toISOString().split("T")[0]
-              : null;
+            if (activity.created_at) {
+              const actDate = new Date(activity.created_at);
+              const activityDateStr = actDate.toISOString().split("T")[0];
+              weeklyActivityCounts[activityDateStr] = (weeklyActivityCounts[activityDateStr] || 0) + 1;
+              const hour = actDate.getHours();
+              hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+              const diff = now - actDate;
+              if (diff <= oneDay) activeToday.add(user.id);
+              if (diff <= sevenDays) activeThisWeek.add(user.id);
+            }
 
-            if (activityDate) {
-              weeklyActivityCounts[activityDate] = (weeklyActivityCounts[activityDate] || 0) + 1;
+            if (activityType === 'sleep') {
+              const sleepVal = activity.data?.sleepHours || activity.data?.hours || activity.data?.duration;
+              const hours = parseSleepHours(sleepVal);
+              if (hours > 0) { totalSleep += hours; sleepEntries += 1; }
             }
           });
         });
@@ -140,42 +200,59 @@ const Reports = () => {
 
         const riskLevelData = ["low", "moderate", "high", "critical"].map((level) => ({
           name: level,
-          value: riskStats?.byLevel?.[level] ?? 0,
+          value: dynamicRiskLevels[level] || (riskStats?.byLevel?.[level] ?? 0),
         }));
+
+        const avgScore = totalAssessedSessions > 0
+          ? Math.round((totalRiskScoreSum / totalAssessedSessions) * 10) / 10
+          : (riskStats.averageScore ?? null);
 
         const today = new Date();
         const weeklyActivityData = Array.from({ length: 7 }, (_, index) => {
           const date = new Date(today);
           date.setDate(today.getDate() - (6 - index));
           const key = date.toISOString().split("T")[0];
-          return {
-            day: key.slice(5),
-            activities: weeklyActivityCounts[key] || 0,
-          };
+          return { day: key.slice(5), activities: weeklyActivityCounts[key] || 0 };
         });
 
-        const topUsersData = userSessionTotals
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5);
+        const topUsersData = userSessionTotals.sort((a, b) => b.value - a.value).slice(0, 5);
+
+        let peakH = 12, maxC = 0;
+        for (const [h, count] of Object.entries(hourCounts)) {
+          if (count > maxC) { maxC = count; peakH = h; }
+        }
+        const formatHour = (h) => {
+          const hh = parseInt(h);
+          if (hh === 0) return "12 AM";
+          if (hh === 12) return "12 PM";
+          return hh > 12 ? (hh - 12) + " PM" : hh + " AM";
+        };
+
+        const topFeature = activityTypeData.length > 0 ? activityTypeData[0].name.toUpperCase() : "N/A";
+        const avgSlp = sleepEntries > 0 ? (totalSleep / sleepEntries).toFixed(1) : 0;
+        const eScore = fetchedUsers.length > 0
+          ? Math.min(100, Math.round(((usersWithActivities / fetchedUsers.length) * 50) + ((activeThisWeek.size / fetchedUsers.length) * 50)))
+          : 0;
+
+        const genderDemographics = Object.entries(genderCounts).map(([name, value]) => ({ name, value }));
 
         setAggregateReport({
-          loaded: true,
-          totalActivities,
-          totalSessions,
-          usersAnalyzed: fetchedUsers.length,
-          usersWithActivities,
-          skippedUsers,
-          averageRiskScore: riskStats.averageScore ?? null,
-          avatarSessions: riskStats.total ?? 0,
-          activityTypeData,
-          riskLevelData,
-          weeklyActivityData,
-          topUsersData,
+          loaded: true, totalActivities, totalSessions,
+          usersAnalyzed: fetchedUsers.length, usersWithActivities, skippedUsers,
+          averageRiskScore: avgScore,
+          avatarSessions: totalAssessedSessions || (riskStats.total ?? 0),
+          activityTypeData, riskLevelData, weeklyActivityData, topUsersData,
+          engagementScore: eScore, dau: activeToday.size, wau: activeThisWeek.size,
+          avgSleep: avgSlp, peakHour: formatHour(peakH), mostUsedFeature: topFeature,
+          genderDemographics,
+          criticalUsersData: criticalUsersData.sort((a, b) => b.sessions - a.sessions),
         });
         setError("");
       } catch (err) {
         console.error("Failed to fetch report data:", err);
-        setError(err.response?.data?.message || err.message || "Failed to load report data");
+        const msg = err.response?.data?.message || err.message || "Failed to load report data";
+        setError(msg);
+        setErrorModal({ isOpen: true, title: "Data Sync Failed", message: msg });
       } finally {
         setLoading(false);
       }
@@ -190,7 +267,6 @@ const Reports = () => {
     const weekdayMap = new Map(weekdayBase.map((day) => [day, 0]));
     const roleMap = new Map();
     const cumulativePoints = [];
-
     let activeCount = 0;
     let inactiveCount = 0;
 
@@ -208,396 +284,449 @@ const Reports = () => {
       weekdayMap.set(weekday, (weekdayMap.get(weekday) || 0) + 1);
       roleMap.set(role, (roleMap.get(role) || 0) + 1);
 
-      if (user.is_anonymous) {
-        inactiveCount += 1;
-      } else {
-        activeCount += 1;
-      }
-
-      cumulativePoints.push({
-        index: index + 1,
-        users: index + 1,
-        month,
-      });
+      if (user.is_anonymous) { inactiveCount += 1; } else { activeCount += 1; }
+      cumulativePoints.push({ index: index + 1, users: index + 1, month });
     });
 
-    const monthlyRegistrations = Array.from(monthlyMap.entries()).map(([month, total]) => ({
-      month,
-      total,
-    }));
-
-    const weekdayActivity = weekdayBase.map((day) => ({
-      day,
-      records: weekdayMap.get(day) || 0,
-    }));
-
-    const roleDistribution = Array.from(roleMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-    }));
-
+    const monthlyRegistrations = Array.from(monthlyMap.entries()).map(([month, total]) => ({ month, total }));
+    const weekdayActivity = weekdayBase.map((day) => ({ day, records: weekdayMap.get(day) || 0 }));
+    const roleDistribution = Array.from(roleMap.entries()).map(([name, value]) => ({ name, value }));
     const statusDistribution = [
       { name: "Active", value: activeCount },
       { name: "Inactive", value: inactiveCount },
     ];
 
-    return {
-      totalUsers: validUsers.length,
-      monthlyRegistrations,
-      weekdayActivity,
-      roleDistribution,
-      statusDistribution,
-      cumulativePoints,
-    };
+    return { totalUsers: validUsers.length, monthlyRegistrations, weekdayActivity, roleDistribution, statusDistribution, cumulativePoints };
   }, [users]);
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(99, 102, 241);
-    doc.text("User Analytics Report", 105, 20, { align: "center" });
-
-    // Date
+    const primaryColor = [102, 126, 234];
+    
+    // Title & Header
+    doc.setFontSize(22);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("Neural Intelligence Analytics Report", 105, 20, { align: "center" });
+    
     doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })}`, 105, 28, { align: "center" });
-
-    // Summary Statistics
+    doc.setTextColor(113, 128, 150);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 105, 28, { align: "center" });
+    
+    // Section 1: Key Performance Metrics
     doc.setFontSize(14);
-    doc.setTextColor(51, 51, 51);
-    doc.text("Summary Statistics", 14, 40);
+    doc.setTextColor(26, 32, 44);
+    doc.text("Key Performance Metrics", 14, 45);
 
     const summaryData = [
-      ["Total Users Tracked", analytics.totalUsers.toLocaleString()],
-      ["Active Users", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
-      ["Inactive Users", (analytics.statusDistribution.find(item => item.name === "Inactive")?.value || 0).toLocaleString()],
-      ["Users Analyzed (Reports)", aggregateReport.usersAnalyzed.toLocaleString()],
-      ["Total Activities", aggregateReport.totalActivities.toLocaleString()],
-      ["Total Sessions", aggregateReport.totalSessions.toLocaleString()],
-      ["Avatar Sessions", aggregateReport.avatarSessions.toLocaleString()],
-      ["Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
+      ["Total User Identities", analytics.totalUsers.toLocaleString()],
+      ["Active Engagement (Verified)", (analytics.statusDistribution.find(item => item.name === "Active")?.value || 0).toLocaleString()],
+      ["App Affinity (Habit Strength Index)", `${aggregateReport.engagementScore}%`],
+      ["Retention Ratio (DAU / WAU)", `${aggregateReport.dau} / ${aggregateReport.wau}`],
+      ["Traffic Peak (Active Velocity)", aggregateReport.peakHour],
+      ["Sleep Average (Wellness Recovery)", `${aggregateReport.avgSleep}h`],
+      ["Total Activity Logs", aggregateReport.totalActivities.toLocaleString()],
+      ["AI Sessions Analyzed", aggregateReport.totalSessions.toLocaleString()],
+      ["Global Average Risk Score", aggregateReport.averageRiskScore == null ? "N/A" : String(aggregateReport.averageRiskScore)],
     ];
 
     autoTable(doc, {
-      startY: 45,
-      head: [["Metric", "Value"]],
+      startY: 50,
+      head: [["Performance Metric", "Aggregated Value"]],
       body: summaryData,
+      theme: "striped",
+      headStyles: { fillColor: primaryColor, fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 4 },
+    });
+
+    // Section 2: Top Activity Modalities
+    let currentY = doc.lastAutoTable.finalY + 15;
+    doc.text("Top Activity Modalities", 14, currentY);
+    
+    const activityData = aggregateReport.activityTypeData.map(item => [
+      item.name.toUpperCase(),
+      item.value.toLocaleString()
+    ]);
+
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [["Activity Type", "Total Records"]],
+      body: activityData.length > 0 ? activityData : [["No activity data recorded", "0"]],
       theme: "grid",
-      headStyles: { fillColor: [99, 102, 241] },
+      headStyles: { fillColor: [139, 92, 246] },
+      styles: { fontSize: 9 },
     });
 
-    // Monthly Registrations
-    doc.setFontSize(14);
-    doc.text("Monthly Registrations", 14, (doc.lastAutoTable?.finalY || 45) + 15);
+    // Section 3: Critical User Alerts
+    currentY = doc.lastAutoTable.finalY + 15;
+    if (currentY > 250) { doc.addPage(); currentY = 20; }
+    
+    doc.setTextColor(225, 29, 72);
+    doc.text("Critical User Alerts (High Priority)", 14, currentY);
+    doc.setTextColor(26, 32, 44);
 
-    const monthlyData = analytics.monthlyRegistrations.map(item => [
-      item.month,
-      item.total
+    const criticalData = aggregateReport.criticalUsersData.map(user => [
+      user.name,
+      user.sessions.toString(),
+      user.score ? user.score.toFixed(1) : "N/A"
     ]);
 
     autoTable(doc, {
-      startY: (doc.lastAutoTable?.finalY || 45) + 20,
-      head: [["Month", "Registrations"]],
-      body: monthlyData,
-      theme: "striped",
-      headStyles: { fillColor: [99, 102, 241] },
+      startY: currentY + 5,
+      head: [["User Identity", "Critical Sessions", "Peak Risk Score"]],
+      body: criticalData.length > 0 ? criticalData : [["Baseline Normal - No critical flags detected", "-", "-"]],
+      theme: "grid",
+      headStyles: { fillColor: [225, 29, 72] },
+      styles: { fontSize: 9 },
     });
 
-    // Weekday Activity
-    doc.setFontSize(14);
-    doc.text("Activity by Weekday", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-
-    const weekdayData = analytics.weekdayActivity.map(item => [
-      item.day,
-      item.records
-    ]);
-
-    autoTable(doc, {
-      startY: (doc.lastAutoTable?.finalY || 45) + 20,
-      head: [["Day", "Records"]],
-      body: weekdayData,
-      theme: "striped",
-      headStyles: { fillColor: [99, 102, 241] },
-    });
-
-    // Role Distribution
-    if (analytics.roleDistribution.length > 0) {
-      doc.setFontSize(14);
-      doc.text("User Roles Distribution", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-
-      const roleData = analytics.roleDistribution.map(item => [
-        item.name,
-        item.value
-      ]);
-
-      autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 45) + 20,
-        head: [["Role", "Count"]],
-        body: roleData,
-        theme: "striped",
-        headStyles: { fillColor: [99, 102, 241] },
-      });
-    }
-
-    if (aggregateReport.activityTypeData.length > 0) {
-      doc.setFontSize(14);
-      doc.text("Top Activity Types", 14, (doc.lastAutoTable?.finalY || 45) + 15);
-
-      const activityTypeRows = aggregateReport.activityTypeData.map((item) => [
-        item.name,
-        item.value,
-      ]);
-
-      autoTable(doc, {
-        startY: (doc.lastAutoTable?.finalY || 45) + 20,
-        head: [["Activity Type", "Count"]],
-        body: activityTypeRows,
-        theme: "striped",
-        headStyles: { fillColor: [99, 102, 241] },
-      });
-    }
-
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.text(
-        `Page ${i} of ${pageCount}`,
-        doc.internal.pageSize.getWidth() / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: "center" }
-      );
-    }
-
-    // Save the PDF
-    doc.save(`user-analytics-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`vera-admin-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
-    <div className="reports-page">
+    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
+      <div className="reports-page">
+
+      {/* ── Header ── */}
       <div className="reports-header">
         <div>
-          <h1 className="reports-title">Reports</h1>
-          <p className="reports-subtitle">Graphs for overall user activity records and trends.</p>
+          <h1 className="reports-title">User Analytics</h1>
+          <p className="reports-subtitle">Comprehensive data visualization of user engagement and behavioral trends.</p>
         </div>
-        <button
-          onClick={downloadPDF}
-          className="reports-download-btn"
-          disabled={loading}
-          style={{
-            padding: "10px 20px",
-            borderRadius: "8px",
-            border: "none",
-            background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-            color: "white",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontWeight: "600",
-            fontSize: "14px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
-            transition: "transform 0.2s, box-shadow 0.2s",
-            opacity: loading ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => !loading && (e.target.style.transform = "translateY(-2px)")}
-          onMouseLeave={(e) => !loading && (e.target.style.transform = "translateY(0)")}
-        >
-          📄 Download PDF Report
-        </button>
+        {!loading && aggregateReport.loaded && (
+          <button
+            onClick={downloadPDF}
+            disabled={loading}
+            style={{
+              padding: "14px 28px",
+              borderRadius: "16px",
+              border: "none",
+              background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+              color: "white",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontWeight: "800",
+              fontSize: "13px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              boxShadow: "0 8px 24px -8px rgba(0,0,0,0.35)",
+              transition: "all 0.3s ease",
+              opacity: loading ? 0.6 : 1,
+              letterSpacing: "0.04em",
+            }}
+          >
+            <div style={{ background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "10px" }}>
+              <MdBarChart style={{ fontSize: "20px", display: "block" }} />
+            </div>
+            EXPORT ANALYTICS PDF
+          </button>
+        )}
       </div>
+
+      <ReusableModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ ...errorModal, isOpen: false })}
+        title={errorModal.title}
+        message={errorModal.message}
+      />
 
       {error && <p className="reports-error">{error}</p>}
 
-      <div className="reports-summary-cards">
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Total Users Tracked</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : analytics.totalUsers.toLocaleString()}
-          </span>
-        </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Active Users</span>
-          <span className="reports-summary-value">
-            {loading
-              ? "..."
-              : (analytics.statusDistribution.find((item) => item.name === "Active")?.value || 0).toLocaleString()}
-          </span>
-        </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Inactive Users</span>
-          <span className="reports-summary-value">
-            {loading
-              ? "..."
-              : (analytics.statusDistribution.find((item) => item.name === "Inactive")?.value || 0).toLocaleString()}
-          </span>
-        </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Total Activities</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : aggregateReport.totalActivities.toLocaleString()}
-          </span>
-        </div>
-        <div className="reports-summary-card">
-          <span className="reports-summary-label">Total Sessions</span>
-          <span className="reports-summary-value">
-            {loading ? "..." : aggregateReport.totalSessions.toLocaleString()}
-          </span>
-        </div>
-      </div>
+      {/* ── AI Analytics Hub ── */}
+      <div className="ai-hub-card">
+        <div className="ai-hub-header">
 
-      <div className="reports-grid">
-        <div className="report-card">
-          <h3 className="report-card-title">Monthly Registrations (Line)</h3>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics.monthlyRegistrations}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="ai-hub-title-section">
+            <h2>AI Analytics Hub</h2>
+            <p className="ai-hub-subtitle">NEURAL INTELLIGENCE REPORT</p>
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">Activity by Weekday (Bar)</h3>
-          <div className="report-chart-wrap">
+        <div className="hub-grid">
+          {/* Left: Strategic Risk Alerts */}
+          <div className="hub-left">
+            <div className="flex items-center mb-6">
+              <div className="alert-badge">
+                <div className="pulse-dot" />
+                STRATEGIC RISK ALERTS
+              </div>
+              <span className="real-time-label">REAL-TIME</span>
+            </div>
+
+            <div className="critical-intervention">
+              <MdWarning className="warning-icon" />
+              <div>
+                <div className="critical-title">Critical Intervention Needed</div>
+                <div className="critical-desc">
+                  {aggregateReport.criticalUsersData.length} user {aggregateReport.criticalUsersData.length === 1 ? 'identity' : 'identities'} flagged with severe psychological stress indicators.
+                </div>
+              </div>
+            </div>
+
+            <div className="risk-badges">
+              <div className="risk-user-badge">
+                <MdPerson style={{ fontSize: "18px" }} />
+                {aggregateReport.criticalUsersData.length} User{aggregateReport.criticalUsersData.length === 1 ? '' : 's'} at Risk
+              </div>
+              <div className="risk-trajectory-badge">
+                <MdTrendingUp style={{ fontSize: "18px", color: "#818cf8" }} />
+                Elevated Risk Trajectory
+              </div>
+            </div>
+          </div>
+
+          <div className="hub-divider" />
+
+          {/* Right: Predictive Forecasts */}
+          <div className="hub-right">
+            <div className="forecast-badge">
+              PREDICTIVE FORECASTS
+            </div>
+
+            <div className="forecast-item">
+              <div className="forecast-icon-box">
+                -{aggregateReport.criticalUsersData.length > 0 ? "1" : "0"}
+              </div>
+              <div className="forecast-content">
+                <h5>Projected Resilience Drop</h5>
+                <p>Early emotional markers suggest increased anxiety in a subset of users within the 72h window.</p>
+              </div>
+            </div>
+
+            <div className="forecast-item">
+              <div className="forecast-icon-box">
+                <MdNotificationsNone style={{ fontSize: "22px" }} />
+              </div>
+              <div className="forecast-content">
+                <h5>Smart Timing Recommendation</h5>
+                <p>
+                  Highest engagement expected at <strong>{aggregateReport.peakHour}</strong>.
+                  Recommend scheduling group sessions during this window.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Summary Cards ── */}
+      <div className="reports-summary-cards">
+
+        <div className="reports-summary-card">
+          <div className="flex justify-between items-start">
+            <span className="reports-summary-label">App Affinity</span>
+            <div className="bg-blue-50 text-blue-600 p-2.5 rounded-xl"><MdTimeline size={20} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value">{loading ? "—" : `${aggregateReport.engagementScore}%`}</div>
+            <div className="card-sub-label text-indigo-500">Habit Strength Index</div>
+          </div>
+        </div>
+
+        <div className="reports-summary-card">
+          <div className="flex justify-between items-start">
+            <span className="reports-summary-label">Retention Ratio</span>
+            <div className="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl"><MdPeople size={20} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value">{loading ? "—" : `${aggregateReport.dau}/${aggregateReport.wau}`}</div>
+            <div className="card-sub-label text-emerald-500">DAU / WAU Efficiency</div>
+          </div>
+        </div>
+
+        <div className="reports-summary-card">
+          <div className="flex justify-between items-start">
+            <span className="reports-summary-label">Traffic Peak</span>
+            <div className="bg-purple-50 text-purple-600 p-2.5 rounded-xl"><MdAccessTime size={20} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value">{loading ? "—" : aggregateReport.peakHour}</div>
+            <div className="card-sub-label text-purple-500">Active Velocity Time</div>
+          </div>
+        </div>
+
+        <div className="reports-summary-card">
+          <div className="flex justify-between items-start">
+            <span className="reports-summary-label">Sleep Avg</span>
+            <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl"><MdNightsStay size={20} /></div>
+          </div>
+          <div>
+            <div className="reports-summary-value">{loading ? "—" : `${aggregateReport.avgSleep}h`}</div>
+            <div className="card-sub-label text-indigo-500">Wellness Recovery</div>
+          </div>
+        </div>
+
+        <div className="reports-summary-card">
+          <span className="reports-summary-label">Total Activities</span>
+          <div className="reports-summary-value">
+            {loading ? "—" : aggregateReport.totalActivities.toLocaleString()}
+          </div>
+        </div>
+
+        <div className="reports-summary-card">
+          <span className="reports-summary-label">Total Sessions</span>
+          <div className="reports-summary-value">
+            {loading ? "—" : aggregateReport.totalSessions.toLocaleString()}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── Charts Grid ── */}
+      <div className="reports-grid">
+
+        {/* User Engagement Distribution */}
+        <div className="report-card lg:col-span-8">
+          <div className="flex justify-between items-end mb-1">
+            <div>
+              <h3 className="report-card-title"><MdBarChart /> User Engagement Distribution</h3>
+              <p className="report-card-desc">Relative activity volume ranked by total user sessions.</p>
+            </div>
+          </div>
+          <div className="report-chart-wrap" style={{ height: 340 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.weekdayActivity}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="records" fill="#10b981" radius={[6, 6, 0, 0]} />
+              <BarChart data={aggregateReport.topUsersData} margin={{ top: 16, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#0891b2" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 16px 40px -8px rgba(0,0,0,0.12)', padding: '14px 18px' }}
+                  itemStyle={{ fontWeight: 800, fontSize: '14px' }}
+                />
+                <Bar dataKey="value" fill="url(#barGradient)" radius={[10, 10, 0, 0]} barSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">User Roles (Pie)</h3>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.roleDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label
-                >
-                  {analytics.roleDistribution.map((entry, index) => (
-                    <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* Critical Thresholds */}
+        <div className="report-card lg:col-span-4">
+          <div className="mb-5">
+            <h3 className="report-card-title" style={{ color: '#e11d48' }}>
+              Critical Thresholds
+              <span style={{
+                marginLeft: 'auto', fontSize: '9px', background: '#fff1f2',
+                color: '#e11d48', padding: '3px 10px', borderRadius: '999px',
+                fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase'
+              }}>Priority 1</span>
+            </h3>
+            <p className="report-card-desc">Users requiring immediate clinical oversight.</p>
+          </div>
+          <div style={{ height: 280 }}>
+            {aggregateReport.criticalUsersData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={aggregateReport.criticalUsersData} layout="vertical" margin={{ left: 0, right: 24 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={90} tick={{ fill: '#1e293b', fontSize: 12, fontWeight: 700 }} />
+                  <Tooltip cursor={{ fill: '#fff1f2' }} contentStyle={{ borderRadius: '16px', border: 'none', padding: '12px 16px' }} />
+                  <Bar dataKey="sessions" radius={[0, 10, 10, 0]} fill="#fb7185" barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full gap-4" style={{ opacity: 0.35 }}>
+                <div style={{ width: 64, height: 64, background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <MdPeople size={32} color="#94a3b8" />
+                </div>
+                <p style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#94a3b8', textAlign: 'center' }}>Baseline Normal</p>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">Cumulative User Growth (Area)</h3>
-          <div className="report-chart-wrap">
+        {/* Growth Velocity */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdTrendingUp /> Growth Velocity</h3>
+          <p className="report-card-desc">Cumulative user growth over time.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics.cumulativePoints}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="index" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="users" stroke="#8b5cf6" fill="#c4b5fd" />
+              <AreaChart data={analytics.cumulativePoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} dy={12} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 16px 40px -8px rgba(0,0,0,0.1)' }} />
+                <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#areaGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">Activity Types Across Users (Bar)</h3>
-          <div className="report-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={aggregateReport.activityTypeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#06b6d4" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="report-card">
-          <h3 className="report-card-title">Avatar Risk Distribution (Pie)</h3>
-          <div className="report-chart-wrap">
+        {/* Risk Profile Summary */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdPsychology /> Risk Profile Summary</h3>
+          <p className="report-card-desc">Session-level risk distribution across all users.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={aggregateReport.riskLevelData}
                   dataKey="value"
                   nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label
+                  cx="50%" cy="48%"
+                  outerRadius={110}
+                  innerRadius={80}
+                  stroke="none"
+                  paddingAngle={8}
                 >
                   {aggregateReport.riskLevelData.map((entry, index) => (
-                    <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <Cell key={entry.name} fill={['#10b981', '#f59e0b', '#f97316', '#ef4444'][index % 4]} cornerRadius={10} />
                   ))}
                 </Pie>
-                <Tooltip />
-                <Legend />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: '20px', fontWeight: 800, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">Last 7 Days Activity (Area)</h3>
-          <div className="report-chart-wrap">
+        {/* Daily Activity Velocity */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdTimeline /> Daily Activity Velocity</h3>
+          <p className="report-card-desc">Activity volume over the last 7 days.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={aggregateReport.weeklyActivityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="activities" stroke="#0891b2" fill="#67e8f9" />
-              </AreaChart>
+              <LineChart data={aggregateReport.weeklyActivityData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} dy={12} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 16px 40px -8px rgba(0,0,0,0.1)' }} />
+                <Line type="monotone" dataKey="activities" stroke="#ef4444" strokeWidth={4} dot={{ stroke: '#ef4444', strokeWidth: 2, r: 5, fill: '#ffffff' }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="report-card">
-          <h3 className="report-card-title">Top Users by Sessions (Bar)</h3>
-          <div className="report-chart-wrap">
+        {/* Top Activity Modalities */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdBarChart /> Top Activity Modalities</h3>
+          <p className="report-card-desc">Most frequently logged activity types across users.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={aggregateReport.topUsersData} layout="vertical" margin={{ left: 30, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={120} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#10b981" radius={[0, 6, 6, 0]} />
+              <BarChart data={aggregateReport.activityTypeData} layout="vertical" margin={{ left: 0, right: 24, top: 4 }}>
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#1e293b', fontSize: 12, fontWeight: 700 }} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[0, 10, 10, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
+
       </div>
-    </div>
+      </div>
+    </PullToRefresh>
   );
 };
 
-export default Reports;
+export default AdminReports;

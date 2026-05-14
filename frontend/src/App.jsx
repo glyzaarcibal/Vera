@@ -8,7 +8,6 @@ import MainLayout from "./layouts/MainLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import Welcome from "./pages/Welcome";
 import About from "./pages/About";
-import Notifications from "./pages/Notifications";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -25,7 +24,11 @@ import UserManagement from "./pages/Admin/UserManagement";
 import UserSessions from "./pages/Admin/UserSessions";
 import UserChat from "./pages/Admin/UserChat";
 import Resources from "./pages/Admin/Resources";
+import FeedbackManagement from "./pages/Admin/FeedbackManagement";
 import AvatarAI from "./pages/Avatar";
+import PsychologyLayout from "./layouts/PsychologyLayout";
+import PsychologyDashboard from "./pages/Psychology/Dashboard";
+import PsychologyUserManagement from "./pages/Psychology/UserManagement";
 import CheckEmail from "./pages/CheckEmail";
 import EmailVerified from "./pages/EmailVerified";
 import Activities from "./pages/Activities";
@@ -36,10 +39,30 @@ import SleepTracker from "./pages/Activities/SleepTracker";
 import WeeklyWellnessReport from "./pages/Activities/WeeklyWellnessReport";
 import TakeABreath from "./pages/Activities/TakeABreath";
 import MedicationTracker from "./pages/Activities/MedicationTracker";
+import Feedback from "./pages/Feedback";
+import UserDashboard from "./pages/UserDashboard";
 
 const App = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await axiosInstance.get("/auth/fetch-profile");
+        if (res.data.profile) {
+          dispatch(setUser(res.data.profile));
+        }
+      } catch (e) {
+        console.error("Error refreshing profile:", e);
+        // If profile fetch fails (e.g., token expired), interceptor will handle it
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     console.log("App mounted, user:", user);
@@ -48,9 +71,9 @@ const App = () => {
   return (
     <Routes>
       <Route element={<MainLayout />}>
-        <Route path="/" element={<Welcome />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Welcome />} />
+        <Route path="/dashboard" element={user ? <UserDashboard /> : <Navigate to="/" />} />
         <Route path="/about" element={<About />} />
-        <Route path="/notifications" element={<Notifications />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/chat" element={<ChatAI />} />
         <Route path="/voice" element={<VoiceAI />} />
@@ -66,6 +89,7 @@ const App = () => {
         />
         <Route path="/activities/take-a-breath" element={<TakeABreath />} />
         <Route path="/activities/medication-history" element={<MedicationTracker />} />
+        <Route path="/feedback" element={<Feedback />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
@@ -74,9 +98,18 @@ const App = () => {
         <Route path="/admin/sessions/:userId" element={<UserSessions />} />
         <Route path="/admin/chat/:sessionId" element={<UserChat />} />
         <Route path="/admin/resources" element={<Resources />} />
+        <Route path="/admin/feedback" element={<FeedbackManagement />} />
         {/* <Route path="/admin/activity-graph/:userId" element={<UserActivityGraph />} /> */}
       </Route>
-      <Route path="/login" element={<Login />} />
+      <Route path="/psychology" element={<PsychologyLayout />}>
+        <Route index element={<PsychologyDashboard />} />
+        <Route path="/psychology/users" element={<PsychologyUserManagement />} />
+        <Route path="/psychology/sessions/:userId" element={<UserSessions />} />
+        <Route path="/psychology/chat/:sessionId" element={<UserChat />} />
+        <Route path="/psychology/resources" element={<Resources />} />
+        <Route path="/psychology/reports" element={<Reports />} />
+      </Route>
+      <Route path="/login" element={<Navigate to="/" />} />
       <Route path="/register" element={<Register />} />
       <Route path="/check-email" element={<CheckEmail />} />
       <Route path="/email-verified" element={<EmailVerified />} />
