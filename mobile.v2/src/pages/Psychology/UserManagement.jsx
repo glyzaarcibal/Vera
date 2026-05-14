@@ -69,15 +69,34 @@ const PsychologyUserManagement = () => {
         return;
       }
 
-      const formattedUsers = usersData.map((user) => ({
-        id: user.id,
-        username: user.profile?.username || "Unknown",
-        email: user.email,
-        role: user.profile?.role || "user",
-        status: user.is_anonymous ? "Inactive" : "Active",
-        joined: new Date(user.created_at).toISOString().split("T")[0],
-        avatar_url: user.profile?.avatar_url || null,
-      }));
+      const formattedUsers = usersData.map((user) => {
+        const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
+        let ageGroup = "Unknown";
+        if (birthDateStr) {
+          const birthDate = new Date(birthDateStr);
+          const now = new Date();
+          const age = now.getFullYear() - birthDate.getFullYear();
+          const m = now.getMonth() - birthDate.getMonth();
+          const actualAge = (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) ? age - 1 : age;
+
+          if (actualAge <= 12) ageGroup = "Children";
+          else if (actualAge <= 19) ageGroup = "Teens";
+          else if (actualAge <= 35) ageGroup = "Young Adults";
+          else if (actualAge <= 55) ageGroup = "Adults";
+          else ageGroup = "Seniors";
+        }
+
+        return {
+          id: user.id,
+          username: user.profile?.username || "Unknown",
+          email: user.email,
+          role: user.profile?.role || "user",
+          status: user.is_anonymous ? "Inactive" : "Active",
+          joined: new Date(user.created_at).toISOString().split("T")[0],
+          avatar_url: user.profile?.avatar_url || null,
+          ageGroup: ageGroup
+        };
+      });
 
       setUsers(formattedUsers);
       setPagination(res.data.pagination);
@@ -184,6 +203,7 @@ const PsychologyUserManagement = () => {
             <tr style={{ background: '#f8fafc', textTransform: 'uppercase', letterSpacing: 1.2, color: '#a0aec0', fontWeight: 700, fontSize: 12 }}>
               <th style={{ padding: '18px 24px' }}>User</th>
               <th style={{ padding: '18px 24px' }}>Role</th>
+              <th style={{ padding: '18px 24px' }}>Age Group</th>
               <th style={{ padding: '18px 24px' }}>Status</th>
               <th style={{ padding: '18px 24px' }}>Joined</th>
               <th style={{ padding: '18px 24px', textAlign: 'center' }}>Actions</th>
@@ -219,6 +239,9 @@ const PsychologyUserManagement = () => {
                     textTransform: 'uppercase',
                     letterSpacing: 1,
                   }}>{user.role}</span>
+                </td>
+                <td style={{ padding: '18px 24px' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#4a5568' }}>{user.ageGroup}</span>
                 </td>
                 <td style={{ padding: '18px 24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -313,7 +336,7 @@ const PsychologyUserManagement = () => {
                 />
               </div>
               <div className="group">
-                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Email Address <span className="normal-case text-indigo-400 font-medium">(Only Gmail is allowed)</span></label>
                 <input
                   type="email"
                   required

@@ -372,20 +372,21 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
             </div>
 
             {error && <div className="didagent-error-toast">{error}</div>}
+            
+            <div className="didagent-floating-controls">
+              <button
+                onClick={toggleListening}
+                disabled={isProcessing || isSpeaking}
+                className={`didagent-mic-btn ${isListening ? 'active' : ''}`}
+              >
+                {isListening ? <Mic size={24} /> : <MicOff size={24} />}
+              </button>
+              <button onClick={() => { onEnd?.(); setIsSessionActive(false); }} className="didagent-end-btn">
+                <PhoneOff size={24} />
+              </button>
+            </div>
           </div>
 
-          <div className="didagent-controls">
-            <button
-              onClick={toggleListening}
-              disabled={isProcessing || isSpeaking}
-              className={`didagent-mic-btn ${isListening ? 'active' : ''}`}
-            >
-              {isListening ? <Mic size={32} /> : <MicOff size={32} />}
-            </button>
-            <button onClick={() => { onEnd?.(); setIsSessionActive(false); }} className="didagent-end-btn">
-              <PhoneOff size={32} />
-            </button>
-          </div>
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>
       )}

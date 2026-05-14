@@ -38,7 +38,7 @@ export async function updateSessionAnalysis(sessionId) {
     }
 
     // Analyze the conversation
-    const analysis = await analyzeConversation(messages);
+    const analysis = await analyzeConversation(messages, sessionId);
 
     // Update the session with analysis results
     const { data: updatedSession, error: updateError } = await supabaseAdmin
@@ -143,20 +143,30 @@ export async function fetchMessagesBySessionId(sessionId) {
 export async function getAvatarRiskStats() {
   const { data, error } = await supabaseAdmin
     .from("chat_sessions")
-    .select("risk_level, risk_score")
-    .eq("type", "Avatar");
+    .select("risk_level, risk_score, created_at");
 
   if (error) throw error;
 
   const byLevel = { low: 0, moderate: 0, high: 0, critical: 0 };
+  const todayByLevel = { low: 0, moderate: 0, high: 0, critical: 0 };
   let total = 0;
   let withScore = 0;
   let scoreSum = 0;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   (data || []).forEach((row) => {
     total += 1;
     const level = (row.risk_level || "").toLowerCase();
     if (byLevel[level] !== undefined) byLevel[level] += 1;
+    
+    // Check if created today
+    const createdAt = new Date(row.created_at);
+    if (createdAt >= today) {
+      if (todayByLevel[level] !== undefined) todayByLevel[level] += 1;
+    }
+
     if (row.risk_score != null) {
       withScore += 1;
       scoreSum += Number(row.risk_score);
@@ -165,6 +175,7 @@ export async function getAvatarRiskStats() {
 
   return {
     byLevel,
+    todayByLevel,
     total,
     averageScore: withScore > 0 ? Math.round((scoreSum / withScore) * 10) / 10 : null,
     assessedCount: withScore,

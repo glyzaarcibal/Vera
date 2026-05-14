@@ -24,7 +24,7 @@ const About = () => {
     <div className="about-container">
       <div className="about-header">
         <h1 className="about-title">
-          {t("about_title")} <span className="gradient-text">V.E.R.A.</span>
+          {t("about_title")} <span className="gradient-text">V.E.R.A. - Voice Emotion Recognition Application</span>
         </h1>
         <p className="about-subtitle">{t("about_subtitle")}</p>
       </div>

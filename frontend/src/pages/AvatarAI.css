@@ -841,17 +841,18 @@
 
 .didagent-floating-controls {
   position: absolute;
-  bottom: 24px;
+  bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(12px);
-  padding: 12px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  padding: 10px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   z-index: 10;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
 }
 
 .didagent-mic-btn, .didagent-end-btn {
@@ -1025,13 +1026,23 @@
   }
 
   .didagent-mic-btn, .didagent-end-btn {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
   }
 
   .didagent-controls {
-    padding: 10px 0;
-    gap: 16px;
+    display: none;
+  }
+
+  .didagent-floating-controls {
+    bottom: 16px;
+    gap: 12px;
+    padding: 6px;
+  }
+
+  .didagent-floating-controls button svg {
+    width: 20px;
+    height: 20px;
   }
 
   .didagent-video-wrap {

@@ -82,16 +82,16 @@ async function handleCriticalAlert(sessionId, riskScore, summary) {
 
     if (sessErr || !session?.user_id) return;
 
-    // 2. Get user profile and guardian info
+    // 2. Get user profile and contact info for alerts
     const { data: profile, error: profErr } = await supabaseAdmin
       .from("profiles")
-      .select("username, guardian_email")
+      .select("username, guardian_email, professional_email")
       .eq("id", session.user_id)
       .single();
 
     if (profErr || !profile) return;
 
-    // 3. Send email if guardian_email exists
+    // 3. Send email to guardian if guardian_email exists
     if (profile.guardian_email) {
       console.log(`[ALERT] Sending urgent email to guardian: ${profile.guardian_email}`);
       await sendCriticalRiskAlert(
@@ -100,8 +100,17 @@ async function handleCriticalAlert(sessionId, riskScore, summary) {
         riskScore,
         summary
       );
-    } else {
-      console.log(`[ALERT] No guardian email found for user: ${profile.username}`);
+    }
+
+    // 4. Send email to professional if professional_email exists
+    if (profile.professional_email) {
+      console.log(`[ALERT] Sending urgent email to professional: ${profile.professional_email}`);
+      await sendCriticalRiskAlert(
+        profile.professional_email,
+        profile.username || "User",
+        riskScore,
+        summary
+      );
     }
   } catch (err) {
     console.error("[ALERT] Failed to send critical risk alert:", err);

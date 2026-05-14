@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
-import { 
-  FaUserCircle, 
+import {
+  FaUserCircle,
   FaUserShield,
   FaRegCommentDots,
   FaRegClipboard,
@@ -34,14 +34,14 @@ const Profile = () => {
   });
   const [originalProfile, setOriginalProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Tab data states
   const [chatSessions, setChatSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [appointments, setAppointments] = useState([]);
   const [loadingAppointments, setLoadingAppointments] = useState(true);
-  
+
   // Sessions filters
   const [sessionSortOrder, setSessionSortOrder] = useState("desc");
   const [sessionTypeFilter, setSessionTypeFilter] = useState("all");
@@ -303,17 +303,17 @@ const Profile = () => {
     return (
       <div className="tab-content">
         <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", flexShrink: 0 }}>
-          <select value={sessionSortOrder} onChange={(e) => setSessionSortOrder(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
+          <select value={sessionSortOrder} onChange={(e) => setSessionSortOrder(e.target.value)} className="sidebar-input" style={{ flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px" }}>
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>
           </select>
-          <select value={sessionTypeFilter} onChange={(e) => setSessionTypeFilter(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
+          <select value={sessionTypeFilter} onChange={(e) => setSessionTypeFilter(e.target.value)} className="sidebar-input" style={{ flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px" }}>
             <option value="all">All AI Types</option>
             <option value="text">Text</option>
             <option value="voice">Voice</option>
             <option value="avatar">Avatar</option>
           </select>
-          <select value={sessionRiskFilter} onChange={(e) => setSessionRiskFilter(e.target.value)} className="sidebar-input" style={{flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px"}}>
+          <select value={sessionRiskFilter} onChange={(e) => setSessionRiskFilter(e.target.value)} className="sidebar-input" style={{ flex: 1, minWidth: "120px", height: "30px", borderRadius: "8px" }}>
             <option value="all">All Risk Levels</option>
             <option value="low">Low</option>
             <option value="moderate">Moderate</option>
@@ -325,10 +325,10 @@ const Profile = () => {
           <button className="session-mobile-toggle" onClick={() => setShowSessionList(!showSessionList)}>
             {showSessionList ? "View Conversation" : "Back to Session List"}
           </button>
-          
+
           <div className={`session-list-new ${!showSessionList ? 'mobile-hidden' : ''}`}>
             {filteredSessions.length === 0 ? (
-              <p style={{fontFamily:"'DM Sans', sans-serif", fontSize:"12px"}}>No sessions found.</p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "12px" }}>No sessions found.</p>
             ) : (
               filteredSessions.map((session) => (
                 <div key={session.id} className={`session-item-new ${selectedSession?.id === session.id ? 'active' : ''}`} onClick={() => {
@@ -354,14 +354,14 @@ const Profile = () => {
           </div>
 
           <div className={`session-detail-new ${showSessionList ? 'mobile-hidden' : ''}`}>
-            <h2 className="content-title" style={{marginBottom: "12px"}}>{t("session_details")}</h2>
+            <h2 className="content-title" style={{ marginBottom: "12px" }}>{t("session_details")}</h2>
             {selectedSession ? (
               <>
                 <div className="session-detail-header-row">
                   <div className="session-detail-date">
                     Date: {formatDate(selectedSession.created_at)}
                   </div>
-                  <div style={{display:"flex", gap:"8px", alignItems:"center"}}>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     {selectedSession.risk_level && (
                       <span className={`badge-new risk-${selectedSession.risk_level.toLowerCase()}`}>
                         {getRiskRiskText(selectedSession.risk_level, selectedSession.risk_score)}
@@ -389,12 +389,12 @@ const Profile = () => {
                       ))}
                     </div>
                   ) : (
-                    <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"11px", color:"#9CA3AF", textAlign:"center", padding:"20px"}}>No messages recorded.</div>
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "11px", color: "#9CA3AF", textAlign: "center", padding: "20px" }}>No messages recorded.</div>
                   )}
                 </div>
               </>
             ) : (
-              <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"13px"}}>Select a session to view details</div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px" }}>Select a session to view details</div>
             )}
           </div>
         </div>
@@ -408,17 +408,17 @@ const Profile = () => {
         <h2 className="content-title">{t("appointment_tab")}</h2>
         <div className="appointment-box-new">
           {loadingAppointments ? (
-             <div className="loading-box">Loading...</div>
+            <div className="loading-box">Loading...</div>
           ) : appointments.length === 0 ? (
-             <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:"13px", color:"#9CA3AF"}}>No appointments found</div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px", color: "#9CA3AF" }}>No appointments found</div>
           ) : (
-            <div style={{display:"flex", flexDirection:"column", gap:"16px"}}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {appointments.map((appt) => (
-                <div key={appt.id} style={{fontFamily:"'DM Sans', sans-serif", fontSize:"13px"}}>
-                  <strong>{formatDate(appt.next_appointment)}</strong> - 
+                <div key={appt.id} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "13px" }}>
+                  <strong>{formatDate(appt.next_appointment)}</strong> -
                   Dr. {appt.profiles?.first_name || ""} {appt.profiles?.last_name || "Unknown"}
                   {appt.clinical_observations && (
-                    <p style={{marginTop:"4px", color:"#6B7280"}}>{appt.clinical_observations}</p>
+                    <p style={{ marginTop: "4px", color: "#6B7280" }}>{appt.clinical_observations}</p>
                   )}
                 </div>
               ))}
@@ -446,10 +446,10 @@ const Profile = () => {
           </div>
 
           <div className="profile-info-section">
-            <div className="profile-info-title" style={{justifyContent: "space-between"}}>
+            <div className="profile-info-title" style={{ justifyContent: "space-between" }}>
               <span>{t("profile_info")}</span>
               {!isEditMode && (
-                <button onClick={handleEdit} className="sidebar-btn ghost" style={{padding: "2px 8px", fontSize: "10px", marginLeft:"auto", flexShrink: 0}}>
+                <button onClick={handleEdit} className="sidebar-btn ghost" style={{ padding: "2px 8px", fontSize: "10px", marginLeft: "auto", flexShrink: 0 }}>
                   {t("edit")}
                 </button>
               )}
@@ -459,35 +459,35 @@ const Profile = () => {
               <span className="sidebar-label">{t("first_name")}</span>
               {isEditMode ? (
                 <input type="text" name="first_name" className="sidebar-input" value={profile.first_name} onChange={handleInputChange} />
-              ) : ( <div className="sidebar-value">{profile.first_name}</div> )}
+              ) : (<div className="sidebar-value">{profile.first_name}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("last_name")}</span>
               {isEditMode ? (
                 <input type="text" name="last_name" className="sidebar-input" value={profile.last_name} onChange={handleInputChange} />
-              ) : ( <div className="sidebar-value">{profile.last_name}</div> )}
+              ) : (<div className="sidebar-value">{profile.last_name}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("email")}</span>
               {isEditMode ? (
-                <input type="email" name="email" className="sidebar-input disabled" style={{opacity: 0.6}} value={profile.email} disabled />
-              ) : ( <div className="sidebar-value">{profile.email}</div> )}
+                <input type="email" name="email" className="sidebar-input disabled" style={{ opacity: 0.6 }} value={profile.email} disabled />
+              ) : (<div className="sidebar-value">{profile.email}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("username")}</span>
               {isEditMode ? (
                 <input type="text" name="username" className="sidebar-input" value={profile.username} onChange={handleInputChange} />
-              ) : ( <div className="sidebar-value">{profile.username}</div> )}
+              ) : (<div className="sidebar-value">{profile.username}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("birthday")}</span>
               {isEditMode ? (
                 <input type="date" name="birthday" className="sidebar-input" value={profile.birthday} onChange={handleInputChange} />
-              ) : ( <div className="sidebar-value">{profile.birthday || "—"}</div> )}
+              ) : (<div className="sidebar-value">{profile.birthday || "—"}</div>)}
             </div>
 
             <div className="sidebar-field">
@@ -500,38 +500,38 @@ const Profile = () => {
                   <option value="other">Other</option>
                   <option value="prefer_not_to_say">Prefer not to say</option>
                 </select>
-              ) : ( <div className="sidebar-value">{profile.gender}</div> )}
+              ) : (<div className="sidebar-value">{profile.gender}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("phone")}</span>
               {isEditMode ? (
                 <input type="tel" name="contact_number" className="sidebar-input" value={profile.contact_number} onChange={handleInputChange} />
-              ) : ( <div className="sidebar-value">{profile.contact_number}</div> )}
+              ) : (<div className="sidebar-value">{profile.contact_number}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("guardian_email")}</span>
               {isEditMode ? (
                 <input type="email" name="guardian_email" className="sidebar-input" value={profile.guardian_email} onChange={handleInputChange} placeholder="example@guardian.com" />
-              ) : ( <div className="sidebar-value">{profile.guardian_email || "—"}</div> )}
+              ) : (<div className="sidebar-value">{profile.guardian_email || "—"}</div>)}
             </div>
 
             <div className="sidebar-field">
               <span className="sidebar-label">{t("professional_email")}</span>
               {isEditMode ? (
                 <input type="email" name="professional_email" className="sidebar-input" value={profile.professional_email} onChange={handleInputChange} placeholder="doctor@clinic.com" />
-              ) : ( <div className="sidebar-value">{profile.professional_email || "—"}</div> )}
+              ) : (<div className="sidebar-value">{profile.professional_email || "—"}</div>)}
             </div>
 
-            <p style={{fontSize: "10px", color: "#6B7280", fontStyle: "italic", marginTop: "4px", padding: "0 4px"}}>
+            <p style={{ fontSize: "10px", color: "#6B7280", fontStyle: "italic", marginTop: "4px", padding: "0 4px" }}>
               {t("risk_alert_desc")}
             </p>
 
             {isEditMode && (
-              <div className="sidebar-actions" style={{flexDirection:"row", marginTop:"8px"}}>
-                <button className="sidebar-btn" style={{flex:1}} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : t("save")}</button>
-                <button className="sidebar-btn ghost" style={{flex:1}} onClick={handleCancel}>{t("cancel")}</button>
+              <div className="sidebar-actions" style={{ flexDirection: "row", marginTop: "8px" }}>
+                <button className="sidebar-btn" style={{ flex: 1 }} onClick={handleSave} disabled={saving}>{saving ? "Saving..." : t("save")}</button>
+                <button className="sidebar-btn ghost" style={{ flex: 1 }} onClick={handleCancel}>{t("cancel")}</button>
               </div>
             )}
           </div>

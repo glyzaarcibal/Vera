@@ -79,6 +79,7 @@ const PsychologyReports = () => {
     peakHour: "12:00 PM",
     mostUsedFeature: "N/A",
     genderDemographics: [],
+    ageDemographics: [],
     criticalUsersData: [],
   });
 
@@ -124,6 +125,14 @@ const PsychologyReports = () => {
         let activeToday = new Set();
         let activeThisWeek = new Set();
         const genderCounts = {};
+        const ageCounts = {
+          "Children (<=12)": 0,
+          "Teens (13-19)": 0,
+          "Young Adults (20-35)": 0,
+          "Adults (36-55)": 0,
+          "Seniors (56+)": 0,
+          "Unknown": 0
+        };
         const dynamicRiskLevels = { low: 0, moderate: 0, high: 0, critical: 0 };
         let totalAssessedSessions = 0;
         let totalRiskScoreSum = 0;
@@ -144,6 +153,23 @@ const PsychologyReports = () => {
 
           const gender = user.profile?.gender || "Unknown";
           genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+
+          // Process Age
+          const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
+          if (birthDateStr) {
+            const birthDate = new Date(birthDateStr);
+            const age = now.getFullYear() - birthDate.getFullYear();
+            const m = now.getMonth() - birthDate.getMonth();
+            const actualAge = (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) ? age - 1 : age;
+
+            if (actualAge <= 12) ageCounts["Children (<=12)"]++;
+            else if (actualAge <= 19) ageCounts["Teens (13-19)"]++;
+            else if (actualAge <= 35) ageCounts["Young Adults (20-35)"]++;
+            else if (actualAge <= 55) ageCounts["Adults (36-55)"]++;
+            else ageCounts["Seniors (56+)"]++;
+          } else {
+            ageCounts["Unknown"]++;
+          }
 
           let maxUserRiskScore = 0;
           let userCriticalCount = 0;
@@ -235,6 +261,9 @@ const PsychologyReports = () => {
           : 0;
 
         const genderDemographics = Object.entries(genderCounts).map(([name, value]) => ({ name, value }));
+        const ageDemographics = Object.entries(ageCounts)
+          .map(([name, value]) => ({name, value}))
+          .filter(item => item.value > 0);
 
         setAggregateReport({
           loaded: true, totalActivities, totalSessions,
@@ -245,6 +274,7 @@ const PsychologyReports = () => {
           engagementScore: eScore, dau: activeToday.size, wau: activeThisWeek.size,
           avgSleep: avgSlp, peakHour: formatHour(peakH), mostUsedFeature: topFeature,
           genderDemographics,
+          ageDemographics,
           criticalUsersData: criticalUsersData.sort((a, b) => b.sessions - a.sessions),
         });
         setError("");
@@ -731,6 +761,51 @@ const PsychologyReports = () => {
                 <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{ fill: '#1e293b', fontSize: 12, fontWeight: 700 }} />
                 <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
                 <Bar dataKey="value" fill="#8b5cf6" radius={[0, 10, 10, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* User Demographics (Gender) */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdPeople /> User Demographics (Gender)</h3>
+          <p className="report-card-desc">Visualizes your app's base by gender for demographic relevance.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={aggregateReport.genderDemographics}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%" cy="48%"
+                  outerRadius={110}
+                  innerRadius={70}
+                  stroke="none"
+                  paddingAngle={5}
+                >
+                  {aggregateReport.genderDemographics.map((entry, index) => (
+                    <Cell key={entry.name} fill={['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#94a3b8'][index % 5]} cornerRadius={8} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontWeight: 800, fontSize: '10px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* User Demographics (Age Group) */}
+        <div className="report-card lg:col-span-6">
+          <h3 className="report-card-title"><MdTimeline /> User Demographics (Age Group)</h3>
+          <p className="report-card-desc">Breakdown of users by life stage for clinical context.</p>
+          <div className="report-chart-wrap" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={aggregateReport.ageDemographics} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} angle={-15} textAnchor="end" />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none' }} />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[8, 8, 0, 0]} barSize={32} />
               </BarChart>
             </ResponsiveContainer>
           </div>
