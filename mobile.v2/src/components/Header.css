@@ -80,7 +80,7 @@
 }
 
 .header-right {
-  flex: 0 0 200px; /* Fixed width to balance center */
+  flex: 0 0 240px; /* Increased to prevent text wrapping */
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -294,6 +294,7 @@
   box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 /* Shimmer sweep on button hover */

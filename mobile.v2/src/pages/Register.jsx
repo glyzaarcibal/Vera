@@ -68,7 +68,7 @@ const Register = () => {
     if (!formData.username) newErrors.username = "Name is required";
     else if (formData.username.length < 2) newErrors.username = "At least 2 characters";
     if (!formData.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email";
+    else if (!formData.email.toLowerCase().endsWith("@gmail.com")) newErrors.email = "Only Gmail is allowed";
     if (!formData.contactNumber) newErrors.contactNumber = "Contact number required";
     else if (!/^\+?[\d\s-]{10,}$/.test(formData.contactNumber))
       newErrors.contactNumber = "Invalid contact number";
@@ -92,8 +92,8 @@ const Register = () => {
     if (requiresConsent) {
       if (!formData.guardianEmail) {
         newErrors.guardianEmail = "Guardian email required";
-      } else if (!/\S+@\S+\.\S+/.test(formData.guardianEmail)) {
-        newErrors.guardianEmail = "Invalid email format";
+      } else if (!formData.guardianEmail.toLowerCase().endsWith("@gmail.com")) {
+        newErrors.guardianEmail = "Only Gmail is allowed";
       }
       if (!consentAgreed) newErrors.consent = "Parental consent is required";
     }
@@ -248,7 +248,7 @@ const Register = () => {
               </div>
               <div className="reg-field">
                 <label className="reg-label" htmlFor="email">
-                  <IoMail className="reg-label-icon" /> Email Address
+                  <IoMail className="reg-label-icon" /> Email Address <span style={{ fontSize: '10px', color: '#667eea', marginLeft: '4px', textTransform: 'none' }}>(Only Gmail is allowed)</span>
                 </label>
                 <div className="reg-input-wrap">
                   <input type="email" id="email" name="email" placeholder="you@example.com"
@@ -350,7 +350,7 @@ const Register = () => {
                       </div>
                     </div>
                     <div className="reg-field">
-                      <label className="reg-label" htmlFor="guardianEmail"><IoMail className="reg-label-icon" /> Guardian Email</label>
+                      <label className="reg-label" htmlFor="guardianEmail"><IoMail className="reg-label-icon" /> Guardian Email <span style={{ fontSize: '10px', color: '#667eea', marginLeft: '4px', textTransform: 'none' }}>(Only Gmail is allowed)</span></label>
                       <div className="reg-input-wrap">
                         <input type="email" id="guardianEmail" name="guardianEmail" placeholder="Guardian's email"
                           value={formData.guardianEmail} onChange={handleChange} disabled={isLoading}

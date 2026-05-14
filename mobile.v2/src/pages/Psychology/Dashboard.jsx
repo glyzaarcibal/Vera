@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { MdPeople, MdCheckCircle, MdWifi, MdVerified, MdAdd, MdSettings, MdNotifications, MdFolder } from "react-icons/md";
+import { MdPeople, MdCheckCircle, MdWifi, MdVerified, MdAdd, MdSettings, MdNotifications, MdFolder, MdBarChart } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell } from "recharts";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, AreaChart, Area, Legend } from "recharts";
 import axiosInstance from "../../utils/axios.instance.js";
 import "../Admin/Dashboard.css"; // Same CSS
 
@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [avatarRiskStats, setAvatarRiskStats] = useState(null);
   const [avatarRiskLoading, setAvatarRiskLoading] = useState(true);
+  const [trendData, setTrendData] = useState([]);
 
   // Helper function to format time ago
   const formatTimeAgo = (date) => {
@@ -95,13 +96,46 @@ const Dashboard = () => {
       }
     };
     fetchAvatarRiskStats();
+
+    // Mock trend data for visualization
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+    const mockTrends = months.map(m => ({
+      name: m,
+      sessions: Math.floor(Math.random() * 50) + 20,
+      engagement: Math.floor(Math.random() * 30) + 40
+    }));
+    setTrendData(mockTrends);
   }, []);
 
   const stats = [
-    { label: "Total Users", value: totalUsers.toLocaleString(), icon: <MdPeople />, change: "+12%" },
-    { label: "Active Sessions", value: "89", icon: <MdCheckCircle />, change: "+5%" },
-    { label: "API Calls Today", value: "15.2K", icon: <MdWifi />, change: "+23%" },
-    { label: "System Status", value: "Healthy", icon: <MdVerified />, change: "100%" },
+    { 
+      label: "Total Users", 
+      value: loading ? "..." : totalUsers.toLocaleString(), 
+      icon: <MdPeople />, 
+      change: "+12%",
+      onClick: () => navigate("/psychology/users")
+    },
+    { 
+      label: "Active Sessions", 
+      value: avatarRiskLoading ? "..." : (avatarRiskStats?.total?.toLocaleString() || "0"), 
+      icon: <MdCheckCircle />, 
+      change: "Lifetime",
+      onClick: () => navigate("/psychology/users")
+    },
+    { 
+      label: "Critical Risk (Today)", 
+      value: avatarRiskLoading ? "..." : (avatarRiskStats?.todayByLevel?.critical?.toString() || "0"), 
+      icon: <MdBarChart />, 
+      change: avatarRiskStats?.todayByLevel?.critical > 0 ? "Action Required" : "Stable",
+      onClick: () => navigate("/psychology/users")
+    },
+    { 
+      label: "System Status", 
+      value: error ? "Issues" : "Healthy", 
+      icon: <MdVerified />, 
+      change: error ? "Check Logs" : "100%",
+      onClick: null
+    },
   ];
 
   const chartData = avatarRiskStats
@@ -123,12 +157,19 @@ const Dashboard = () => {
 
       <div className="dashboard-stats">
         {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
+          <div 
+            key={index} 
+            className="stat-card" 
+            onClick={stat.onClick}
+            style={{ cursor: stat.onClick ? 'pointer' : 'default' }}
+          >
             <div className="stat-icon">{stat.icon}</div>
             <div className="stat-info">
               <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{loading && stat.label === "Total Users" ? "..." : stat.value}</div>
-              <div className="stat-change positive">{stat.change}</div>
+              <div className="stat-value">{stat.value}</div>
+              <div className={`stat-change ${stat.label === "System Status" && error ? "negative" : "positive"}`}>
+                {stat.change}
+              </div>
             </div>
           </div>
         ))}
@@ -169,6 +210,28 @@ const Dashboard = () => {
           )}
         </div>
 
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">User Engagement Trends</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorSessions" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+              <Tooltip 
+                contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+              />
+              <Area type="monotone" dataKey="sessions" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorSessions)" />
+              <Legend verticalAlign="top" height={36}/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
         <div className="activity-card">
           <h2 className="activity-title">Recent Activity - New Users</h2>
           <div className="activity-list">
@@ -198,14 +261,6 @@ const Dashboard = () => {
             <button className="quick-action-btn" onClick={() => navigate("/psychology/resources")}>
               <span className="quick-action-icon"><MdFolder /></span>
               <span>View Resources</span>
-            </button>
-            <button className="quick-action-btn">
-              <span className="quick-action-icon"><MdSettings /></span>
-              <span>Settings</span>
-            </button>
-            <button className="quick-action-btn">
-              <span className="quick-action-icon"><MdNotifications /></span>
-              <span>Notifications</span>
             </button>
           </div>
         </div>

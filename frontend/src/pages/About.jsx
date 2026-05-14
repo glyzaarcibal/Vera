@@ -29,7 +29,7 @@ const About = () => {
         <p className="about-subtitle">{t("about_subtitle")}</p>
       </div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideLeft}
         initial="hidden"
@@ -48,7 +48,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_intro_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideRight}
         initial="hidden"
@@ -64,7 +64,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_problem_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideLeft}
         initial="hidden"
@@ -81,7 +81,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_mission_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section objectives-section"
         variants={slideRight}
         initial="hidden"
@@ -117,7 +117,7 @@ const About = () => {
           </div>
         </div>
       </motion.div>
-      <motion.div 
+      <motion.div
         className="about-section team-section"
         variants={slideLeft}
         initial="hidden"

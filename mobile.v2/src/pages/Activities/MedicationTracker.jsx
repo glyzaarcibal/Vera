@@ -6,9 +6,9 @@ import axiosInstance from "../../utils/axios.instance";
 import { useSelector, useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
-import { 
-  Pill, Clock, Calendar, Star, Download, Plus, 
-  Heart, History, MessageSquare, CheckCircle, ArrowLeft, X, Edit2 
+import {
+    Pill, Clock, Calendar, Star, Download, Plus,
+    Heart, History, MessageSquare, CheckCircle, ArrowLeft, X, Edit2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ModalPortal from "../../components/ModalPortal";
@@ -139,7 +139,7 @@ const MedicationTracker = () => {
         doc.setFontSize(22);
         doc.setTextColor(124, 58, 237); // Purple theme
         doc.text(language === 'tl' ? "Ulat ng Gamot sa V.E.R.A." : "V.E.R.A. Medication Report", 14, 20);
-        
+
         doc.setFontSize(10);
         doc.setTextColor(100, 116, 139);
         doc.text(`${language === 'tl' ? 'Pasyente' : 'Patient'}: ${user?.username || user?.email}`, 14, 30);
@@ -164,11 +164,11 @@ const MedicationTracker = () => {
         autoTable(doc, {
             startY: 55,
             head: [[
-              language === 'tl' ? 'Gamot' : 'Medication', 
-              language === 'tl' ? 'Dosis' : 'Dosage', 
-              language === 'tl' ? 'Dalas' : 'Frequency', 
-              language === 'tl' ? 'Kategorya' : 'Category', 
-              language === 'tl' ? 'Nagsimula' : 'Started'
+                language === 'tl' ? 'Gamot' : 'Medication',
+                language === 'tl' ? 'Dosis' : 'Dosage',
+                language === 'tl' ? 'Dalas' : 'Frequency',
+                language === 'tl' ? 'Kategorya' : 'Category',
+                language === 'tl' ? 'Nagsimula' : 'Started'
             ]],
             body: maintenanceData.length > 0 ? maintenanceData : [[language === 'tl' ? 'Walang aktibong maintenance na gamot' : 'No active maintenance medications', '', '', '', '']],
             headStyles: { fillStyle: 'fill', fillColor: [124, 58, 237], textColor: [255, 255, 255] },
@@ -193,11 +193,11 @@ const MedicationTracker = () => {
         autoTable(doc, {
             startY: finalY + 20,
             head: [[
-              language === 'tl' ? 'Gamot' : 'Medication', 
-              language === 'tl' ? 'Dosis' : 'Dosage', 
-              language === 'tl' ? 'Dalas' : 'Frequency', 
-              language === 'tl' ? 'Dahilan ng Paghinto' : 'Reason for Stopping', 
-              language === 'tl' ? 'Bisa' : 'Efficacy'
+                language === 'tl' ? 'Gamot' : 'Medication',
+                language === 'tl' ? 'Dosis' : 'Dosage',
+                language === 'tl' ? 'Dalas' : 'Frequency',
+                language === 'tl' ? 'Dahilan ng Paghinto' : 'Reason for Stopping',
+                language === 'tl' ? 'Bisa' : 'Efficacy'
             ]],
             body: historicalData.length > 0 ? historicalData : [[language === 'tl' ? 'Walang nakitang mga nakaraang record' : 'No historical records found', '', '', '', '']],
             headStyles: { fillStyle: 'fill', fillColor: [100, 116, 139], textColor: [255, 255, 255] },
@@ -223,7 +223,7 @@ const MedicationTracker = () => {
     return (
         <div className="med-container">
             <div className="med-content">
-                
+
                 {/* ── HEADER ── */}
                 <header className="med-header">
                     <div className="review-badge">
@@ -258,11 +258,11 @@ const MedicationTracker = () => {
                     </div>
                     <div className="maintenance-grid">
                         {(showAllMaintenance ? maintenance : maintenance.slice(0, 3)).map((med) => (
-                            <motion.div 
+                            <motion.div
                                 layout
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                key={med.id} 
+                                key={med.id}
                                 className="med-card"
                             >
                                 <div className="card-header">
@@ -291,8 +291,8 @@ const MedicationTracker = () => {
                     </div>
                     {maintenance.length > 3 && (
                         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                            <button 
-                                className="btn-view-all" 
+                            <button
+                                className="btn-view-all"
                                 onClick={() => setShowAllMaintenance(!showAllMaintenance)}
                                 style={{
                                     background: 'rgba(124, 58, 237, 0.05)',
@@ -367,14 +367,14 @@ const MedicationTracker = () => {
                 <AnimatePresence>
                     {showLogModal && (
                         <ModalPortal>
-                            <motion.div 
+                            <motion.div
                                 className="med-modal-overlay"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setShowLogModal(false)}
                             >
-                                <motion.div 
+                                <motion.div
                                     className="med-modal-content"
                                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                                     animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -390,9 +390,9 @@ const MedicationTracker = () => {
                                             <div className="form-left">
                                                 <div className="input-group">
                                                     <label>{t('med_name_label')}</label>
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder={language === 'tl' ? "hal. Sertraline" : "e.g. Sertraline"} 
+                                                    <input
+                                                        type="text"
+                                                        placeholder={language === 'tl' ? "hal. Sertraline" : "e.g. Sertraline"}
                                                         value={medicationName}
                                                         onChange={(e) => setMedicationName(e.target.value)}
                                                         required
@@ -401,9 +401,9 @@ const MedicationTracker = () => {
                                                 <div className="input-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                                                     <div>
                                                         <label>{t('med_dosage_label')}</label>
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder={language === 'tl' ? "hal. 50mg" : "e.g. 50mg"} 
+                                                        <input
+                                                            type="text"
+                                                            placeholder={language === 'tl' ? "hal. 50mg" : "e.g. 50mg"}
                                                             value={dosage}
                                                             onChange={(e) => setDosage(e.target.value)}
                                                         />
@@ -421,17 +421,17 @@ const MedicationTracker = () => {
                                                 </div>
                                                 <div className="input-group">
                                                     <label>{language === 'tl' ? "Petsa ng Pagsisimula" : "Started Date"}</label>
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder={language === 'tl' ? "hal. May 13, 2026" : "e.g. May 13, 2026"} 
+                                                    <input
+                                                        type="text"
+                                                        placeholder={language === 'tl' ? "hal. May 13, 2026" : "e.g. May 13, 2026"}
                                                         value={startedDate}
                                                         onChange={(e) => setStartedDate(e.target.value)}
                                                     />
                                                 </div>
-                                                 <div className="input-group">
+                                                <div className="input-group">
                                                     <label className="checkbox-group">
-                                                        <input 
-                                                            type="checkbox" 
+                                                        <input
+                                                            type="checkbox"
                                                             checked={isMaintenance}
                                                             onChange={(e) => setIsMaintenance(e.target.checked)}
                                                         />
@@ -440,7 +440,7 @@ const MedicationTracker = () => {
                                                 </div>
 
                                                 {!isMaintenance && (
-                                                    <motion.div 
+                                                    <motion.div
                                                         initial={{ opacity: 0, height: 0 }}
                                                         animate={{ opacity: 1, height: 'auto' }}
                                                         className="historical-fields"
@@ -461,7 +461,7 @@ const MedicationTracker = () => {
                                                             <label>{t('med_efficacy')} (1-5 {language === 'tl' ? 'Bituin' : 'Stars'})</label>
                                                             <div className="efficacy-selector" style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                                                 {[1, 2, 3, 4, 5].map((star) => (
-                                                                    <Star 
+                                                                    <Star
                                                                         key={star}
                                                                         size={24}
                                                                         onClick={() => setEfficacy(star)}
@@ -478,8 +478,8 @@ const MedicationTracker = () => {
                                             <div className="form-right">
                                                 <div className="input-group">
                                                     <label>Notes for your psychiatrist</label>
-                                                    <textarea 
-                                                        rows="6" 
+                                                    <textarea
+                                                        rows="6"
                                                         placeholder="Share specific observations with Dr. Thorne..."
                                                         value={notes}
                                                         onChange={(e) => setNotes(e.target.value)}
@@ -500,8 +500,8 @@ const MedicationTracker = () => {
 
 
             </div>
-            <TokenRewardModal 
-                isOpen={showRewardModal} 
+            <TokenRewardModal
+                isOpen={showRewardModal}
                 onClose={() => setShowRewardModal(false)}
                 amount={5}
                 message={t('med_reward')}

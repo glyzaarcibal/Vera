@@ -71,15 +71,34 @@ const UserManagement = () => {
         return;
       }
 
-      const formattedUsers = usersData.map((user) => ({
-        id: user.id,
-        username: user.profile?.username || "Unknown",
-        email: user.email,
-        role: user.profile?.role || "user",
-        status: user.is_anonymous ? "Inactive" : "Active",
-        joined: new Date(user.created_at).toISOString().split("T")[0],
-        avatar_url: user.profile?.avatar_url || null,
-      }));
+      const formattedUsers = usersData.map((user) => {
+        const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
+        let ageGroup = "Unknown";
+        if (birthDateStr) {
+          const birthDate = new Date(birthDateStr);
+          const now = new Date();
+          const age = now.getFullYear() - birthDate.getFullYear();
+          const m = now.getMonth() - birthDate.getMonth();
+          const actualAge = (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) ? age - 1 : age;
+
+          if (actualAge <= 12) ageGroup = "Children";
+          else if (actualAge <= 19) ageGroup = "Teens";
+          else if (actualAge <= 35) ageGroup = "Young Adults";
+          else if (actualAge <= 55) ageGroup = "Adults";
+          else ageGroup = "Seniors";
+        }
+
+        return {
+          id: user.id,
+          username: user.profile?.username || "Unknown",
+          email: user.email,
+          role: user.profile?.role || "user",
+          status: user.is_anonymous ? "Inactive" : "Active",
+          joined: new Date(user.created_at).toISOString().split("T")[0],
+          avatar_url: user.profile?.avatar_url || null,
+          ageGroup: ageGroup
+        };
+      });
 
       setUsers(formattedUsers);
       setPagination(res.data.pagination);
@@ -224,6 +243,7 @@ const UserManagement = () => {
             <tr>
               <th>User</th>
               <th>Role</th>
+              <th>Age Group</th>
               <th>Status</th>
               <th className="desktop-only-table-cell">Joined</th>
               <th className="action-cell">Actions</th>
@@ -251,6 +271,9 @@ const UserManagement = () => {
                   <span className={`role-badge role-${user.role.toLowerCase()}`}>
                     {user.role}
                   </span>
+                </td>
+                <td>
+                  <span className="age-group-text">{user.ageGroup}</span>
                 </td>
                 <td>
                   <div className="status-cell">
