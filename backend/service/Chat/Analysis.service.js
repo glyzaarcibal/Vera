@@ -8,7 +8,7 @@ dotenv.config();
 const client = new InferenceClient(process.env.HUGGING_FACE_API_TOKEN);
 
 export async function analyzeConversation(conversation, sessionId) {
-  console.log("Analyzing Conversation...");
+  console.log(`[analyzeConversation] Starting analysis for session ${sessionId}...`);
   try {
     const conversationText = conversation
       .map((msg) => {
@@ -25,17 +25,50 @@ export async function analyzeConversation(conversation, sessionId) {
       },
       {
         role: "user",
-        content: `Please analyze the following conversation:\n\n${conversationText}`,
+        content: `Analyze this conversation and provide risk assessment:\n\n${conversationText}`,
       },
     ];
 
-    const chatCompletion = await client.chatCompletion({
-      model: "meta-llama/Llama-3.1-8B-Instruct",
-      messages,
-    });
+    const models = [
+      "meta-llama/Llama-3.1-70B-Instruct",
+      "mistralai/Mixtral-8x7B-Instruct-v0.1",
+      "meta-llama/Llama-3.1-8B-Instruct"
+    ];
 
-    const responseText = chatCompletion.choices[0].message.content;
-    const analysis = JSON.parse(responseText);
+    let analysis = null;
+    let lastError = null;
+
+    for (const model of models) {
+      try {
+        console.log(`[analyzeConversation] Attempting with model: ${model}`);
+        const chatCompletion = await client.chatCompletion({
+          model: model,
+          messages,
+          max_tokens: 800,
+        });
+
+        let responseText = chatCompletion.choices[0].message.content;
+        console.log(`[analyzeConversation] Raw Response from ${model}:`, responseText);
+
+        // More robust JSON extraction
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+          console.log(`[analyzeConversation] Successfully parsed JSON from ${model}`);
+          break;
+        }
+      } catch (err) {
+        console.warn(`[analyzeConversation] Model ${model} failed:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!analysis) {
+      throw new Error(`All analysis models failed. Last error: ${lastError?.message}`);
+    }
+
+    console.log(`[analyzeConversation] Analysis Result:`, analysis);
+
     await updateSession(
       sessionId,
       analysis.summary,
@@ -43,20 +76,21 @@ export async function analyzeConversation(conversation, sessionId) {
       analysis.risk_score
     );
 
-    // REAL-TIME ALERT SYSTEM: Check for critical risk
-    if (analysis.risk_level === "critical") {
+    const normalizedRiskLevel = analysis.risk_level?.toLowerCase();
+    
+    if (normalizedRiskLevel === "critical") {
+      console.log(`[analyzeConversation] Critical risk detected! Triggering alert for session ${sessionId}...`);
       await handleCriticalAlert(sessionId, analysis.risk_score, analysis.summary);
     }
 
-    return {
-      summary: analysis.summary,
-      risk_level: analysis.risk_level,
-      risk_score: analysis.risk_score,
-      categories: analysis.categories,
-    };
+    return analysis;
   } catch (error) {
-    console.error("Conversation analysis error:", error);
-    throw new Error(`Failed to analyze conversation: ${error.message}`);
+    console.error("[analyzeConversation] Fatal error:", error);
+    // Even on error, we try to mark it as failed in DB so we don't keep "Not Assessed" forever
+    try {
+      await supabaseAdmin.from("chat_sessions").update({ risk_level: "error" }).eq("id", sessionId);
+    } catch (_) {}
+    throw error;
   }
 }
 
@@ -80,16 +114,32 @@ async function handleCriticalAlert(sessionId, riskScore, summary) {
       .eq("id", sessionId)
       .single();
 
-    if (sessErr || !session?.user_id) return;
+    if (sessErr || !session?.user_id) {
+      console.warn(`[ALERT] Failed to get session or user_id for session ${sessionId}:`, sessErr);
+      return;
+    }
 
     // 2. Get user profile and contact info for alerts
     const { data: profile, error: profErr } = await supabaseAdmin
       .from("profiles")
-      .select("username, guardian_email, professional_email")
+      .select("username, guardian_email")
       .eq("id", session.user_id)
       .single();
 
-    if (profErr || !profile) return;
+    if (profErr || !profile) {
+      console.warn(`[ALERT] Failed to get profile for user ${session.user_id}:`, profErr);
+      return;
+    }
+
+    // Fetch all psychology staff
+    const { data: psychStaff, error: psychErr } = await supabaseAdmin
+      .from("profiles")
+      .select("email, first_name")
+      .eq("role", "psychology");
+
+    if (psychErr) {
+      console.warn("[ALERT] Failed to fetch psychology staff:", psychErr);
+    }
 
     // 3. Send email to guardian if guardian_email exists
     if (profile.guardian_email) {
@@ -100,19 +150,29 @@ async function handleCriticalAlert(sessionId, riskScore, summary) {
         riskScore,
         summary
       );
+    } else {
+      console.log(`[ALERT] No guardian_email found for user ${profile.username}`);
     }
 
-    // 4. Send email to professional if professional_email exists
-    if (profile.professional_email) {
-      console.log(`[ALERT] Sending urgent email to professional: ${profile.professional_email}`);
-      await sendCriticalRiskAlert(
-        profile.professional_email,
-        profile.username || "User",
-        riskScore,
-        summary
-      );
+    // 4. Send email to all psychology staff
+    if (psychStaff && psychStaff.length > 0) {
+      console.log(`[ALERT] Sending urgent email to ${psychStaff.length} psychology staff member(s).`);
+      for (const staff of psychStaff) {
+        if (staff.email) {
+          await sendCriticalRiskAlert(
+            staff.email,
+            profile.username || "User",
+            riskScore,
+            summary
+          );
+        }
+      }
+    } else {
+      console.log(`[ALERT] No psychology staff found to receive critical alert.`);
     }
+    
+    console.log(`[ALERT] Finished processing alerts for session ${sessionId}`);
   } catch (err) {
-    console.error("[ALERT] Failed to send critical risk alert:", err);
+    console.error(`[ALERT] Error in handleCriticalAlert for session ${sessionId}:`, err);
   }
 }

@@ -5,7 +5,7 @@ import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import ModalPortal from "../components/ModalPortal";
 import mentalImg from "../assets/mental.png";
-import qrCodeScanImg from "../assets/qrcode.jpg";
+import veraApk from "../assets/VERA.apk";
 import voiceWaveImg from "../assets/voice-wave.png";
 import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
@@ -150,8 +150,16 @@ const Welcome = () => {
       const assignments = r.data.assignments || [];
       const allRes = await axiosInstance.get("/resources");
       const all = allRes.data.resources || allRes.data.data || [];
-      setAssignedResourceDetails(assignments.map(a => all.find(x => x.id === a.resource_id)).filter(Boolean));
-    } catch (e) { console.error(e); }
+      
+      // Use String comparison to be safe with IDs (number vs string)
+      const details = assignments
+        .map(a => all.find(x => String(x.id) === String(a.resource_id)))
+        .filter(Boolean);
+        
+      setAssignedResourceDetails(details);
+    } catch (e) { 
+      console.error("Error fetching assigned resources:", e); 
+    }
   };
 
   const checkMoodEntry = async () => {
@@ -412,7 +420,7 @@ const Welcome = () => {
             <div className="v-download-grid-centered">
               <div className="v-qr-card">
                 <div className="v-qr-img">
-                  <img src={qrCodeScanImg} alt={t('scan_download')} />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/download-apk')}`} alt={t('scan_download')} />
                 </div>
                 <span className="v-qr-label">{t('scan_download')}</span>
               </div>
@@ -421,8 +429,8 @@ const Welcome = () => {
         </div>
       </section>
 
-      {/* ══ RESOURCES (Existing Logic) ══════════════════════ */}
-      {(user?.id && assignedResourceDetails.length > 0) && (
+      {/* ══ RESOURCES (Assigned) ══════════════════════ */}
+      {(user?.id && assignedResourceDetails.length > 0) ? (
         <section className="v-section v-resources-section">
           <div className="v-section-head sa sa-up">
             <div className="v-label-gold"><StarIcon /> Personalized for you</div>
@@ -434,6 +442,21 @@ const Welcome = () => {
             ))}
           </div>
         </section>
+      ) : (
+        /* Fallback: Show general resources if none assigned or guest */
+        resources.length > 0 && (
+          <section className="v-section v-resources-section">
+            <div className="v-section-head sa sa-up">
+              <div className="v-label-purple"><BookIcon /> Explorer</div>
+              <h2>Mental Health <em>Resources</em></h2>
+            </div>
+            <div className="v-scroll-container">
+              {resources.map((r, i) => (
+                <ResourceCard key={r.id} resource={r} className="sa sa-scale" />
+              ))}
+            </div>
+          </section>
+        )
       )}
 
       <section className="v-cta-section sa sa-scale">

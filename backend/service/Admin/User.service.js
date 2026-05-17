@@ -125,6 +125,7 @@ export async function createUser(userData) {
 
   if (profileError) {
     console.error("Error updating profile role:", profileError);
+    throw profileError;
   }
 
   return data;
@@ -151,6 +152,7 @@ export async function updateUser(userId, userData) {
 
   if (profileError) {
     console.error("Error updating profile:", profileError);
+    throw profileError;
   }
 
   return data;

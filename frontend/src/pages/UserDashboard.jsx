@@ -32,6 +32,7 @@ const UserDashboard = () => {
   const [syncDepth, setSyncDepth] = useState(88);
   const [veraQuote, setVeraQuote] = useState("");
   const [resources, setResources] = useState([]);
+  const [assignedResources, setAssignedResources] = useState([]);
   const [showMoodModal, setShowMoodModal] = useState(false);
 
   const fetchDashboardData = async () => {
@@ -54,7 +55,24 @@ const UserDashboard = () => {
       else setVeraQuote(t("vera_quote_low"));
 
       const resResources = await axiosInstance.get("/resources");
-      setResources(resResources.data.resources || resResources.data || []);
+      const allResources = resResources.data.resources || resResources.data || [];
+      
+      let assignedDetails = [];
+      try {
+        if (user?.id) {
+          const assignedRes = await axiosInstance.get(`/resources/get-assignments/${user.id}`);
+          const assignments = assignedRes.data.assignments || [];
+          assignedDetails = assignments
+            .map(a => allResources.find(x => String(x.id) === String(a.resource_id)))
+            .filter(Boolean);
+          setAssignedResources(assignedDetails);
+        }
+      } catch (err) {
+        console.error("Error fetching assigned resources:", err);
+      }
+
+      // Exclude assigned resources from generic recommended list
+      setResources(allResources.filter(r => !assignedDetails.some(a => a.id === r.id)));
     } catch (e) {
       console.error("Error fetching dashboard data:", e);
     }
@@ -88,7 +106,7 @@ const UserDashboard = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="dash-v2-welcome"
               >
-                <span className="dash-v2-date">{new Date().toLocaleDateString(language === 'tl' ? 'tl-PH' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                <span className="dash-v2-date">{new Date().toLocaleDateString(language === 'tl' ? 'tl-PH' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 <h1>{greeting}, <span className="v-gradient-text">{user?.firstName || user?.username || "Companion"}</span>.</h1>
                 <p>{t("welcome_back")}</p>
 
@@ -189,6 +207,38 @@ const UserDashboard = () => {
               <ArrowRight size={16} className="tool-arrow" />
             </div>
           </section>
+
+          {assignedResources.length > 0 && (
+            <section className="dash-recommended" style={{ marginBottom: '20px' }}>
+              <div className="recommended-header">
+                <h2>Assigned Resources</h2>
+              </div>
+              <div className="recommended-grid">
+                {assignedResources.map((resource, i) => {
+                  const colors = ['#0b8a4f', '#db2777', '#7c3aed', '#f59e0b', '#3b82f6'];
+                  const color = colors[i % colors.length];
+                  return (
+                    <div className="rec-card" key={resource.id} onClick={() => window.open(resource.links?.[0] || "#", "_blank")}>
+                      <div className="rec-img-wrap">
+                        <img src={resource.image_url || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=600&auto=format&fit=crop"} alt={resource.title} />
+                        <div className="rec-overlay"></div>
+                        <span className="rec-overlay-title" style={{ background: '#db2777', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          ★ Assigned to you
+                        </span>
+                      </div>
+                      <div className="rec-content">
+                        <span className="rec-category" style={{ color }}>{resource.category || "RESOURCE"}</span>
+                        <h3 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{resource.title}</h3>
+                        <p style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {resource.description || "View this resource for more details."}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <section className="dash-recommended">
             <div className="recommended-header">

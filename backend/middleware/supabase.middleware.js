@@ -83,7 +83,7 @@ export async function setSupabaseSession(req, res, next) {
   const refresh_token = req.cookies.refresh_token;
 
   if (!access_token || !refresh_token) {
-    return res.status(400).json({
+    return res.status(401).json({
       message: "Missing access or refresh token",
       error: "Missing access or refresh token",
     });

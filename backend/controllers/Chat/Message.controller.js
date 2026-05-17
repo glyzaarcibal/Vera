@@ -63,8 +63,11 @@ export const processMessage = async (req, res) => {
 
     messages.push(userMessage);
     messages.push(botMessage);
-    if (messages.length > 5 && permissions.permit_analyze)
-      analyzeConversation(messages, sessionId);
+    if (messages.length >= 5 && (permissions?.permit_analyze !== false)) {
+      analyzeConversation(messages, sessionId).catch(err => 
+        console.error("[processMessage] Background analysis failed:", err)
+      );
+    }
 
     return res.status(200).json({ 
       response,

@@ -21,7 +21,7 @@ export const translations = {
     saving: "Saving...",
     language: "Language",
     english: "English",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
     privacy_policy: "Privacy Policy",
     terms_service: "Terms of Service",
     tawag_paglaum: "Tawag Paglaum",
@@ -298,7 +298,7 @@ export const translations = {
     // Misc
     language: "Language",
     english: "English",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
 
     // Dashboard Quotes
     vera_quote_high: "Your resonance is remarkably clear today. Let's keep this positive momentum going!",
@@ -384,6 +384,8 @@ export const translations = {
     promo_title: "Take Your Sanctuary Anywhere.",
     promo_desc: "Healing doesn't just happen at home. Experience real-time Voice Recognition, Daily Emotional Check-ins, and personalized guidance wherever life takes you.",
     scan_download: "Scan to Download",
+    login_required_title: "Authentication Required",
+    login_required_desc: "Please sign in or create an account to access these wellness activities and track your progress.",
   },
   tl: {
     // Nav
@@ -407,7 +409,7 @@ export const translations = {
     saving: "Sine-save...",
     language: "Wika",
     english: "Ingles",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
     privacy_policy: "Patakaran sa Privacy",
     terms_service: "Mga Tuntunin ng Serbisyo",
     tawag_paglaum: "Tawag Paglaum",
@@ -679,7 +681,7 @@ export const translations = {
     // Misc
     language: "Wika",
     english: "Ingles",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
 
     // Dashboard Quotes
     vera_quote_high: "Ang iyong resonance ay napakalinaw ngayon. Ituloy lang natin ang positive momentum na ito!",
@@ -765,5 +767,7 @@ export const translations = {
     promo_title: "Dalhin ang Iyong Santuwaryo Kahit Saan.",
     promo_desc: "Ang paghilom ay hindi lamang nangyayari sa bahay. Makaranas ng real-time Voice Recognition, Daily Emotional Check-ins, at gabay saan ka man magpunta.",
     scan_download: "I-scan para i-download",
+    login_required_title: "Kailangan ng Login",
+    login_required_desc: "Mangyaring mag-login muna o gumawa ng account para ma-access ang mga aktibidad na ito at masubaybayan ang iyong progreso.",
   }
 };

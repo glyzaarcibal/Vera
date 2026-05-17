@@ -30,7 +30,6 @@ const Profile = () => {
     permit_store: false,
     permit_analyze: false,
     guardian_email: "",
-    professional_email: "",
   });
   const [originalProfile, setOriginalProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,7 +72,6 @@ const Profile = () => {
         permit_store: p.permit_store || false,
         permit_analyze: p.permit_analyze || false,
         guardian_email: p.guardian_email || "",
-        professional_email: p.professional_email || "",
       };
       setProfile(formatted);
       setOriginalProfile(formatted);
@@ -144,7 +142,6 @@ const Profile = () => {
         gender: profile.gender,
         contact_number: profile.contact_number,
         guardian_email: profile.guardian_email,
-        professional_email: profile.professional_email,
       });
       setOriginalProfile(profile);
       setIsEditMode(false);
@@ -212,6 +209,20 @@ const Profile = () => {
     }
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
+
+  const getAge = (birthdayStr) => {
+    if (!birthdayStr) return 0;
+    const birthDate = new Date(birthdayStr);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const isTeenager = getAge(profile.birthday) < 19;
 
   const getRiskRiskText = (riskLevel, score) => {
     if (!riskLevel) return null;
@@ -510,19 +521,12 @@ const Profile = () => {
               ) : (<div className="sidebar-value">{profile.contact_number}</div>)}
             </div>
 
-            <div className="sidebar-field">
-              <span className="sidebar-label">{t("guardian_email")}</span>
-              {isEditMode ? (
-                <input type="email" name="guardian_email" className="sidebar-input" value={profile.guardian_email} onChange={handleInputChange} placeholder="example@guardian.com" />
-              ) : (<div className="sidebar-value">{profile.guardian_email || "—"}</div>)}
-            </div>
-
-            <div className="sidebar-field">
-              <span className="sidebar-label">{t("professional_email")}</span>
-              {isEditMode ? (
-                <input type="email" name="professional_email" className="sidebar-input" value={profile.professional_email} onChange={handleInputChange} placeholder="doctor@clinic.com" />
-              ) : (<div className="sidebar-value">{profile.professional_email || "—"}</div>)}
-            </div>
+            {isTeenager && (
+              <div className="sidebar-field">
+                <span className="sidebar-label">{t("guardian_email")}</span>
+                <div className="sidebar-value">{profile.guardian_email || "—"}</div>
+              </div>
+            )}
 
             <p style={{ fontSize: "10px", color: "#6B7280", fontStyle: "italic", marginTop: "4px", padding: "0 4px" }}>
               {t("risk_alert_desc")}

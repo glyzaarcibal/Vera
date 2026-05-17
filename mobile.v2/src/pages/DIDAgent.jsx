@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, PhoneOff, ShieldCheck, Heart, Sparkles, User, Shirt, Check, MoveLeft } from 'lucide-react';
+import { PawPrint, Sparkles, Heart, ShieldCheck, MoveLeft, Mic, MicOff, PhoneOff, Video, User, Shirt, Check } from "lucide-react";
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import './AvatarAI.css';
+import ReusableModal from "../components/ReusableModal";
 
 // Assets
 import womanAmericaVideo from '../assets/Unleash+yo.mp4';
@@ -57,9 +58,11 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showMicModal, setShowMicModal] = useState(false);
   const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [detectedEmotion, setDetectedEmotion] = useState(null);
   
   const dispatch = useDispatch();
   const audioRef = useRef(null);
@@ -150,6 +153,20 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
 
   const startRecording = async () => {
     try {
+      const status = await navigator.permissions.query({ name: 'microphone' });
+      if (status.state === 'prompt') {
+        setShowMicModal(true);
+        return;
+      }
+      proceedWithMic();
+    } catch (e) {
+      setShowMicModal(true);
+    }
+  };
+
+  const proceedWithMic = async () => {
+    setShowMicModal(false);
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
@@ -173,9 +190,39 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     setIsListening(false);
   };
 
+  const convertBlobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const transcribeAudio = async (blob) => {
     setIsProcessing(true);
     try {
+      const audioBase64 = await convertBlobToBase64(blob);
+      
+      // Real-time emotion detection for UI
+      axiosInstance.post("/emotion-from-voice", { audioBase64 })
+        .then(res => {
+          if (res.data?.mappedScores) {
+            console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
+          }
+          if (res.data?.emotion) {
+            setDetectedEmotion({
+              emotion: res.data.emotion,
+              score: res.data.score ?? 0,
+              source: "Hume AI"
+            });
+          }
+        })
+        .catch(err => console.error("Emotion detection UI error:", err));
+
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
       formData.append('model_id', 'scribe_v2');
@@ -187,7 +234,23 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       const data = await res.json();
       if (data.text) {
         onTranscript?.(data.text, { author: 'User', source: 'did' });
-        await getAIResponse(data.text);
+        
+        const newUserMessage = { role: 'user', content: data.text, text: data.text, type: 'user' };
+        const updatedMessages = [...messages, newUserMessage];
+        setMessages(updatedMessages);
+
+        // Save user message and trigger backend emotion detection
+        try {
+          await axiosInstance.post(`/messages/process-message/${sessionId}`, {
+            message: { text: data.text },
+            audioBase64,
+            messages: updatedMessages
+          });
+        } catch (saveErr) {
+          console.error("Failed to save message to session:", saveErr);
+        }
+
+        await getAIResponse(data.text, updatedMessages);
       }
     } catch (e) {
       setError('Transcription failed');
@@ -196,22 +259,28 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     }
   };
 
-  const getAIResponse = async (text) => {
+  const getAIResponse = async (text, currentMessages) => {
     setIsProcessing(true);
     try {
+      const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'system', content: 'You are a compassionate therapeutic companion.' }, { role: 'user', content: text }],
+          messages: [
+            { role: 'system', content: `You are ${agent.name}, a compassionate therapeutic companion. ${agent.description}` },
+            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: text }
+          ],
           max_tokens: 150
         })
       });
       const data = await res.json();
       const aiMsg = data.choices[0]?.message?.content;
       if (aiMsg) {
-        onTranscript?.(aiMsg, { author: AVATAR_OPTIONS.find(a => a.id === selectedAgent)?.name || 'AI', source: 'did' });
+        onTranscript?.(aiMsg, { author: agent?.name || 'AI', source: 'did' });
+        setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
         await speakText(aiMsg);
       }
     } catch (e) {
@@ -230,13 +299,42 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
         headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
       });
+
+      if (!res.ok) {
+        if (res.status === 402) throw new Error("ElevenLabs quota exceeded");
+        throw new Error("Failed to generate speech");
+      }
+
       const blob = await res.blob();
       audioRef.current.src = URL.createObjectURL(blob);
       setIsSpeaking(true);
       audioRef.current.play();
       videoRef.current?.play();
     } catch (e) {
-      setError('Speech error');
+      console.error('Speech error:', e);
+      
+      // Fallback to browser TTS if ElevenLabs fails (e.g. 402 Quota Exceeded)
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
+        if (agent?.id.includes('girl')) {
+          utterance.pitch = 1.2;
+        } else {
+          utterance.pitch = 0.9;
+        }
+        
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+          videoRef.current?.play();
+        };
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          videoRef.current?.pause();
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setError(e.message === "ElevenLabs quota exceeded" ? "Out of speech characters." : "Speech failed.");
+      }
     }
   };
 
@@ -370,7 +468,15 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
                   </div>
                 </div>
               </div>
-              <button className="didagent-change-btn" onClick={() => { setIsSessionActive(false); setSessionId(null); setSessionStarted(false); }}>
+
+              {detectedEmotion && (
+                <div className="didagent-emotion-indicator">
+                  <Sparkles size={14} />
+                  <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                </div>
+              )}
+
+              <button className="didagent-change-btn" onClick={() => { setIsSessionActive(false); setSessionId(null); setSessionStarted(false); setDetectedEmotion(null); }}>
                 Change Agent
               </button>
             </div>
@@ -393,6 +499,29 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
 
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>
+      )}
+
+      {showMicModal && (
+        <ReusableModal
+          isOpen={showMicModal}
+          onClose={() => setShowMicModal(false)}
+          title="Microphone Access Required"
+          type="confirm"
+          position="fixed"
+        >
+          <div className="flex flex-col gap-6">
+            <p className="text-slate-600 text-center leading-relaxed">
+              Vera needs access to your microphone so you can converse with your AI companion. 
+              Please click "Allow" when your browser prompts you.
+            </p>
+            <button 
+              onClick={proceedWithMic} 
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95"
+            >
+              Continue & Allow
+            </button>
+          </div>
+        </ReusableModal>
       )}
     </div>
   );

@@ -171,7 +171,6 @@ const PsychologyUserManagement = () => {
             >
               <option value="all">All Roles</option>
               <option value="psychology">Psychology</option>
-              <option value="moderator">Moderator</option>
               <option value="user">User</option>
             </select>
             <select
@@ -229,9 +228,9 @@ const PsychologyUserManagement = () => {
                 </td>
                 <td style={{ padding: '18px 24px' }}>
                   <span style={{
-                    background: user.role === 'admin' ? '#ede9fe' : (user.role === 'psychology' ? '#fce7f3' : (user.role === 'moderator' ? '#dbeafe' : '#f3f4f6')),
-                    color: user.role === 'admin' ? '#7c3aed' : (user.role === 'psychology' ? '#db2777' : (user.role === 'moderator' ? '#2563eb' : '#6b7280')),
-                    border: '1px solid ' + (user.role === 'admin' ? '#ddd6fe' : (user.role === 'psychology' ? '#fbcfe8' : (user.role === 'moderator' ? '#bfdbfe' : '#e5e7eb'))),
+                    background: user.role === 'admin' ? '#ede9fe' : (user.role === 'psychology' ? '#fce7f3' : '#f3f4f6'),
+                    color: user.role === 'admin' ? '#7c3aed' : (user.role === 'psychology' ? '#db2777' : '#6b7280'),
+                    border: '1px solid ' + (user.role === 'admin' ? '#ddd6fe' : (user.role === 'psychology' ? '#fbcfe8' : '#e5e7eb')),
                     borderRadius: 8,
                     fontSize: 12,
                     fontWeight: 700,
@@ -365,7 +364,6 @@ const PsychologyUserManagement = () => {
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700 cursor-pointer appearance-none"
                 >
                   <option value="user">Standard User</option>
-                  <option value="moderator">System Moderator</option>
                   <option value="psychology">Licensed Psychologist</option>
                 </select>
               </div>

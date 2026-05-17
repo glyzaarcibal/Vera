@@ -4,9 +4,26 @@ import "./ChatAI.css";
 import axiosInstance from "../utils/axios.instance";
 import PullToRefresh from "../components/PullToRefresh.jsx";
 import { useLanguage } from "../context/LanguageContext";
+import { useSelector } from "react-redux";
+import ReusableModal from "../components/ReusableModal.jsx";
 
 const ChatAI = () => {
   const { t } = useLanguage();
+  const user = useSelector((state) => state.auth.user);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      setShowLoginModal(true);
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowLoginModal(false);
+    navigate("/");
+  };
+
   const [sessionId, setSessionId] = useState(() => localStorage.getItem("chatSessionId") || null);
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem("chatMessages");
@@ -28,7 +45,6 @@ const ChatAI = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,6 +53,20 @@ const ChatAI = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  if (!user) {
+    return (
+      <div className="chat-ai-container">
+        <ReusableModal
+          isOpen={showLoginModal}
+          onClose={handleCloseModal}
+          title={t("login_required_title")}
+          message={t("login_required_desc")}
+          type="error"
+        />
+      </div>
+    );
+  }
 
   useEffect(() => {
     localStorage.setItem("chatMessages", JSON.stringify(messages));

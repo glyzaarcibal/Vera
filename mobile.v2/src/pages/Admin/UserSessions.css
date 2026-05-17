@@ -251,6 +251,8 @@
   background: #f8fafc;
   border-radius: 12px;
   padding: 16px;
+  min-height: 380px;
+  position: relative;
 }
 
 .user-emotion-words-grid {

@@ -28,6 +28,8 @@ const UserManagement = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -104,7 +106,7 @@ const UserManagement = () => {
       setPagination(res.data.pagination);
     } catch (e) {
       console.error("Error fetching users:", e);
-      alert(e.response?.data?.message || "Internal Server Error");
+      setErrorMessage(e.response?.data?.message || "Internal Server Error");
     }
   };
 
@@ -114,13 +116,13 @@ const UserManagement = () => {
 
     try {
       await axiosInstance.post("/admin/users/create-user", formData);
-      alert("User created successfully!");
+      setSuccessMessage("User created successfully!");
       setShowAddModal(false);
       setFormData({ email: "", password: "", username: "", role: "user" });
       fetchAllUsers();
     } catch (error) {
       console.error("Error creating user:", error);
-      alert(error.response?.data?.message || "Failed to create user");
+      setErrorMessage(error.response?.data?.message || "Failed to create user");
     } finally {
       setIsLoading(false);
     }
@@ -135,14 +137,14 @@ const UserManagement = () => {
         `/admin/users/update-user/${selectedUser.id}`,
         formData
       );
-      alert("User updated successfully!");
+      setSuccessMessage("User updated successfully!");
       setShowEditModal(false);
       setSelectedUser(null);
       setFormData({ email: "", password: "", username: "", role: "user" });
       fetchAllUsers();
     } catch (error) {
       console.error("Error updating user:", error);
-      alert(error.response?.data?.message || "Failed to update user");
+      setErrorMessage(error.response?.data?.message || "Failed to update user");
     } finally {
       setIsLoading(false);
     }
@@ -155,13 +157,13 @@ const UserManagement = () => {
       await axiosInstance.delete(
         `/admin/users/delete-user/${selectedUser.id}`
       );
-      alert("User deleted successfully!");
+      setSuccessMessage("User deleted successfully!");
       setShowDeleteModal(false);
       setSelectedUser(null);
       fetchAllUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert(error.response?.data?.message || "Failed to delete user");
+      setErrorMessage(error.response?.data?.message || "Failed to delete user");
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +175,7 @@ const UserManagement = () => {
       email: user.email,
       password: "",
       username: user.username,
-      role: user.role,
+      role: (user.role || "user").toLowerCase(),
     });
     setShowEditModal(true);
   };
@@ -214,7 +216,6 @@ const UserManagement = () => {
               <option value="all">All Roles</option>
               <option value="admin">Admin</option>
               <option value="psychology">Psychology</option>
-              <option value="moderator">Moderator</option>
               <option value="user">User</option>
             </select>
             <select
@@ -410,7 +411,6 @@ const UserManagement = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="user">User</option>
-                    <option value="moderator">Moderator</option>
                     <option value="psychology">Psychology</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -524,7 +524,6 @@ const UserManagement = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="user">User</option>
-                    <option value="moderator">Moderator</option>
                     <option value="psychology">Psychology</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -603,6 +602,52 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
+      )}
+
+      {/* Success Modal */}
+      {successMessage && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center mx-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">Success</h3>
+              <p className="text-sm text-gray-500 mb-4">{successMessage}</p>
+              <button
+                onClick={() => setSuccessMessage("")}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:text-sm"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Error Modal */}
+      {errorMessage && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+            <div className="bg-white rounded-lg p-6 w-full max-w-sm text-center mx-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">Error</h3>
+              <p className="text-sm text-gray-500 mb-4">{errorMessage}</p>
+              <button
+                onClick={() => setErrorMessage("")}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </ModalPortal>
       )}
     </div>

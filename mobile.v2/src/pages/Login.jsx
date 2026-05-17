@@ -47,6 +47,7 @@ const Login = () => {
     try {
       const res = await axiosInstance.post("/auth/login", formData);
       dispatch(setUser(res.data.profile));
+      localStorage.setItem("vera_session_active", "true");
       navigate("/dashboard");
     } catch (e) {
       const message = e.response?.data?.message || "Internal Server Error";
