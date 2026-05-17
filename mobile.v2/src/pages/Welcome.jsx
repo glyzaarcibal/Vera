@@ -7,7 +7,6 @@ import ModalPortal from "../components/ModalPortal";
 import mentalImg from "../assets/mental.png";
 import qrCodeScanImg from "../assets/qrcode.jpg";
 import voiceWaveImg from "../assets/voice-wave.png";
-import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
 import PullToRefresh from "../components/PullToRefresh.jsx";
@@ -151,8 +150,16 @@ const Welcome = () => {
       const assignments = r.data.assignments || [];
       const allRes = await axiosInstance.get("/resources");
       const all = allRes.data.resources || allRes.data.data || [];
-      setAssignedResourceDetails(assignments.map(a => all.find(x => x.id === a.resource_id)).filter(Boolean));
-    } catch (e) { console.error(e); }
+
+      // Use String comparison for ID safety
+      const details = assignments
+        .map(a => all.find(x => String(x.id) === String(a.resource_id)))
+        .filter(Boolean);
+
+      setAssignedResourceDetails(details);
+    } catch (e) { 
+      console.error("Error fetching assigned resources:", e); 
+    }
   };
 
   const checkMoodEntry = async () => {
@@ -377,8 +384,8 @@ const Welcome = () => {
 
 
 
-        {/* ══ RESOURCES (Existing Logic) ══════════════════════ */}
-        {(user?.id && assignedResourceDetails.length > 0) && (
+        {/* ══ RESOURCES (Assigned) ══════════════════════ */}
+        {(user?.id && assignedResourceDetails.length > 0) ? (
           <section className="v-section v-resources-section">
             <div className="v-section-head sa sa-up">
               <div className="v-label-gold"><StarIcon /> Personalized for you</div>
@@ -390,6 +397,21 @@ const Welcome = () => {
               ))}
             </div>
           </section>
+        ) : (
+          /* Fallback for guest or no assignments */
+          resources.length > 0 && (
+            <section className="v-section v-resources-section">
+              <div className="v-section-head sa sa-up">
+                <div className="v-label-purple"><BookIcon /> Explorer</div>
+                <h2>Mental Health <em>Resources</em></h2>
+              </div>
+              <div className="v-scroll-container">
+                {resources.map((r, i) => (
+                  <ResourceCard key={r.id} resource={r} className="sa sa-scale" />
+                ))}
+              </div>
+            </section>
+          )
         )}
 
         <section className="v-cta-section sa sa-scale">
@@ -465,7 +487,7 @@ const Welcome = () => {
             <div className="v-footer-contact">
               <h4>{t('contact_us')}</h4>
               <p>TUP-Taguig</p>
-              <p>Km. 14 East Service Road, Western Bicutan, Taguig City, Metro Manila, Philippines,</p>
+              <p>Km. 14 East Service Road, Western Bicutan, Taguig City, Metro Manila, Philippines</p>
               <p>voiceemotionrecog@gmail.com</p>
             </div>
           </div>

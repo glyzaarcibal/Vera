@@ -13,6 +13,11 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
+  "http://192.168.1.8:5173",
+  "http://192.168.1.2:5173",
+  "http://192.168.1.5:5173",
+  "http://192.168.1.10:5173",
+  "http://192.168.1.100:5173",
 ].filter(Boolean);
 
 const corsConfig = {
@@ -40,8 +45,9 @@ const corsConfig = {
       return callback(null, true);
     }
 
-    // 4. Allow localhost in development
-    if (normalizedOrigin.includes("localhost") || normalizedOrigin.includes("127.0.0.1")) {
+    // 4. Allow localhost and local network IPs in development
+    const isLocalIp = /^(http:\/\/|https:\/\/)(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(normalizedOrigin);
+    if (isLocalIp) {
       return callback(null, true);
     }
 

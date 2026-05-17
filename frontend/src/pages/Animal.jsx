@@ -18,6 +18,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [detectedEmotion, setDetectedEmotion] = useState(null);
   
   const dispatch = useDispatch();
   const audioRef = useRef(null);
@@ -93,9 +94,36 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     setIsListening(false);
   };
 
+  const convertBlobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const transcribeAudio = async (blob) => {
     setIsProcessing(true);
     try {
+      const audioBase64 = await convertBlobToBase64(blob);
+
+      // Real-time emotion detection for UI
+      axiosInstance.post("/emotion-from-voice", { audioBase64 })
+        .then(res => {
+          if (res.data?.emotion) {
+            setDetectedEmotion({
+              emotion: res.data.emotion,
+              score: res.data.score ?? 0,
+              source: "Hume AI"
+            });
+          }
+        })
+        .catch(err => console.error("Emotion detection UI error:", err));
+
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
       formData.append('model_id', 'scribe_v2');
@@ -107,7 +135,23 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       const data = await res.json();
       if (data.text) {
         onTranscript?.(data.text, { author: 'User', source: 'animal' });
-        await getAIResponse(data.text);
+        
+        const newUserMessage = { role: 'user', content: data.text, text: data.text, type: 'user' };
+        const updatedMessages = [...messages, newUserMessage];
+        setMessages(updatedMessages);
+
+        // Save user message and trigger backend emotion persistence
+        try {
+          await axiosInstance.post(`/messages/process-message/${sessionId}`, {
+            message: { text: data.text },
+            audioBase64,
+            messages: updatedMessages
+          });
+        } catch (saveErr) {
+          console.error("Failed to save message to session:", saveErr);
+        }
+
+        await getAIResponse(data.text, updatedMessages);
       }
     } catch (e) {
       setError('Transcription failed');
@@ -116,7 +160,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     }
   };
 
-  const getAIResponse = async (text) => {
+  const getAIResponse = async (text, currentMessages) => {
     setIsProcessing(true);
     try {
       const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
@@ -125,7 +169,11 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'system', content: guide.personality }, { role: 'user', content: text }],
+          messages: [
+            { role: 'system', content: guide.personality },
+            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: text }
+          ],
           max_tokens: 150
         })
       });
@@ -133,6 +181,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       const aiMsg = data.choices[0]?.message?.content;
       if (aiMsg) {
         onTranscript?.(aiMsg, { author: guide.name, source: 'animal' });
+        setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
         await speakText(aiMsg);
       }
     } catch (e) {
@@ -151,13 +200,40 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
         headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
       });
+
+      if (!res.ok) {
+        let errorMsg = "Failed to generate speech";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.detail?.message || errData.message || errorMsg;
+        } catch (jsonErr) {}
+        if (res.status === 402) throw new Error("ElevenLabs quota exceeded: " + errorMsg);
+        throw new Error(errorMsg);
+      }
+
       const blob = await res.blob();
       audioRef.current.src = URL.createObjectURL(blob);
       setIsSpeaking(true);
       audioRef.current.play();
       videoRef.current?.play();
     } catch (e) {
-      setError('Speech error');
+      console.error('Speech error:', e);
+      
+      // Fallback to browser TTS
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+          videoRef.current?.play();
+        };
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          videoRef.current?.pause();
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setError(e.message.includes("ElevenLabs quota exceeded") || e.message.includes("paid_plan_required") ? "Out of speech characters." : "Speech failed: " + e.message);
+      }
     }
   };
 
@@ -243,14 +319,21 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
               <div className="didagent-hud-info">
                 <img src={ANIMAL_GUIDES.find(g => g.id === animalType)?.image} alt="Animal" className="didagent-hud-avatar" />
                 <div>
-                  <div className="didagent-hud-name">{ANIMAL_GUIDES.find(g => g.id === animalType)?.name} AI</div>
                   <div className="didagent-hud-status">
                     <span className={`didagent-status-dot ${isSpeaking ? 'speaking' : isProcessing ? 'thinking' : 'online'}`} />
                     {isSpeaking ? 'Speaking' : isProcessing ? 'Thinking' : 'Online'}
                   </div>
                 </div>
               </div>
-              <button className="didagent-change-btn" onClick={() => { setAnimalType(null); setSessionId(null); setSessionStarted(false); }}>
+
+              {detectedEmotion && (
+                <div className="didagent-emotion-indicator">
+                  <Sparkles size={14} />
+                  <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                </div>
+              )}
+
+              <button className="didagent-change-btn" onClick={() => { setAnimalType(null); setSessionId(null); setSessionStarted(false); setDetectedEmotion(null); }}>
                 Change Companion
               </button>
             </div>

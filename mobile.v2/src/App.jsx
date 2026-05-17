@@ -42,6 +42,7 @@ import MedicationTracker from "./pages/Activities/MedicationTracker.jsx";
 import Feedback from "./pages/Feedback.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
 import Loader from "./components/Loader.jsx";
+import ScrollToTop from "./components/ScrollToTop.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -50,14 +51,24 @@ const App = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      // Prevent 401/400 error in console if we know there is no session
+      const hasActiveSession = localStorage.getItem("vera_session_active") === "true";
+      if (!hasActiveSession) {
+        setAppLoading(false);
+        return;
+      }
+
       try {
         const res = await axiosInstance.get("/auth/fetch-profile");
         if (res.data.profile) {
           dispatch(setUser(res.data.profile));
         }
       } catch (e) {
-        console.error("Error refreshing profile:", e);
+        if (e.response?.status !== 401 && e.response?.status !== 400) {
+          console.error("Error refreshing profile:", e);
+        }
         dispatch(clearUser());
+        localStorage.removeItem("vera_session_active");
       } finally {
         setTimeout(() => setAppLoading(false), 1500);
       }
@@ -69,7 +80,9 @@ const App = () => {
   if (appLoading) return <Loader text="Synchronizing your sanctuary..." />;
 
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route element={<MainLayout />}>
         <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Welcome />} />
         <Route path="/dashboard" element={user ? <UserDashboard /> : <Navigate to="/" />} />
@@ -79,16 +92,16 @@ const App = () => {
         <Route path="/voice" element={<VoiceAI />} />
         <Route path="/avatar" element={<AvatarAI />} />
         <Route path="/activities" element={<Activities />} />
-        <Route path="/activities/clipcard" element={<ClipcardGame />} />
-        <Route path="/activities/diary" element={<Diary />} />
-        <Route path="/activities/mood-tracker" element={<MoodTrackerScreen />} />
-        <Route path="/activities/sleep-tracker" element={<SleepTracker />} />
+        <Route path="/activities/clipcard" element={user ? <ClipcardGame /> : <Navigate to="/activities" />} />
+        <Route path="/activities/diary" element={user ? <Diary /> : <Navigate to="/activities" />} />
+        <Route path="/activities/mood-tracker" element={user ? <MoodTrackerScreen /> : <Navigate to="/activities" />} />
+        <Route path="/activities/sleep-tracker" element={user ? <SleepTracker /> : <Navigate to="/activities" />} />
         <Route
           path="/activities/weekly-wellness-report"
-          element={<WeeklyWellnessReport />}
+          element={user ? <WeeklyWellnessReport /> : <Navigate to="/activities" />}
         />
-        <Route path="/activities/take-a-breath" element={<TakeABreath />} />
-        <Route path="/activities/medication-history" element={<MedicationTracker />} />
+        <Route path="/activities/take-a-breath" element={user ? <TakeABreath /> : <Navigate to="/activities" />} />
+        <Route path="/activities/medication-history" element={user ? <MedicationTracker /> : <Navigate to="/activities" />} />
         <Route path="/feedback" element={<Feedback />} />
       </Route>
       <Route path="/admin" element={<AdminLayout />}>
@@ -118,6 +131,7 @@ const App = () => {
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
     </Routes>
+    </>
   );
 };
 

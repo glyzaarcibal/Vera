@@ -132,11 +132,18 @@
 
 @media (max-width: 768px) {
   .admin-content {
-    padding: 20px 16px;
+    padding: 0 !important;
   }
 
   .admin-mobile-header {
     display: flex;
-    margin: -20px -16px 20px;
+    margin: 0 0 20px 0 !important;
+    width: 100% !important;
+  }
+
+  .admin-content > div:not(.admin-mobile-header) {
+    padding: 20px 16px;
+    box-sizing: border-box;
+    width: 100%;
   }
 }

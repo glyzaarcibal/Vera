@@ -12,6 +12,7 @@ import {
 import axiosInstance from "../../utils/axios.instance";
 import RiskBadge from "../../components/RiskBadge";
 import Skeleton from "../../components/Skeleton";
+import ReusableModal from "../../components/ReusableModal";
 import {
   BarChart,
   Bar,
@@ -46,6 +47,12 @@ const UserChat = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [medicationHistory, setMedicationHistory] = useState([]);
   const [medHistoryLoading, setMedHistoryLoading] = useState(false);
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success"
+  });
 
   const emotionColors = {
     sad: "#3B82F6",
@@ -78,9 +85,26 @@ const UserChat = () => {
       { name: "doubt", value: emotions.doubt },
       { name: "confusion", value: emotions.confusion },
     ];
-    return emotionList.reduce((max, emotion) =>
-      emotion.value > max.value ? emotion : max
+
+    // Priority for negative emotions if they are within 5% of the max
+    const sorted = emotionList.sort((a, b) => b.value - a.value);
+    const max = sorted[0];
+    
+    // Threshold: if max score is too low (< 0.1), call it neutral
+    if (max.value < 0.1) return { name: "neutral", value: max.value };
+
+    const negativeEmotions = ["sad", "angry", "fearful", "confusion", "doubt"];
+    const negativeWithinRange = emotionList.find(e => 
+      negativeEmotions.includes(e.name) && 
+      e.value > 0.15 && 
+      (max.value - e.value) < 0.1
     );
+
+    if (negativeWithinRange && max.name === "happy") {
+      return negativeWithinRange;
+    }
+
+    return max;
   };
 
   const getEmotionArray = (msg) => {
@@ -138,6 +162,7 @@ const UserChat = () => {
 
     let summary = `Speech emotion detection (Hume AI Prosody) analyzed ${messagesWithEmotions.length} user utterance(s). `;
     summary += `Dominant emotion: **${dominant.emotion}** (${dominant.value.toFixed(1)}%). `;
+    
     if (secondary && secondary.value > 5) {
       summary += `Also present: ${secondary.emotion} (${secondary.value.toFixed(1)}%)`;
       if (tertiary && tertiary.value > 5) {
@@ -145,10 +170,20 @@ const UserChat = () => {
       }
       summary += ". ";
     }
-    if (dominant.emotion === "Sad" || dominant.emotion === "Fearful" || dominant.emotion === "Angry") {
-      summary += "Emotional tone may warrant follow-up.";
+
+    const negativeEmotions = ["Sad", "Fearful", "Angry", "Confusion", "Doubt", "Disgust"];
+    const hasSignificantNegative = emotionsData.some(e => negativeEmotions.includes(e.emotion) && e.value > 10);
+    const topNegative = [...emotionsData]
+      .filter(e => negativeEmotions.includes(e.emotion))
+      .sort((a, b) => b.value - a.value)[0];
+
+    if (dominant.emotion === "Sad" || dominant.emotion === "Fearful" || dominant.emotion === "Angry" || hasSignificantNegative) {
+      summary += "Emotional tone indicates significant distress or negative affect; immediate clinical attention or follow-up is recommended.";
+    } else if (dominant.value < 15 && topNegative && topNegative.value > 5) {
+      // If dominant is positive but very low score, and there's a negative emotion close by
+      summary += `Mixed emotional signals detected. While ${dominant.emotion} is mathematically dominant, the low confidence scores and presence of ${topNegative.emotion} suggest potential underlying distress.`;
     } else if (dominant.emotion === "Calm" || dominant.emotion === "Neutral" || dominant.emotion === "Happy") {
-      summary += "Overall tone suggests stable or positive state.";
+      summary += "Overall tone suggests a relatively stable state, but should be cross-referenced with conversation content.";
     } else if (dominant.emotion === "Doubt" || dominant.emotion === "Confusion") {
       summary += "Uncertainty or confusion detected; clarification may be helpful.";
     } else {
@@ -218,19 +253,39 @@ const UserChat = () => {
 
   const saveDoctorNotes = async () => {
     if (!problemCategory) {
-      alert("Please select a problem category");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please select a problem category",
+        type: "error"
+      });
       return;
     }
     if (!severityRating) {
-      alert("Please select a severity rating");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please select a severity rating",
+        type: "error"
+      });
       return;
     }
     if (!doctorNotes.trim()) {
-      alert("Please enter clinical observations");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please enter clinical observations",
+        type: "error"
+      });
       return;
     }
     if (!treatmentPlan.trim()) {
-      alert("Please enter a treatment plan");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please enter a treatment plan",
+        type: "error"
+      });
       return;
     }
 
@@ -247,7 +302,12 @@ const UserChat = () => {
       };
 
       await axiosInstance.post("/doctor/save-note", payload);
-      alert("Doctor's notes saved successfully");
+      setNotification({
+        isOpen: true,
+        title: "Success",
+        message: "Doctor's notes saved successfully",
+        type: "success"
+      });
       setProblemCategory("");
       setSeverityRating(null);
       setDoctorNotes("");
@@ -256,7 +316,12 @@ const UserChat = () => {
       setShowCreateForm(false);
       await getChatInfo();
     } catch (e) {
-      alert(e.response?.data?.message || "Failed to save doctor's notes");
+      setNotification({
+        isOpen: true,
+        title: "Error",
+        message: e.response?.data?.message || "Failed to save doctor's notes",
+        type: "error"
+      });
     } finally {
       setSavingNotes(false);
     }
@@ -1128,6 +1193,13 @@ const UserChat = () => {
           </div>
         </div>
       )}
+      <ReusableModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 };

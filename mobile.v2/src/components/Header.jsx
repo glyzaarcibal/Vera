@@ -243,7 +243,7 @@ const Header = () => {
           {/* Desktop Language Switcher */}
           <div className="desktop-only language-switcher-pill">
             <button className={`lang-pill ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>EN</button>
-            <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>TL</button>
+            <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>FIL</button>
           </div>
 
           {isAuthenticated ? (

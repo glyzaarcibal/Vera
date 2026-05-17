@@ -12,6 +12,7 @@ import {
 import axiosInstance from "../../utils/axios.instance";
 import RiskBadge from "../../components/RiskBadge";
 import Skeleton from "../../components/Skeleton";
+import ReusableModal from "../../components/ReusableModal";
 import {
   BarChart,
   Bar,
@@ -46,6 +47,12 @@ const UserChat = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [medicationHistory, setMedicationHistory] = useState([]);
   const [medHistoryLoading, setMedHistoryLoading] = useState(false);
+  const [notification, setNotification] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "success"
+  });
 
   const emotionColors = {
     sad: "#3B82F6",
@@ -218,19 +225,39 @@ const UserChat = () => {
 
   const saveDoctorNotes = async () => {
     if (!problemCategory) {
-      alert("Please select a problem category");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please select a problem category",
+        type: "error"
+      });
       return;
     }
     if (!severityRating) {
-      alert("Please select a severity rating");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please select a severity rating",
+        type: "error"
+      });
       return;
     }
     if (!doctorNotes.trim()) {
-      alert("Please enter clinical observations");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please enter clinical observations",
+        type: "error"
+      });
       return;
     }
     if (!treatmentPlan.trim()) {
-      alert("Please enter a treatment plan");
+      setNotification({
+        isOpen: true,
+        title: "Validation Error",
+        message: "Please enter a treatment plan",
+        type: "error"
+      });
       return;
     }
 
@@ -247,7 +274,12 @@ const UserChat = () => {
       };
 
       await axiosInstance.post("/doctor/save-note", payload);
-      alert("Doctor's notes saved successfully");
+      setNotification({
+        isOpen: true,
+        title: "Success",
+        message: "Doctor's notes saved successfully",
+        type: "success"
+      });
       setProblemCategory("");
       setSeverityRating(null);
       setDoctorNotes("");
@@ -256,7 +288,12 @@ const UserChat = () => {
       setShowCreateForm(false);
       await getChatInfo();
     } catch (e) {
-      alert(e.response?.data?.message || "Failed to save doctor's notes");
+      setNotification({
+        isOpen: true,
+        title: "Error",
+        message: e.response?.data?.message || "Failed to save doctor's notes",
+        type: "error"
+      });
     } finally {
       setSavingNotes(false);
     }
@@ -1128,6 +1165,13 @@ const UserChat = () => {
           </div>
         </div>
       )}
+      <ReusableModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+        title={notification.title}
+        message={notification.message}
+        type={notification.type}
+      />
     </div>
   );
 };

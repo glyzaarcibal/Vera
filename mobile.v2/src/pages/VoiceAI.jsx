@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios.instance";
 import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
 import PullToRefresh from "../components/PullToRefresh.jsx";
 import { useLanguage } from "../context/LanguageContext";
+import ReusableModal from "../components/ReusableModal.jsx";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -75,6 +77,21 @@ const VoiceAI = () => {
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      setShowLoginModal(true);
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowLoginModal(false);
+    navigate("/");
+  };
+
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -502,10 +519,23 @@ const VoiceAI = () => {
     speaking: t("speaking"),
   };
 
-  const user = useSelector((state) => state.auth.user);
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 2;
   const hasEnoughTokens = tokens >= SESSION_COST;
+
+  if (!user) {
+    return (
+      <div className="voice-ai-container">
+        <ReusableModal
+          isOpen={showLoginModal}
+          onClose={handleCloseModal}
+          title={t("login_required_title")}
+          message={t("login_required_desc")}
+          type="error"
+        />
+      </div>
+    );
+  }
 
   return (
     <PullToRefresh onRefresh={async () => { window.location.reload(); }}>

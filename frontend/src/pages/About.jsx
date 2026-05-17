@@ -5,6 +5,7 @@ import arcibalPhoto from "../assets/team/arcibal.jpg";
 import cervantesPhoto from "../assets/team/cervantes.jpg";
 import mendozaPhoto from "../assets/team/mendoza.jpg";
 import baloloyPhoto from "../assets/team/baloloy.png";
+import silangPhoto from "../assets/team/silang.png";
 import { useLanguage } from "../context/LanguageContext";
 
 
@@ -170,6 +171,13 @@ const About = () => {
                   <img src={baloloyPhoto} alt="Prof Maria Christina Baloloy" className="member-image" />
                 </div>
                 <p className="member-name">Prof Maria Christina Baloloy</p>
+                <p className="member-role">{t("about_advisor")}</p>
+              </div>
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <img src={silangPhoto} alt="Prof Julius Delfin Silang" className="member-image" />
+                </div>
+                <p className="member-name">Prof Julius Delfin Silang</p>
                 <p className="member-role">{t("about_advisor")}</p>
               </div>
             </div>
