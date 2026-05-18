@@ -103,11 +103,11 @@ export async function getUserInfo(userId) {
 }
 
 export async function createUser(userData) {
-  const { email, password, username, role } = userData;
+  const { email, password, username, birthday, role } = userData;
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    user_metadata: { name: username },
+    user_metadata: { name: username, birthday },
     email_confirm: true,
   });
 
@@ -117,11 +117,10 @@ export async function createUser(userData) {
 
   const userId = data.user.id;
 
-  // Update the profile with the role (assuming trigger creates initial profile)
+  // Upsert so admin-created users still get profile data if the trigger row is not present yet.
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .update({ role, username })
-    .eq("id", userId);
+    .upsert({ id: userId, role, username, birthday }, { onConflict: "id" });
 
   if (profileError) {
     console.error("Error updating profile role:", profileError);
@@ -132,9 +131,9 @@ export async function createUser(userData) {
 }
 
 export async function updateUser(userId, userData) {
-  const { email, password, username, role } = userData;
+  const { email, password, username, birthday, role } = userData;
 
-  let authUpdates = { email, user_metadata: { name: username } };
+  let authUpdates = { email, user_metadata: { name: username, birthday } };
   if (password && password.trim() !== "") {
     authUpdates.password = password;
   }
@@ -147,8 +146,7 @@ export async function updateUser(userId, userData) {
 
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .update({ role, username })
-    .eq("id", userId);
+    .upsert({ id: userId, role, username, birthday }, { onConflict: "id" });
 
   if (profileError) {
     console.error("Error updating profile:", profileError);

@@ -5,6 +5,35 @@ import "./UserManagement.css";
 import axiosInstance from "../../utils/axios.instance";
 import ModalPortal from "../../components/ModalPortal";
 
+const emptyUserForm = {
+  email: "",
+  password: "",
+  username: "",
+  birthday: "",
+  role: "user",
+};
+
+const getAgeGroup = (birthday) => {
+  if (!birthday) return "Unknown";
+
+  const [year, month, day] = birthday.split("T")[0].split("-").map(Number);
+  if (!year || !month || !day) return "Unknown";
+
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  const hasBirthdayPassed =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day);
+
+  if (!hasBirthdayPassed) age -= 1;
+  if (age < 0) return "Unknown";
+  if (age <= 12) return "Children";
+  if (age <= 19) return "Teens";
+  if (age <= 35) return "Young Adults";
+  if (age <= 55) return "Adults";
+  return "Seniors";
+};
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,12 +61,7 @@ const UserManagement = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   // Form states
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    username: "",
-    role: "user",
-  });
+  const [formData, setFormData] = useState(emptyUserForm);
 
   // Debounce search term
   useEffect(() => {
@@ -74,21 +98,11 @@ const UserManagement = () => {
       }
 
       const formattedUsers = usersData.map((user) => {
-        const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
-        let ageGroup = "Unknown";
-        if (birthDateStr) {
-          const birthDate = new Date(birthDateStr);
-          const now = new Date();
-          const age = now.getFullYear() - birthDate.getFullYear();
-          const m = now.getMonth() - birthDate.getMonth();
-          const actualAge = (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) ? age - 1 : age;
-
-          if (actualAge <= 12) ageGroup = "Children";
-          else if (actualAge <= 19) ageGroup = "Teens";
-          else if (actualAge <= 35) ageGroup = "Young Adults";
-          else if (actualAge <= 55) ageGroup = "Adults";
-          else ageGroup = "Seniors";
-        }
+        const birthDateStr =
+          user.profile?.birthday ||
+          user.profile?.birthDate ||
+          user.user_metadata?.birthday ||
+          user.user_metadata?.birthDate;
 
         return {
           id: user.id,
@@ -98,7 +112,8 @@ const UserManagement = () => {
           status: user.is_anonymous ? "Inactive" : "Active",
           joined: new Date(user.created_at).toISOString().split("T")[0],
           avatar_url: user.profile?.avatar_url || null,
-          ageGroup: ageGroup
+          birthday: birthDateStr || "",
+          ageGroup: getAgeGroup(birthDateStr)
         };
       });
 
@@ -118,7 +133,7 @@ const UserManagement = () => {
       await axiosInstance.post("/admin/users/create-user", formData);
       setSuccessMessage("User created successfully!");
       setShowAddModal(false);
-      setFormData({ email: "", password: "", username: "", role: "user" });
+      setFormData(emptyUserForm);
       fetchAllUsers();
     } catch (error) {
       console.error("Error creating user:", error);
@@ -140,7 +155,7 @@ const UserManagement = () => {
       setSuccessMessage("User updated successfully!");
       setShowEditModal(false);
       setSelectedUser(null);
-      setFormData({ email: "", password: "", username: "", role: "user" });
+      setFormData(emptyUserForm);
       fetchAllUsers();
     } catch (error) {
       console.error("Error updating user:", error);
@@ -175,6 +190,7 @@ const UserManagement = () => {
       email: user.email,
       password: "",
       username: user.username,
+      birthday: user.birthday || "",
       role: (user.role || "user").toLowerCase(),
     });
     setShowEditModal(true);
@@ -343,12 +359,7 @@ const UserManagement = () => {
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setFormData({
-                    email: "",
-                    password: "",
-                    username: "",
-                    role: "user",
-                  });
+                  setFormData(emptyUserForm);
                 }}
                 className="text-gray-500 hover:text-gray-700"
               >
@@ -401,6 +412,21 @@ const UserManagement = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Birthday
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.birthday}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birthday: e.target.value })
+                    }
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Role
                   </label>
                   <select
@@ -421,12 +447,7 @@ const UserManagement = () => {
                   type="button"
                   onClick={() => {
                     setShowAddModal(false);
-                    setFormData({
-                      email: "",
-                      password: "",
-                      username: "",
-                      role: "user",
-                    });
+                    setFormData(emptyUserForm);
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
@@ -457,12 +478,7 @@ const UserManagement = () => {
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedUser(null);
-                  setFormData({
-                    email: "",
-                    password: "",
-                    username: "",
-                    role: "user",
-                  });
+                  setFormData(emptyUserForm);
                 }}
                 className="text-gray-500 hover:text-gray-700"
               >
@@ -514,6 +530,21 @@ const UserManagement = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Birthday
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.birthday}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birthday: e.target.value })
+                    }
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Role
                   </label>
                   <select
@@ -535,12 +566,7 @@ const UserManagement = () => {
                   onClick={() => {
                     setShowEditModal(false);
                     setSelectedUser(null);
-                    setFormData({
-                      email: "",
-                      password: "",
-                      username: "",
-                      role: "user",
-                    });
+                    setFormData(emptyUserForm);
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
