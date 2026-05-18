@@ -16,6 +16,8 @@ import moodImg from "../assets/images/mood_tracker.png";
 import medicationImg from "../assets/images/medication_tracker.png";
 import reportImg from "../assets/images/wellness_report.png";
 
+import ReusableModal from "../components/ReusableModal";
+
 import "./Activities.css";
 
 const Activities = () => {
@@ -23,6 +25,7 @@ const Activities = () => {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("All");
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [wellnessMetrics, setWellnessMetrics] = useState({
     vitalityScore: 0,
     averageSleep: 0,
@@ -31,6 +34,7 @@ const Activities = () => {
   });
 
   const fetchWellnessData = async () => {
+    if (!user) return; // Don't fetch if no user
     try {
       setWellnessMetrics(prev => ({ ...prev, loading: true }));
       const response = await axiosInstance.get("/activities");
@@ -81,8 +85,31 @@ const Activities = () => {
   };
 
   useEffect(() => {
-    fetchWellnessData();
-  }, []);
+    if (!user) {
+      setShowLoginModal(true);
+    } else {
+      fetchWellnessData();
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowLoginModal(false);
+    navigate("/");
+  };
+
+  if (!user) {
+    return (
+      <div className="act-v2-container">
+        <ReusableModal
+          isOpen={showLoginModal}
+          onClose={handleCloseModal}
+          title={t("login_required_title")}
+          message={t("login_required_desc")}
+          type="error"
+        />
+      </div>
+    );
+  }
 
   const filters = ["All", "Games", "Breathing", "Journaling", "Sleep", "Tracker", "Report"];
 

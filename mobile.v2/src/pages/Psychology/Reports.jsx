@@ -78,6 +78,8 @@ const PsychologyReports = () => {
     peakHour: "12:00 PM",
     mostUsedFeature: "N/A",
     genderDemographics: [],
+    ageDemographics: [],
+    riskDistribution: [],
     criticalUsersData: [],
   });
 
@@ -134,6 +136,14 @@ const PsychologyReports = () => {
         let activeToday = new Set();
         let activeThisWeek = new Set();
         const genderCounts = {};
+        const ageCounts = {
+          "Children (<=12)": 0,
+          "Teens (13-19)": 0,
+          "Young Adults (20-35)": 0,
+          "Adults (36-55)": 0,
+          "Seniors (56+)": 0,
+          "Unknown": 0
+        };
 
         // Manually compute risk distribution for all users
         const dynamicRiskLevels = { low: 0, moderate: 0, high: 0, critical: 0 };
@@ -166,6 +176,23 @@ const PsychologyReports = () => {
 
           const gender = user.profile?.gender || "Unknown";
           genderCounts[gender] = (genderCounts[gender] || 0) + 1;
+
+          // Process Age
+          const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
+          if (birthDateStr) {
+            const birthDate = new Date(birthDateStr);
+            const age = now.getFullYear() - birthDate.getFullYear();
+            const m = now.getMonth() - birthDate.getMonth();
+            const actualAge = (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) ? age - 1 : age;
+
+            if (actualAge <= 12) ageCounts["Children (<=12)"]++;
+            else if (actualAge <= 19) ageCounts["Teens (13-19)"]++;
+            else if (actualAge <= 35) ageCounts["Young Adults (20-35)"]++;
+            else if (actualAge <= 55) ageCounts["Adults (36-55)"]++;
+            else ageCounts["Seniors (56+)"]++;
+          } else {
+            ageCounts["Unknown"]++;
+          }
 
           // Process and Aggregate Session Risk Data
           let maxUserRiskScore = 0;
@@ -271,6 +298,14 @@ const PsychologyReports = () => {
         const eScore = fetchedUsers.length > 0 ? Math.min(100, Math.round(((usersWithActivities / fetchedUsers.length) * 50) + ((activeThisWeek.size / fetchedUsers.length) * 50))) : 0;
         
         const genderDemographics = Object.entries(genderCounts).map(([name, value]) => ({name, value}));
+        const ageDemographics = Object.entries(ageCounts)
+          .map(([name, value]) => ({name, value}))
+          .filter(item => item.value > 0);
+        
+        const riskDistribution = ["low", "moderate", "high", "critical"].map(level => ({
+          name: level.toUpperCase(),
+          value: dynamicRiskLevels[level] || 0
+        }));
 
         setAggregateReport({
           loaded: true,
@@ -292,6 +327,8 @@ const PsychologyReports = () => {
           peakHour: formatHour(peakH),
           mostUsedFeature: topFeature,
           genderDemographics,
+          ageDemographics,
+          riskDistribution,
           criticalUsersData: criticalUsersData.sort((a, b) => b.sessions - a.sessions),
         });
         setError("");
@@ -827,7 +864,7 @@ const PsychologyReports = () => {
         <div className="report-card">
           <div className="mb-4">
             <h3 className="report-card-title mb-1">User Demographics (Gender)</h3>
-            <p className="text-[11px] text-gray-500 font-medium">Visualizes your app's base to ensure your clinical content is relevant to the demographic.</p>
+            <p className="text-[11px] text-gray-500 font-medium">Visualizes your app's base by gender for demographic relevance.</p>
           </div>
           <div className="report-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -839,10 +876,62 @@ const PsychologyReports = () => {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  innerRadius={0}
+                  innerRadius={60}
+                  paddingAngle={5}
                 >
                   {aggregateReport.genderDemographics && aggregateReport.genderDemographics.map((entry, index) => (
-                    <Cell key={entry.name} fill={['#6366f1', '#ec4899', '#f59e0b', '#10b981'][index % 4]} />
+                    <Cell key={entry.name} fill={['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#94a3b8'][index % 5]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="mb-4">
+            <h3 className="report-card-title mb-1">User Demographics (Age Group)</h3>
+            <p className="text-[11px] text-gray-500 font-medium">Breakdown of users by life stage for clinical context.</p>
+          </div>
+          <div className="report-chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={aggregateReport.ageDemographics} margin={{ bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 10}} angle={-15} textAnchor="end" />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#718096', fontSize: 12}} />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}}
+                />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="mb-4">
+            <h3 className="report-card-title mb-1">Psychological Risk Distribution</h3>
+            <p className="text-[11px] text-gray-500 font-medium">Proportion of sessions across all risk categories.</p>
+          </div>
+          <div className="report-chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={aggregateReport.riskDistribution}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={0}
+                >
+                  {aggregateReport.riskDistribution.map((entry, index) => (
+                    <Cell key={entry.name} fill={['#10b981', '#f59e0b', '#f97316', '#ef4444'][index % 4]} />
                   ))}
                 </Pie>
                 <Tooltip 

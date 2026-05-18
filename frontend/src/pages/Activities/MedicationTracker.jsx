@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import { 
-  Heart, History, MessageSquare, CheckCircle, ArrowLeft, X 
+  Heart, History, MessageSquare, CheckCircle, ArrowLeft, X, Download, Plus, Pill, Star
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ModalPortal from "../../components/ModalPortal";

@@ -1,6 +1,6 @@
 import express from "express";
 import { registerUser, resendVerification, verifyAccount, sendGuardianVerification, verifyGuardianConsent } from "../../controllers/Auth/Register.controller.js";
-import { signIn } from "../../controllers/Auth/Login.controller.js";
+import { signIn, signOut } from "../../controllers/Auth/Login.controller.js";
 import {
   requestPasswordReset,
   confirmPasswordReset,
@@ -17,6 +17,7 @@ router.post("/register", registerUser);
 router.post("/verify-account", verifyAccount);
 router.post("/resend-verification", resendVerification);
 router.post("/login", signIn);
+router.post("/logout", signOut);
 router.post("/forgot-password", requestPasswordReset);
 router.post("/reset-password", confirmPasswordReset);
 router.post("/send-guardian-verification", sendGuardianVerification);

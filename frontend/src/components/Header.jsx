@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Menu, X, Bell, LogOut, User, Activity, LayoutDashboard, Sparkles, ChevronDown, Mic, MessageSquare, UserCircle, Calendar, Clock, Zap } from "lucide-react";
 import axiosInstance from "../utils/axios.instance";
 import { selectIsAuthenticated, selectUser } from "../store/slices/authSelectors";
+import { store, persistor } from "../store/store";
 import { clearUser } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
 import logoImg from "../assets/logo.png";
@@ -63,7 +64,7 @@ const Header = () => {
       const all = [...appointmentNotifications, ...staticNotifications];
       const clearedIds = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
       const filtered = all.filter(n => !clearedIds.includes(n.id));
-      
+
       setNotifications(filtered);
       setUnreadCount(filtered.length);
     } catch (e) {
@@ -87,9 +88,28 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // 1. Clear Redux and Local State Immediately
     dispatch(clearUser());
-    navigate("/");
+    
+    try {
+      // 2. Clear all related local storage items
+      localStorage.removeItem("persist:auth");
+      localStorage.removeItem("clearedNotifications");
+      localStorage.clear(); // Nuclear local clear
+      
+      if (persistor) {
+        await persistor.purge();
+      }
+
+      // 3. Call backend to clear cookies
+      await axiosInstance.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      // 4. Force hard redirect to landing page
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -103,8 +123,8 @@ const Header = () => {
 
         <div className={`header-links ${isMenuOpen ? "show" : ""}`}>
           <div className="mobile-only mobile-menu-header">
-            <div 
-              className="mobile-user-profile" 
+            <div
+              className="mobile-user-profile"
               onClick={() => {
                 navigate("/profile");
                 setIsMenuOpen(false);
@@ -122,12 +142,12 @@ const Header = () => {
               </div>
               <div className="mobile-user-info">
                 <p className="mobile-user-name">{user?.username || user?.first_name || "User"}</p>
-              {isAuthenticated && !location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
-                <div className="mobile-token-pill">
-                  <span>🪙</span>
-                  <span>{user?.tokens ?? 0}</span>
-                </div>
-              )}
+                {isAuthenticated && !location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
+                  <div className="mobile-token-pill">
+                    <span>🪙</span>
+                    <span>{user?.tokens ?? 0}</span>
+                  </div>
+                )}
               </div>
             </div>
             <button className="mobile-menu-close" onClick={toggleMenu}>
@@ -136,8 +156,8 @@ const Header = () => {
           </div>
 
           <Link to="/" className={`header-link ${isActive("/") ? "active" : ""}`}>
-             <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
-             <span>{t("home")}</span>
+            <span className="header-link-icon mobile-only"><LayoutDashboard size={18} /></span>
+            <span>{t("home")}</span>
           </Link>
 
           <div className="desktop-ai-dropdown">
@@ -182,44 +202,44 @@ const Header = () => {
             <div className="header-divider"></div>
             <p className="mobile-section-label">{t("language")}</p>
             <div className="lang-btn-group">
-               <button className={`lang-btn ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>{t("english")}</button>
-               <button className={`lang-btn ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>{t("tagalog")}</button>
+              <button className={`lang-btn ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>{t("english")}</button>
+              <button className={`lang-btn ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>{t("tagalog")}</button>
             </div>
           </div>
 
           {isAuthenticated && (
             <div className="mobile-only mobile-notifications-link">
-               <button onClick={toggleNotifications} className="header-link">
-                 <span className="header-link-icon"><Bell size={18} /></span>
-                 <span>{t("notifications")}</span>
-                 {unreadCount > 0 && <span className="mobile-notif-badge">{unreadCount}</span>}
-               </button>
+              <button onClick={toggleNotifications} className="header-link">
+                <span className="header-link-icon"><Bell size={18} /></span>
+                <span>{t("notifications")}</span>
+                {unreadCount > 0 && <span className="mobile-notif-badge">{unreadCount}</span>}
+              </button>
             </div>
           )}
 
           <div className="mobile-only mobile-auth-section">
-             <div className="header-divider"></div>
-             {isAuthenticated ? (
-               <button onClick={handleLogout} className="header-link header-logout-btn">
-                 <LogOut size={18} />
-                 <span>{t("logout")}</span>
-               </button>
-             ) : (
-                <Link to="/register" className="header-link get-started-link">{t("get_started")}</Link>
-             )}
+            <div className="header-divider"></div>
+            {isAuthenticated ? (
+              <button onClick={handleLogout} className="header-link header-logout-btn">
+                <LogOut size={18} />
+                <span>{t("logout")}</span>
+              </button>
+            ) : (
+              <Link to="/register" className="header-link get-started-link">{t("get_started")}</Link>
+            )}
           </div>
         </div>
 
         <div className="header-right">
           <div className="desktop-only language-switcher-pill">
-             <button className={`lang-pill ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>EN</button>
-             <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>TL</button>
+            <button className={`lang-pill ${language === 'en' ? 'active' : ''}`} onClick={() => setLanguage('en')}>EN</button>
+            <button className={`lang-pill ${language === 'tl' ? 'active' : ''}`} onClick={() => setLanguage('tl')}>FIL</button>
           </div>
 
           {isAuthenticated ? (
             <>
               <div className="notification-container" ref={notificationRef}>
-                <button 
+                <button
                   onClick={toggleNotifications}
                   className={`header-link notification-bell desktop-only ${isNotificationOpen ? "active" : ""}`}
                   style={{ background: 'none', border: 'none', cursor: 'pointer' }}
@@ -269,7 +289,7 @@ const Header = () => {
                   </div>
                 )}
               </div>
-              
+
               {!location.pathname.startsWith("/admin") && !location.pathname.startsWith("/psychology") && (
                 <div className="desktop-profile-dropdown desktop-only">
                   <div className="profile-trigger">
@@ -295,7 +315,7 @@ const Header = () => {
             </>
           ) : (
             <Link to="/register" className="header-button-link desktop-only">
-              Get Started
+              {t("sign_up")}
             </Link>
           )}
 

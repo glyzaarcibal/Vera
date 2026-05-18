@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { clearUser } from "../store/slices/authSlice";
+import { persistor } from "../store/store";
+import axiosInstance from "../utils/axios.instance";
 import {
   MdDashboard,
   MdPeople,
@@ -24,10 +26,29 @@ const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // 1. Clear Redux and Local State Immediately
     dispatch(clearUser());
-    if (onClose) onClose();
-    navigate("/");
+    
+    try {
+      // 2. Clear all related local storage items
+      localStorage.removeItem("persist:auth");
+      localStorage.clear(); // Nuclear local clear
+      
+      if (persistor) {
+        await persistor.purge();
+      }
+
+      if (onClose) onClose();
+
+      // 3. Call backend to clear cookies
+      await axiosInstance.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      // 4. Force hard redirect to landing page
+      window.location.href = "/";
+    }
   };
 
   // Close sidebar when clicking links on mobile

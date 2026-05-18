@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios.instance";
 import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
+import ReusableModal from "../components/ReusableModal";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -74,6 +76,22 @@ const VoiceAI = () => {
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showMicModal, setShowMicModal] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      setShowLoginModal(true);
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowLoginModal(false);
+    navigate("/");
+  };
+
   const audioPlayerRef = useRef(null);
   const carouselRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -310,16 +328,14 @@ const VoiceAI = () => {
         }
       }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) audioChunksRef.current.push(event.data);
-        };
-        mediaRecorder.start();
-        mediaRecorderRef.current = mediaRecorder;
-      } catch (error) {
-        alert("Failed to access microphone");
+        const status = await navigator.permissions.query({ name: 'microphone' });
+        if (status.state === 'prompt') {
+          setShowMicModal(true);
+          return;
+        }
+        proceedWithMic();
+      } catch (e) {
+        setShowMicModal(true);
       }
     } else {
       setIsListening(false);
@@ -341,6 +357,22 @@ const VoiceAI = () => {
         streamRef.current.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
       }
+    }
+  };
+
+  const proceedWithMic = async () => {
+    setShowMicModal(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+    } catch (error) {
+      alert("Failed to access microphone");
     }
   };
 
@@ -447,6 +479,11 @@ const VoiceAI = () => {
           if (messageId && hasValidAudio && audioBase64) {
             axiosInstance
               .post("/emotion-from-voice", { audioBase64, messageId })
+              .then(res => {
+                 if (res.data?.mappedScores) {
+                   console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
+                 }
+              })
               .catch(() => { });
           }
 
@@ -501,10 +538,23 @@ const VoiceAI = () => {
     speaking: t("speaking"),
   };
 
-  const user = useSelector((state) => state.auth.user);
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 2;
   const hasEnoughTokens = tokens >= SESSION_COST;
+
+  if (!user) {
+    return (
+      <div className="voice-ai-container">
+        <ReusableModal
+          isOpen={showLoginModal}
+          onClose={handleCloseModal}
+          title={t("login_required_title")}
+          message={t("login_required_desc")}
+          type="error"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="voice-ai-container">
@@ -689,6 +739,29 @@ const VoiceAI = () => {
           </div>
         )}
       </div>
+
+      {showMicModal && (
+        <ReusableModal
+          isOpen={showMicModal}
+          onClose={() => setShowMicModal(false)}
+          title="Microphone Access Required"
+          type="confirm"
+          position="fixed"
+        >
+          <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <p className="text-slate-600 text-center leading-relaxed" style={{ color: '#475569', textAlign: 'center' }}>
+              Vera needs access to your microphone so you can converse with your AI companion. 
+              Please click "Allow" when your browser prompts you.
+            </p>
+            <button 
+              onClick={proceedWithMic} 
+              style={{ width: '100%', padding: '16px', backgroundColor: '#4f46e5', color: 'white', borderRadius: '24px', fontWeight: 'bold' }}
+            >
+              Continue & Allow
+            </button>
+          </div>
+        </ReusableModal>
+      )}
     </div>
   );
 };

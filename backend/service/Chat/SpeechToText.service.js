@@ -85,19 +85,21 @@ const RAW_TO_DISPLAY_LABEL = {
 function getDominantEmotion(humeEmotions) {
   if (!humeEmotions || typeof humeEmotions !== "object") return null;
 
+  // Map to our core emotions first to avoid noise from raw Hume tags
+  const mapped = mapHumeEmotionsToDb(humeEmotions);
+  
   let maxScore = 0;
-  let dominantLabel = null;
+  let dominantLabel = "neutral";
 
-  Object.entries(humeEmotions).forEach(([label, score]) => {
-    if (typeof score === "number" && score > maxScore) {
+  Object.entries(mapped).forEach(([label, score]) => {
+    // Only consider emotions with a decent confidence score to avoid defaulting to noise
+    if (typeof score === "number" && score > maxScore && score > 0.15) {
       maxScore = score;
       dominantLabel = label;
     }
   });
 
-  if (!dominantLabel) return null;
-  const displayLabel = RAW_TO_DISPLAY_LABEL[dominantLabel.toLowerCase()] ?? dominantLabel;
-  return { label: displayLabel, score: maxScore };
+  return { label: dominantLabel, score: maxScore || 1.0 }; // Default to 1.0 score if neutral fallback
 }
 
 /** Call Hume AI Expression Measurement API for speech emotion recognition. */
@@ -297,10 +299,10 @@ export async function getEmotionFromAudio(audioBase64) {
     const dominant = getDominantEmotion(humeEmotions);
 
     if (!dominant) {
-      return { emotion: null, score: 0 };
+      return { emotion: null, score: 0, mappedScores: humeEmotions };
     }
 
-    return { emotion: dominant.label, score: dominant.score };
+    return { emotion: dominant.label, score: dominant.score, mappedScores: humeEmotions };
   } catch (error) {
     const status = error.response?.status;
     const data = error.response?.data;

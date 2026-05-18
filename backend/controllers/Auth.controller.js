@@ -43,7 +43,10 @@ export const retrieveProfileInformation = async (req, res) => {
 export const updateProfileInformation = async (req, res) => {
   try {
     const userId = req.userId;
-    const { username, first_name, last_name, birthday, gender, contact_number } = req.body;
+    const { 
+      username, first_name, last_name, birthday, gender, contact_number,
+      guardian_email, professional_email 
+    } = req.body;
 
     const profileData = {};
     if (username !== undefined) profileData.username = username;
@@ -53,6 +56,8 @@ export const updateProfileInformation = async (req, res) => {
       profileData.birthday = birthday === "" ? null : birthday;
     if (gender !== undefined) profileData.gender = gender;
     if (contact_number !== undefined) profileData.contact_number = contact_number;
+    if (guardian_email !== undefined) profileData.guardian_email = guardian_email;
+    if (professional_email !== undefined) profileData.professional_email = professional_email;
 
     const updatedProfile = await updateProfile(userId, profileData);
     return res.status(200).json({ profile: updatedProfile });

@@ -11,8 +11,7 @@ const baseApiUrl = normalizeApiBaseUrl(configuredApiUrl || "http://localhost:500
 
 const axiosInstance = axios.create({
 
- // baseURL: "http://localhost:5000/api",
-  //baseURL: baseApiUrl,
+  baseURL: baseApiUrl,
 
   timeout: 30000,
   withCredentials: true,
@@ -37,9 +36,6 @@ axiosInstance.interceptors.response.use(
     ) {
       // Clear Redux state
       store.dispatch(clearUser());
-
-      // Redirect to login page
-      window.location.href = "/";
     }
 
     return Promise.reject(error);

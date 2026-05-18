@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import "./About.css";
 import arcibalPhoto from "../assets/team/arcibal.jpg";
 import cervantesPhoto from "../assets/team/cervantes.jpg";
-import mendozaPhoto from "../assets/team/mendoza.png";
-import baloloyPhoto from "../assets/baloloy.jpg";
+import mendozaPhoto from "../assets/team/mendoza.jpg";
+import baloloyPhoto from "../assets/team/baloloy.png";
+import silangPhoto from "../assets/team/silang.png";
 import { useLanguage } from "../context/LanguageContext";
 
 
@@ -24,12 +25,12 @@ const About = () => {
     <div className="about-container">
       <div className="about-header">
         <h1 className="about-title">
-          {t("about_title")} <span className="gradient-text">V.E.R.A.</span>
+          {t("about_title")} <span className="gradient-text">V.E.R.A. - Voice Emotion Recognition Application</span>
         </h1>
         <p className="about-subtitle">{t("about_subtitle")}</p>
       </div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideLeft}
         initial="hidden"
@@ -48,7 +49,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_intro_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideRight}
         initial="hidden"
@@ -64,7 +65,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_problem_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section"
         variants={slideLeft}
         initial="hidden"
@@ -81,7 +82,7 @@ const About = () => {
         <p className="section-text" dangerouslySetInnerHTML={{ __html: t("about_mission_text") }} />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="about-section objectives-section"
         variants={slideRight}
         initial="hidden"
@@ -117,7 +118,7 @@ const About = () => {
           </div>
         </div>
       </motion.div>
-      <motion.div 
+      <motion.div
         className="about-section team-section"
         variants={slideLeft}
         initial="hidden"
@@ -170,6 +171,13 @@ const About = () => {
                   <img src={baloloyPhoto} alt="Prof Maria Christina Baloloy" className="member-image" />
                 </div>
                 <p className="member-name">Prof Maria Christina Baloloy</p>
+                <p className="member-role">{t("about_advisor")}</p>
+              </div>
+              <div className="team-member">
+                <div className="member-image-wrapper">
+                  <img src={silangPhoto} alt="Prof Julius Delfin Silang" className="member-image" />
+                </div>
+                <p className="member-name">Prof Julius Delfin Silang</p>
                 <p className="member-role">{t("about_advisor")}</p>
               </div>
             </div>

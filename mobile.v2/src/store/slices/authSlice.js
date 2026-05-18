@@ -10,7 +10,6 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      console.log("setUser called with:", action.payload);
       state.user = action.payload;
       state.isAuthenticated = true;
     },
@@ -20,7 +19,6 @@ const authSlice = createSlice({
       }
     },
     clearUser: (state) => {
-      console.log("clearUser called");
       state.user = null;
       state.isAuthenticated = false;
     },

@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import DIDAgent from './DIDAgent';
 import AnimalAI from './Animal';
 import { useLanguage } from '../context/LanguageContext';
+import ReusableModal from '../components/ReusableModal';
 import './AvatarAI.css';
 
 // Import local images
@@ -14,6 +15,19 @@ import AnimalCompanionImg from '../assets/animal_companion.png';
 export default function AvatarAI() {
   const { t } = useLanguage();
   const user = useSelector((state) => state.auth.user);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setShowLoginModal(true);
+    }
+  }, [user]);
+
+  const handleCloseModal = () => {
+    setShowLoginModal(false);
+    window.location.href = "/";
+  };
+
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 3;
   const hasEnoughTokens = tokens >= SESSION_COST;
@@ -21,6 +35,20 @@ export default function AvatarAI() {
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
   const [transcripts, setTranscripts] = useState([]);
+
+  if (!user) {
+    return (
+      <div className="avatarai-outer-container">
+        <ReusableModal
+          isOpen={showLoginModal}
+          onClose={handleCloseModal}
+          title={t("login_required_title")}
+          message={t("login_required_desc")}
+          type="error"
+        />
+      </div>
+    );
+  }
 
   const handleTranscript = (text, meta) => {
     setTranscripts(prev => [...prev, {

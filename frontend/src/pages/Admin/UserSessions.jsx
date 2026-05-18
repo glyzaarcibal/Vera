@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./UserSessions.css";
 import { MdArrowBack, MdSort, MdChevronLeft, MdChevronRight, MdDelete, MdImage, MdCheckBox, MdCheckBoxOutlineBlank, MdCalendarToday, MdBarChart, MdPsychology, MdFitnessCenter, MdAccountCircle } from "react-icons/md";
-import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, PieChart, Pie } from "recharts";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, Cell, Legend, LineChart, Line, ScatterChart, Scatter, ZAxis, PieChart, Pie, AreaChart, Area } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "../../utils/axios.instance";
@@ -471,16 +471,18 @@ const UserSessions = () => {
         });
 
         const sleepList = activities.filter(a => a.activity_type === 'sleep').map(a => ({
-          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), hours: a.data?.sleepHours || a.data?.hours || a.data?.duration || 0
+          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), hours: parseFloat(a.data?.sleepHours || a.data?.hours || a.data?.duration) || 0
         }));
 
-        const diaryList = activities.filter(a => a.activity_type === 'diary').map(a => {
-          const d = new Date(a.created_at);
-          return { date: d.toLocaleDateString(), time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), hourOfDay: d.getHours() + (d.getMinutes() / 60) };
-        });
+        const diaryGroups = activities.filter(a => a.activity_type === 'diary').reduce((acc, curr) => {
+          const d = new Date(curr.created_at).toLocaleDateString();
+          acc[d] = (acc[d] || 0) + 1;
+          return acc;
+        }, {});
+        const diaryList = Object.keys(diaryGroups).map(date => ({ date, count: diaryGroups[date] }));
 
         const breathList = activities.filter(a => a.activity_type === 'breath').map(a => ({
-          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), duration: a.data?.durationSeconds || a.data?.duration || 0
+          date: new Date(a.created_at).toLocaleDateString(), time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), duration: parseFloat(a.data?.durationSeconds || a.data?.duration) || 0
         }));
 
         const medList = activities.filter(a => a.activity_type === 'medication').map(a => ({
@@ -1198,13 +1200,23 @@ const UserSessions = () => {
                     ) : (
                       <div className="user-analytics-chart-wrap">
                         <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={detailedActivities.sleep} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`${value} Hours`, `Time: ${props.payload.time}`]} />
-                            <Bar dataKey="hours" name="Hours Slept" fill="#8b5cf6" />
-                          </BarChart>
+                          <AreaChart data={detailedActivities.sleep} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <defs>
+                              <linearGradient id="colorSleep" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <YAxis tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <Tooltip 
+                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                              labelFormatter={(label) => `Date: ${label}`} 
+                              formatter={(value, name, props) => [`${value} Hours`, `Time: ${props.payload.time}`]} 
+                            />
+                            <Area type="monotone" dataKey="hours" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSleep)" />
+                          </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     )}
@@ -1218,13 +1230,17 @@ const UserSessions = () => {
                     ) : (
                       <div className="user-analytics-chart-wrap">
                         <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={detailedActivities.breath} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip labelFormatter={(label) => `Date: ${label}`} formatter={(value, name, props) => [`${value} Seconds`, `Time: ${props.payload.time}`]} />
-                            <Bar dataKey="duration" name="Duration (s)" fill="#06b6d4" />
-                          </BarChart>
+                          <LineChart data={detailedActivities.breath} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <YAxis tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <Tooltip 
+                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                              labelFormatter={(label) => `Date: ${label}`} 
+                              formatter={(value, name, props) => [`${value} Seconds`, `Time: ${props.payload.time}`]} 
+                            />
+                            <Line type="monotone" dataKey="duration" name="Duration (s)" stroke="#06b6d4" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} activeDot={{ r: 8 }} />
+                          </LineChart>
                         </ResponsiveContainer>
                       </div>
                     )}
@@ -1238,15 +1254,16 @@ const UserSessions = () => {
                     ) : (
                       <div className="user-analytics-chart-wrap">
                         <ResponsiveContainer width="100%" height={300}>
-                          <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="category" dataKey="date" name="Date" />
-                            <YAxis type="number" dataKey="hourOfDay" name="Hour of Day" domain={[0, 24]} tickFormatter={(val) => `${Math.floor(val)}:00`} />
-                            <ZAxis type="number" range={[150, 150]} />
-                            <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={(value, name, props) => { if (name === 'Hour of Day') return props.payload.time; return value; }} />
-                            <Legend />
-                            <Scatter name="Diary Entries (Time of Day)" data={detailedActivities.diary} fill="#f59e0b" />
-                          </ScatterChart>
+                          <BarChart data={detailedActivities.diary} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                            <YAxis tick={{ fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} allowDecimals={false} />
+                            <Tooltip 
+                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+                              cursor={{ fill: 'rgba(245, 158, 11, 0.05)' }} 
+                            />
+                            <Bar dataKey="count" name="Entries Written" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                          </BarChart>
                         </ResponsiveContainer>
                       </div>
                     )}

@@ -86,20 +86,39 @@
   border-radius: 2px;
 }
 
-.avatarai-back-link {
-  display: flex;
+.avatarai-back-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: var(--vera-text-muted);
+  gap: 10px;
+  background: white;
+  color: var(--vera-text);
+  border: 1px solid var(--vera-border);
+  padding: 10px 20px;
+  border-radius: 99px;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.05em;
-  transition: color 0.2s;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  text-transform: uppercase;
 }
 
-.avatarai-back-link:hover {
+.avatarai-back-btn:hover {
+  background: var(--vera-bg);
+  border-color: var(--vera-primary);
   color: var(--vera-primary);
+  transform: translateX(-5px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.avatarai-back-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.avatarai-back-btn:hover svg {
+  transform: translateX(-3px);
 }
 
 .avatarai-header-content {
@@ -570,6 +589,7 @@
 .didagent-selection-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
 }
 
 .didagent-selection-header {
@@ -578,10 +598,11 @@
 }
 
 .didagent-selection-title {
-  font-size: clamp(28px, 4vw, 48px);
+  font-size: clamp(24px, 6vw, 48px);
   font-weight: 800;
   margin-bottom: 16px;
   color: var(--vera-text);
+  word-wrap: break-word;
 }
 
 .didagent-accent {
@@ -589,7 +610,7 @@
 }
 
 .didagent-selection-subtitle {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--vera-text-muted);
   max-width: 700px;
   margin: 0 auto;
@@ -598,7 +619,7 @@
 
 .didagent-guide-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 30px;
   margin-bottom: 80px;
 }
@@ -810,6 +831,31 @@
   letter-spacing: 0.05em;
 }
 
+.didagent-emotion-indicator {
+  position: absolute;
+  top: 80px;
+  left: 20px;
+  background: rgba(124, 58, 237, 0.9);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  animation: slideInLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .didagent-status-dot {
   width: 6px;
   height: 6px;
@@ -841,17 +887,18 @@
 
 .didagent-floating-controls {
   position: absolute;
-  bottom: 24px;
+  bottom: 60px; /* Moved higher */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(12px);
-  padding: 12px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  z-index: 10;
+  background: rgba(15, 23, 42, 0.95); /* Even darker for maximum contrast */
+  backdrop-filter: blur(20px);
+  padding: 14px;
+  border-radius: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  z-index: 9999; /* Force to top */
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
 }
 
 .didagent-mic-btn, .didagent-end-btn {
@@ -868,8 +915,9 @@
 
 .didagent-mic-btn {
   background: white;
-  color: #64748b;
+  color: #1e293b;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #e2e8f0;
 }
 
 .didagent-mic-btn.active {
@@ -980,9 +1028,11 @@
 }
 
 @media (max-width: 1024px) {
-  .avatarai-guide-grid {
+  .avatarai-guide-grid, .didagent-guide-grid {
     grid-template-columns: 1fr;
     max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   .didagent-footer-info {
@@ -1025,13 +1075,23 @@
   }
 
   .didagent-mic-btn, .didagent-end-btn {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
   }
 
   .didagent-controls {
-    padding: 10px 0;
-    gap: 16px;
+    display: none;
+  }
+
+  .didagent-floating-controls {
+    bottom: 16px;
+    gap: 12px;
+    padding: 6px;
+  }
+
+  .didagent-floating-controls button svg {
+    width: 20px;
+    height: 20px;
   }
 
   .didagent-video-wrap {

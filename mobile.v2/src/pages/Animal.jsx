@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Mic, MicOff, PhoneOff, PawPrint, Heart, Sparkles } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, PawPrint, Heart, Sparkles, MoveLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import './AvatarAI.css';
@@ -8,9 +8,12 @@ import arfarfVideo from '../assets/++arf+arf+.mp4';
 import CatImg from '../assets/cat_companion.png';
 import DogImg from '../assets/dog_companion.png';
 import axiosInstance from '../utils/axios.instance';
+import ReusableModal from "../components/ReusableModal";
 
 export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [animalType, setAnimalType] = useState(null); 
+  const [showMicModal, setShowMicModal] = useState(false);
+  const [isSessionActive, setIsSessionActive] = useState(false);
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -18,6 +21,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [error, setError] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [detectedEmotion, setDetectedEmotion] = useState(null);
   
   const dispatch = useDispatch();
   const audioRef = useRef(null);
@@ -70,6 +74,20 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
 
   const startRecording = async () => {
     try {
+      const status = await navigator.permissions.query({ name: 'microphone' });
+      if (status.state === 'prompt') {
+        setShowMicModal(true);
+        return;
+      }
+      proceedWithMic();
+    } catch (e) {
+      setShowMicModal(true);
+    }
+  };
+
+  const proceedWithMic = async () => {
+    setShowMicModal(false);
+    try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
@@ -93,9 +111,39 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     setIsListening(false);
   };
 
+  const convertBlobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const transcribeAudio = async (blob) => {
     setIsProcessing(true);
     try {
+      const audioBase64 = await convertBlobToBase64(blob);
+
+      // Real-time emotion detection for UI
+      axiosInstance.post("/emotion-from-voice", { audioBase64 })
+        .then(res => {
+          if (res.data?.mappedScores) {
+            console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
+          }
+          if (res.data?.emotion) {
+            setDetectedEmotion({
+              emotion: res.data.emotion,
+              score: res.data.score ?? 0,
+              source: "Hume AI"
+            });
+          }
+        })
+        .catch(err => console.error("Emotion detection UI error:", err));
+
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
       formData.append('model_id', 'scribe_v2');
@@ -107,7 +155,23 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       const data = await res.json();
       if (data.text) {
         onTranscript?.(data.text, { author: 'User', source: 'animal' });
-        await getAIResponse(data.text);
+        
+        const newUserMessage = { role: 'user', content: data.text, text: data.text, type: 'user' };
+        const updatedMessages = [...messages, newUserMessage];
+        setMessages(updatedMessages);
+
+        // Save user message and trigger backend emotion persistence
+        try {
+          await axiosInstance.post(`/messages/process-message/${sessionId}`, {
+            message: { text: data.text },
+            audioBase64,
+            messages: updatedMessages
+          });
+        } catch (saveErr) {
+          console.error("Failed to save message to session:", saveErr);
+        }
+
+        await getAIResponse(data.text, updatedMessages);
       }
     } catch (e) {
       setError('Transcription failed');
@@ -116,7 +180,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     }
   };
 
-  const getAIResponse = async (text) => {
+  const getAIResponse = async (text, currentMessages) => {
     setIsProcessing(true);
     try {
       const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
@@ -125,7 +189,11 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'system', content: guide.personality }, { role: 'user', content: text }],
+          messages: [
+            { role: 'system', content: guide.personality },
+            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+            { role: 'user', content: text }
+          ],
           max_tokens: 150
         })
       });
@@ -133,6 +201,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       const aiMsg = data.choices[0]?.message?.content;
       if (aiMsg) {
         onTranscript?.(aiMsg, { author: guide.name, source: 'animal' });
+        setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
         await speakText(aiMsg);
       }
     } catch (e) {
@@ -151,13 +220,40 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
         headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
       });
+
+      if (!res.ok) {
+        let errorMsg = "Failed to generate speech";
+        try {
+          const errData = await res.json();
+          errorMsg = errData.detail?.message || errData.message || errorMsg;
+        } catch (jsonErr) {}
+        if (res.status === 402) throw new Error("ElevenLabs quota exceeded: " + errorMsg);
+        throw new Error(errorMsg);
+      }
+
       const blob = await res.blob();
       audioRef.current.src = URL.createObjectURL(blob);
       setIsSpeaking(true);
       audioRef.current.play();
       videoRef.current?.play();
     } catch (e) {
-      setError('Speech error');
+      console.error('Speech error:', e);
+      
+      // Fallback to browser TTS
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+          videoRef.current?.play();
+        };
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          videoRef.current?.pause();
+        };
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setError(e.message.includes("ElevenLabs quota exceeded") || e.message.includes("paid_plan_required") ? "Out of speech characters." : "Speech failed: " + e.message);
+      }
     }
   };
 
@@ -169,9 +265,13 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const toggleListening = () => isListening ? stopRecording() : startRecording();
 
   return (
-    <div className="animal-wrapper">
+    <div className="didagent-wrapper">
       {!animalType ? (
         <div className="didagent-selection-container">
+          <button className="avatarai-back-btn" onClick={onEnd}>
+            <MoveLeft size={16} />
+            <span>Back to Selection</span>
+          </button>
           <div className="didagent-selection-header">
             <h1 className="didagent-selection-title">
               Select Your <span className="didagent-accent">Animal Companion</span>
@@ -182,7 +282,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             </p>
           </div>
 
-          <div className="didagent-guide-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', maxWidth: '900px', margin: '0 auto 80px' }}>
+          <div className="didagent-guide-grid" style={{ maxWidth: '900px', margin: '0 auto 80px' }}>
             {ANIMAL_GUIDES.map((guide) => (
               <div key={guide.id} className="didagent-guide-card">
                 <div className="didagent-guide-avatar-wrap" style={{ borderRadius: '24px' }}>
@@ -239,14 +339,21 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
               <div className="didagent-hud-info">
                 <img src={ANIMAL_GUIDES.find(g => g.id === animalType)?.image} alt="Animal" className="didagent-hud-avatar" />
                 <div>
-                  <div className="didagent-hud-name">{ANIMAL_GUIDES.find(g => g.id === animalType)?.name} AI</div>
                   <div className="didagent-hud-status">
                     <span className={`didagent-status-dot ${isSpeaking ? 'speaking' : isProcessing ? 'thinking' : 'online'}`} />
                     {isSpeaking ? 'Speaking' : isProcessing ? 'Thinking' : 'Online'}
                   </div>
                 </div>
               </div>
-              <button className="didagent-change-btn" onClick={() => { setAnimalType(null); setSessionId(null); setSessionStarted(false); }}>
+
+              {detectedEmotion && (
+                <div className="didagent-emotion-indicator">
+                  <Sparkles size={14} />
+                  <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                </div>
+              )}
+
+              <button className="didagent-change-btn" onClick={() => { setAnimalType(null); setSessionId(null); setSessionStarted(false); setDetectedEmotion(null); }}>
                 Change Companion
               </button>
             </div>
@@ -254,7 +361,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             {error && <div className="didagent-error-toast">{error}</div>}
 
             {/* Floating Controls inside video wrap */}
-            <div className="didagent-floating-controls">
+            <div className="didagent-floating-controls" style={{ zIndex: 100 }}>
               <button
                 onClick={toggleListening}
                 disabled={isProcessing || isSpeaking}
@@ -270,6 +377,29 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
 
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>
+      )}
+
+      {showMicModal && (
+        <ReusableModal
+          isOpen={showMicModal}
+          onClose={() => setShowMicModal(false)}
+          title="Microphone Access Required"
+          type="confirm"
+          position="fixed"
+        >
+          <div className="flex flex-col gap-6">
+            <p className="text-slate-600 text-center leading-relaxed">
+              Vera needs access to your microphone so you can converse with your AI companion. 
+              Please click "Allow" when your browser prompts you.
+            </p>
+            <button 
+              onClick={proceedWithMic} 
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95"
+            >
+              Continue & Allow
+            </button>
+          </div>
+        </ReusableModal>
       )}
     </div>
   );

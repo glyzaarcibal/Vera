@@ -14,6 +14,17 @@ export const translations = {
     voice_ai: "Voice AI",
     avatar_ai: "Avatar AI",
     chat_ai: "Chat AI",
+    sign_up: "Sign Up",
+    sign_in: "Sign In",
+    email: "Email Address",
+    password: "Password",
+    saving: "Saving...",
+    language: "Language",
+    english: "English",
+    tagalog: "Filipino",
+    privacy_policy: "Privacy Policy",
+    terms_service: "Terms of Service",
+    tawag_paglaum: "Tawag Paglaum",
 
     // Dashboard
     greeting_morning: "Good morning",
@@ -43,7 +54,7 @@ export const translations = {
     breath_desc: "A quick 3-minute guided breathing session to center yourself before moving forward.",
     breathe_desc_long: "A quick 3-minute guided breathing session to center yourself before moving forward.",
     recommended: "Recommended for Your Sanctuary",
-    
+
     // Activities Page
     wellness_activities: "Wellness Activities",
     wellness_subtitle: "Take a moment for yourself today. Explore curated exercises designed to nurture your mind, body, and spirit.",
@@ -154,8 +165,8 @@ export const translations = {
     // Footer
     privacy_policy: "PRIVACY POLICY",
     terms_service: "TERMS OF SERVICE",
-    all_rights: "© 2024 V.E.R.A. ALL RIGHTS RESERVED. PROVIDING A SANCTUARY FOR YOUR EMOTIONAL WELL-BEING.",
-    
+    all_rights: "© 2026 V.E.R.A. ALL RIGHTS RESERVED. PROVIDING A SANCTUARY FOR YOUR EMOTIONAL WELL-BEING.",
+
     // Profile
     profile_info: "Profile Information",
     first_name: "First Name",
@@ -191,7 +202,7 @@ export const translations = {
     store_conversations: "Store Conversations",
     safety_reminder_desc: "V.E.R.A. is equipped with advanced emotional detection and emergency response protocols. Please be reminded that these safety features are not optional and serve as a mandatory safeguard for all users.",
     mandatory_detection: "Detection and emergency services are mandatory for user safety.",
-    
+
     // Diary Activity
     diary_title: "What's on your {mind} today?",
     diary_subtitle: "Release your thoughts into the ether and let them settle in your Serenity Jar.",
@@ -205,7 +216,7 @@ export const translations = {
     diary_keep_in_jar: "Keep in Jar",
     diary_delete_confirm: "Are you sure you want to delete this memory? This action cannot be undone.",
     diary_reward: "Your thoughts have been safely stored in your digital jar. Reflecting is a beautiful step towards growth!",
-    
+
     // Medication Activity
     med_sync: "PSYCHIATRIST REVIEW: SYNCHRONIZED",
     med_last_update: "Last update",
@@ -227,7 +238,7 @@ export const translations = {
     med_notes_label: "Notes for your psychiatrist",
     med_save_btn: "Save to History",
     med_reward: "Your health record has been updated. Staying consistent with your medication is a vital part of your well-being.",
-    
+
     // Mood Tracker Activity
     mood_title: "Mood Tracker",
     mood_question: "How are you feeling today?",
@@ -241,7 +252,7 @@ export const translations = {
     mood_download_report: "Download Report",
     mood_reason_placeholder: "What's making you feel this way? (Optional)",
     mood_save_btn: "Save Mood",
-    
+
     // Sleep Tracker Activity
     sleep_title: "Sleep Tracker",
     sleep_quality: "Sleep Quality",
@@ -268,7 +279,7 @@ export const translations = {
     sleep_quality_deep: "DEEP SLEEP",
     sleep_quality_restless: "RESTLESS",
     sleep_reward: "Good rest is the foundation of mental clarity. Your sleep habits are now logged and your tokens are earned!",
-    
+
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
     wellness_mood_dist: "Mood Distribution (Past 30 Days)",
@@ -276,7 +287,7 @@ export const translations = {
     wellness_breathing_sessions: "Breathing Sessions Per Day",
     wellness_sleep_trend: "Sleep trend",
     wellness_breathing_insight: "Breathing insight",
-    
+
     // Mood Modal
     mood_checkin_title: "Daily Emotional Check-in",
     mood_checkin_desc: "How are you feeling today? This helps us track your emotional progress over time.",
@@ -287,13 +298,13 @@ export const translations = {
     // Misc
     language: "Language",
     english: "English",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
 
     // Dashboard Quotes
     vera_quote_high: "Your resonance is remarkably clear today. Let's keep this positive momentum going!",
     vera_quote_med: "Your energy feels balanced. Shall we do a quick check-in to align your thoughts?",
     vera_quote_low: "I'm noticing your vocal resonance is softer today. Would you like to try a grounding exercise?",
-    
+
     // Activity Stats & Status
     sleep_status_deep: "Deep Rest",
     sleep_status_resting: "Resting",
@@ -336,6 +347,45 @@ export const translations = {
     deep_rest: "Deep Rest",
     deep_rest_desc: "Extended exhales to signal your body to enter a parasympathetic state.",
     breath_reward: "Your breath session is complete. You've taken a wonderful step toward inner peace and clarity.",
+    
+    // Welcome Page
+    hero_title: "Your Voice, Your Healing.",
+    hero_desc: "V.E.R.A. - Voice Emotion Recognition Application is your digital sanctuary. Through empathetic AI, we translate the nuances of your voice into a guided path toward emotional balance.",
+    start_journey: "Start Your Journey",
+    about_us: "About Us",
+    welcome_back_title: "Welcome Back",
+    resume_path: "Resume your path to clarity",
+    forgot_password_link: "Forgot Password?",
+    signing_in: "Signing In...",
+    ai_monitoring_active: "AI Real-time Monitoring Active",
+    harmonizing_silence: "Harmonizing Your Silence",
+    voice_biometric_desc: "Our voice biometric engine detects over 40 distinct emotional markers in your speech, providing real-time insights into your subconscious well-being.",
+    designed_inner_calm: "Designed for Your Inner Calm",
+    multi_modal_approach: "A multi-modal approach to therapeutic AI companionship.",
+    voice_emotion_recognition: "Voice Emotion Recognition",
+    voice_emotion_desc: "Real-time analysis of tone, pitch, and cadence to understand your emotional state beyond just words.",
+    ai_avatar_companion: "AI Avatar Companion",
+    avatar_companion_desc: "Meet Vera, your empathetic guide who evolves with you, learning your preferences and triggers to offer personalized support.",
+    interact_now: "Interact Now",
+    wellness_tools_title: "Wellness Tools",
+    wellness_tools_desc: "Integrated breathing exercises and grounding techniques tailored to your current heart-rate and voice stress levels.",
+    encrypted_privacy_title: "Encrypted Privacy",
+    encrypted_privacy_desc: "Your emotional data is your own. We use end-to-end encryption to ensure your sanctuary remains private and secure.",
+    healing_insights_title: "Healing Insights",
+    healing_insights_desc: "Detailed weekly reports that visualize your emotional journey and suggest long-term habits for mental resilience.",
+    emergency_title: "Emergency / Crisis Support",
+    emergency_intro: "Need immediate help? If you or someone you know is in crisis, please reach out to these 24/7 hotlines in the Philippines:",
+    national_support: "National Support Hotline",
+    how_feeling_name: "How are you feeling, {name}?",
+    save_entry: "Save Entry",
+    what_making_feel: "What's making you feel this way?",
+    contact_us: "Contact Us",
+    back: "Back",
+    promo_title: "Take Your Sanctuary Anywhere.",
+    promo_desc: "Healing doesn't just happen at home. Experience real-time Voice Recognition, Daily Emotional Check-ins, and personalized guidance wherever life takes you.",
+    scan_download: "Scan to Download",
+    login_required_title: "Authentication Required",
+    login_required_desc: "Please sign in or create an account to access these wellness activities and track your progress.",
   },
   tl: {
     // Nav
@@ -352,6 +402,17 @@ export const translations = {
     voice_ai: "Voice AI",
     avatar_ai: "Avatar AI",
     chat_ai: "Chat AI",
+    sign_up: "Mag-sign Up",
+    sign_in: "Mag-sign In",
+    email: "Email Address",
+    password: "Password",
+    saving: "Sine-save...",
+    language: "Wika",
+    english: "Ingles",
+    tagalog: "Filipino",
+    privacy_policy: "Patakaran sa Privacy",
+    terms_service: "Mga Tuntunin ng Serbisyo",
+    tawag_paglaum: "Tawag Paglaum",
 
     // Dashboard
     greeting_morning: "Magandang umaga",
@@ -483,12 +544,12 @@ export const translations = {
     online: "Online",
     new_chat: "+ Bagong Chat",
     share_mind: "Ibahagi ang iyong iniisip...",
-    
+
     // Footer
     privacy_policy: "PATAKARAN SA PRIVACY",
     terms_service: "MGA TUNTUNIN NG SERBISYO",
-    all_rights: "© 2024 V.E.R.A. RIZALDO NG MGA KARAPATAN. NAGBIBIGAY NG SANTUWARYO PARA SA IYONG EMOSYONAL NA KALUSUGAN.",
-    
+    all_rights: "© 2026 V.E.R.A. RIZALDO NG MGA KARAPATAN. NAGBIBIGAY NG SANTUWARYO PARA SA IYONG EMOSYONAL NA KALUSUGAN.",
+
     // Profile
     profile_info: "Impormasyon ng Profile",
     first_name: "Pangalan",
@@ -524,7 +585,7 @@ export const translations = {
     store_conversations: "I-store ang mga Pag-uusap",
     safety_reminder_desc: "Ang V.E.R.A. ay nilagyan ng advanced na emotional detection at emergency response protocols. Tandaan na ang mga safety features na ito ay hindi opsyonal at nagsisilbing mandatory safeguard para sa lahat ng users.",
     mandatory_detection: "Ang mga serbisyo sa pagtuklas at emergency ay mandatory para sa kaligtasan ng user.",
-    
+
     // Diary Activity
     diary_title: "Anong nasa {isip} mo ngayon?",
     diary_subtitle: "Ilabas ang iyong mga saloobin at itago sila sa iyong Serenity Jar.",
@@ -538,7 +599,7 @@ export const translations = {
     diary_keep_in_jar: "Iwanan sa Jar",
     diary_delete_confirm: "Sigurado ka bang gusto mong burahin ang alaalang ito? Hindi na ito mababawi.",
     diary_reward: "Ang iyong mga saloobin ay ligtas na naimbak sa iyong digital jar. Ang pagmuni-muni ay isang magandang hakbang patungo sa paglago!",
-    
+
     // Medication Activity
     med_sync: "PSYCHIATRIST REVIEW: SYNCHRONIZED",
     med_last_update: "Last update",
@@ -560,7 +621,7 @@ export const translations = {
     med_notes_label: "Notes para sa iyong psychiatrist",
     med_save_btn: "I-save sa History",
     med_reward: "Updated na ang iyong health record. Importante ang pagiging consistent sa gamot para sa iyong well-being.",
-    
+
     // Mood Tracker Activity
     mood_title: "Mood Tracker",
     mood_question: "Ano ang nararamdaman mo ngayon?",
@@ -574,7 +635,7 @@ export const translations = {
     mood_download_report: "I-download ang Report",
     mood_reason_placeholder: "Anong dahilan? (Optional)",
     mood_save_btn: "I-save ang Mood",
-    
+
     // Sleep Tracker Activity
     sleep_title: "Sleep Tracker",
     sleep_quality: "Sleep Quality",
@@ -601,7 +662,7 @@ export const translations = {
     sleep_quality_deep: "DEEP SLEEP",
     sleep_quality_restless: "RESTLESS",
     sleep_reward: "Ang magandang pahinga ay basehan ng malinaw na isip. Na-log na ang iyong sleep habits!",
-    
+
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
     wellness_mood_dist: "Mood Distribution (Past 30 Days)",
@@ -609,7 +670,7 @@ export const translations = {
     wellness_breathing_sessions: "Breathing Sessions Bawat Araw",
     wellness_sleep_trend: "Sleep trend",
     wellness_breathing_insight: "Breathing insight",
-    
+
     // Mood Modal
     mood_checkin_title: "Araw-araw na Check-in ng Emosyon",
     mood_checkin_desc: "Ano ang nararamdaman mo ngayong araw? Makakatulong ito sa pagsubaybay ng iyong pag-unlad sa paglipas ng panahon.",
@@ -620,7 +681,7 @@ export const translations = {
     // Misc
     language: "Wika",
     english: "Ingles",
-    tagalog: "Tagalog",
+    tagalog: "Filipino",
 
     // Dashboard Quotes
     vera_quote_high: "Ang iyong resonance ay napakalinaw ngayon. Ituloy lang natin ang positive momentum na ito!",
@@ -669,5 +730,44 @@ export const translations = {
     deep_rest: "Deep Rest",
     deep_rest_desc: "Mahabang exhale para senyasan ang katawan na mag-relax.",
     breath_reward: "Tapos na ang iyong breath session. Magandang hakbang ito para sa iyong peace of mind.",
+
+    // Welcome Page
+    hero_title: "Iyong Boses, Iyong Paghilom.",
+    hero_desc: "Ang V.E.R.A. - Voice Emotion Recognition Application ay ang iyong digital na santuwaryo. Gamit ang mapagmalasakit na AI, isinasalin namin ang bawat tono ng iyong boses tungo sa balanseng emosyon.",
+    start_journey: "Simulan ang Iyong Paglalakbay",
+    about_us: "Tungkol sa Amin",
+    welcome_back_title: "Maligayang Pagbabalik",
+    resume_path: "Ipagpatuloy ang iyong daan patungo sa kaliwanagan",
+    forgot_password_link: "Nakalimutan ang Password?",
+    signing_in: "Sumasailalim sa Sign In...",
+    ai_monitoring_active: "Aktibo ang Real-time AI Monitoring",
+    harmonizing_silence: "Pinagtutugma ang Iyong Katahimikan",
+    voice_biometric_desc: "Nakaka-detect ang aming voice biometric engine ng mahigit 40 na emotional markers sa iyong pagsasalita para sa iyong well-being.",
+    designed_inner_calm: "Idinisenyo para sa Iyong Kapayapaan",
+    multi_modal_approach: "Isang multi-modal na approach para sa therapeutic AI companionship.",
+    voice_emotion_recognition: "Voice Emotion Recognition",
+    voice_emotion_desc: "Real-time na analysis ng tono at boses para maintindihan ang iyong emosyon nang higit pa sa mga salita.",
+    ai_avatar_companion: "AI Avatar Companion",
+    avatar_companion_desc: "Kilalanin si Vera, ang iyong gabay na sumasabay sa iyong paglago at nagbibigay ng personalized na suporta.",
+    interact_now: "Kausapin Ngayon",
+    wellness_tools_title: "Wellness Tools",
+    wellness_tools_desc: "Mga exercise sa paghinga at grounding techniques na hango sa iyong heart-rate at voice stress levels.",
+    encrypted_privacy_title: "Encrypted na Privacy",
+    encrypted_privacy_desc: "Ang iyong emotional data ay para sa iyo lamang. Gumagamit kami ng end-to-end encryption para sa iyong seguridad.",
+    healing_insights_title: "Mga Insight sa Paghilom",
+    healing_insights_desc: "Detalyadong ulat linggu-linggo na nagpapakita ng iyong emotional journey at nagbibigay ng tips para sa resilience.",
+    emergency_title: "Suporta sa Emergency / Krisis",
+    emergency_intro: "Kailangan ng agarang tulong? Kung ikaw o ang iyong kakilala ay nasa krisis, tumawag sa mga 24/7 hotlines na ito sa Pilipinas:",
+    national_support: "National Support Hotline",
+    how_feeling_name: "Ano ang nararamdaman mo, {name}?",
+    save_entry: "I-save ang Entry",
+    what_making_feel: "Ano ang nagpapadama sa iyo nang ganito?",
+    contact_us: "Makipag-ugnayan sa Amin",
+    back: "Bumalik",
+    promo_title: "Dalhin ang Iyong Santuwaryo Kahit Saan.",
+    promo_desc: "Ang paghilom ay hindi lamang nangyayari sa bahay. Makaranas ng real-time Voice Recognition, Daily Emotional Check-ins, at gabay saan ka man magpunta.",
+    scan_download: "I-scan para i-download",
+    login_required_title: "Kailangan ng Login",
+    login_required_desc: "Mangyaring mag-login muna o gumawa ng account para ma-access ang mga aktibidad na ito at masubaybayan ang iyong progreso.",
   }
 };
