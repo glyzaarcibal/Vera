@@ -10,7 +10,7 @@ const DownloadApk = () => {
     const downloadUrl = "/app-debug.apk";
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.setAttribute("download", "Vera.apk");
+    link.setAttribute("download", "app-debug.apk");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
