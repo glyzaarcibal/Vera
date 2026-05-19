@@ -94,7 +94,7 @@ const MedicationTracker = () => {
                 activityId: editingMedId // Pass ID if editing
             });
 
-            if (res.data?.updatedTokens !== null) {
+            if (res.data && typeof res.data.updatedTokens === 'number') {
                 dispatch(updateTokens(res.data.updatedTokens));
                 setShowRewardModal(true);
             }

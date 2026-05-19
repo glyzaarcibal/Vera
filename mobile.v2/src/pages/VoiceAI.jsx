@@ -76,6 +76,7 @@ const VoiceAI = () => {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+  const [showMicModal, setShowMicModal] = useState(false);
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -111,62 +112,7 @@ const VoiceAI = () => {
     return () => clearInterval(interval);
   }, [isCallActive]);
 
-  useEffect(() => {
-    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = "en-US";
-      // Disable filtering of critical words for raw emotion detection
-      recognitionInstance.profanityFilter = false;
-
-      recognitionInstance.onresult = (event) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
-        for (let i = 0; i < event.results.length; i++) {
-          const transcriptPiece = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcriptPiece + " ";
-          } else {
-            interimTranscript += transcriptPiece;
-          }
-        }
-        setTranscript(finalTranscript || interimTranscript);
-      };
-
-      recognitionInstance.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-        setIsRecording(false);
-        const message =
-          event.error === "network"
-            ? "Check your internet connection. Speech recognition needs network access."
-            : event.error === "not-allowed"
-              ? "Microphone access was denied."
-              : event.error === "no-speech"
-                ? "No speech detected. Try again."
-                : event.error === "audio-capture"
-                  ? "No microphone found."
-                  : `Speech recognition error: ${event.error}. You can still type below.`;
-        setSpeechError(message);
-      };
-
-      recognitionInstance.onend = () => {
-        recognitionStartedRef.current = false;
-        setIsRecording(false);
-      };
-
-      setRecognition(recognitionInstance);
-
-      return () => {
-        recognitionStartedRef.current = false;
-        try {
-          recognitionInstance.stop();
-        } catch (_) { }
-      };
-    }
-  }, []);
+  // Simplified state initialization without native STT
 
   const initializeSession = async () => {
     try {
@@ -308,45 +254,25 @@ const VoiceAI = () => {
   };
 
   const handleCallToggle = async () => {
-    if (sessionId === null) await initializeSession();
-    setIsCallActive(!isCallActive);
     if (!isCallActive) {
-      setIsListening(true);
-      setTranscript("");
-      setSpeechError(null);
-      if (recognition) {
-        try {
-          if (!recognitionStartedRef.current) {
-            recognition.start();
-            recognitionStartedRef.current = true;
-          }
-          setIsRecording(true);
-        } catch (err) {
-          if (err.name === "InvalidStateError") {
-            recognitionStartedRef.current = false;
+      if (sessionId === null) await initializeSession();
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const status = await navigator.permissions.query({ name: 'microphone' });
+          if (status.state === 'prompt') {
+            setShowMicModal(true);
+            return;
           }
         }
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) audioChunksRef.current.push(event.data);
-        };
-        mediaRecorder.start();
-        mediaRecorderRef.current = mediaRecorder;
-      } catch (error) {
-        alert("Failed to access microphone");
+        proceedWithMic();
+      } catch (e) {
+        proceedWithMic();
       }
     } else {
+      setIsCallActive(false);
       setIsListening(false);
       setIsMuted(false);
-      if (recognition && isRecording) {
-        recognitionStartedRef.current = false;
-        recognition.stop();
-        setIsRecording(false);
-      }
+      setIsRecording(false);
       if (
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state !== "inactive"
@@ -362,53 +288,85 @@ const VoiceAI = () => {
     }
   };
 
+  const proceedWithMic = async () => {
+    setShowMicModal(false);
+    setIsCallActive(true);
+    setIsListening(false);
+    setTranscript("");
+    setSpeechError(null);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+    } catch (error) {
+      alert("Failed to access microphone or permission denied.");
+      setIsCallActive(false);
+    }
+  };
+
   const handleMuteToggle = () => setIsMuted(!isMuted);
 
   const handleRecordingToggle = async () => {
     if (isRecording) {
-      recognitionStartedRef.current = false;
-      recognition.stop();
-
+      setIsRecording(false);
+      setIsListening(false);
+      setConversationMode("thinking");
+      
       let chunks = [];
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state === "recording"
-      ) {
+      let audioBase64 = null;
+      let hasValidAudio = false;
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         await new Promise((resolve) => {
           const mr = mediaRecorderRef.current;
           mr.onstop = resolve;
           mr.stop();
+          // Timeout to prevent infinite hang if onstop never fires
+          setTimeout(resolve, 500);
         });
         chunks = [...audioChunksRef.current];
         audioChunksRef.current = [];
+      }
 
-        if (streamRef.current) {
-          const mr = new MediaRecorder(streamRef.current);
-          mr.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunksRef.current.push(e.data);
-          };
-          mr.start();
-          mediaRecorderRef.current = mr;
+      let finalTranscript = "";
+      
+      if (chunks.length > 0) {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        audioBase64 = await convertBlobToBase64(audioBlob);
+        hasValidAudio = typeof audioBase64 === "string" && audioBase64.length > 100;
+
+        // Use ElevenLabs STT
+        if (hasValidAudio) {
+          try {
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'audio.webm');
+            formData.append('model_id', 'scribe_v2');
+            const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+              method: 'POST',
+              headers: { 'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY },
+              body: formData
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.text) {
+                finalTranscript = data.text.trim();
+                setTranscript(finalTranscript);
+              }
+            }
+          } catch (e) {
+            console.error("STT error:", e);
+          }
         }
       }
 
-      setIsRecording(false);
-      setIsListening(false);
-
-      if (transcript.trim()) {
-        const audioBlob = new Blob(chunks, { type: "audio/webm" });
-        const audioBase64 = await convertBlobToBase64(audioBlob);
-        const hasValidAudio =
-          typeof audioBase64 === "string" && audioBase64.length > 100;
-
+      if (finalTranscript) {
         const userMessage = {
           id: messages.length + 1,
           type: "user",
-          text: transcript.trim(),
+          text: finalTranscript,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, userMessage]);
-        setConversationMode("thinking");
 
         if (hasValidAudio) {
           axiosInstance
@@ -473,30 +431,21 @@ const VoiceAI = () => {
         } else {
           setConversationMode("listening");
         }
-
-        setTranscript("");
-        audioChunksRef.current = [];
+      } else {
+        setConversationMode("listening");
       }
     } else {
       setSpeechError(null);
-      try {
-        if (!recognitionStartedRef.current) {
-          recognition.start();
-          recognitionStartedRef.current = true;
-        }
-      } catch (err) {
-        if (err.name === "InvalidStateError") {
-          recognitionStartedRef.current = false;
-        }
+      setTranscript("");
+      audioChunksRef.current = [];
+      if (streamRef.current) {
+        const mr = new MediaRecorder(streamRef.current);
+        mr.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunksRef.current.push(e.data);
+        };
+        mr.start();
+        mediaRecorderRef.current = mr;
       }
-
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state === "paused"
-      ) {
-        mediaRecorderRef.current.resume();
-      }
-
       setIsRecording(true);
       setIsListening(true);
       setConversationMode("listening");
@@ -661,7 +610,7 @@ const VoiceAI = () => {
               {/* Interaction Panel */}
               <div className="interaction-panel">
                 <div className="transcript-container">
-                  <div className="transcript-label">Live Transcription</div>
+                  <div className="transcript-label">Transcription</div>
                   <div className="transcript-content">
                     {transcript ? (
                       <p className="active-transcript">{transcript}</p>
@@ -721,6 +670,29 @@ const VoiceAI = () => {
           </div>
         )}
       </div>
+
+      {showMicModal && (
+        <ReusableModal
+          isOpen={showMicModal}
+          onClose={() => setShowMicModal(false)}
+          title="Microphone Access Required"
+          type="confirm"
+          position="fixed"
+        >
+          <div className="flex flex-col gap-6">
+            <p className="text-slate-600 text-center leading-relaxed">
+              Vera needs access to your microphone so you can converse with your AI companion. 
+              Please click "Allow" when your browser prompts you.
+            </p>
+            <button 
+              onClick={proceedWithMic} 
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95"
+            >
+              Continue & Allow
+            </button>
+          </div>
+        </ReusableModal>
+      )}
     </div>
   </PullToRefresh>
   );

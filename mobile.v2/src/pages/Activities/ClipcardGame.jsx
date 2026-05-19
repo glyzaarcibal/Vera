@@ -223,7 +223,7 @@ const ClipCardGame = () => {
         activityType: "clipcard",
         data: { score, mode: mode.name, timestamp: new Date().toISOString() }
       });
-      if (res.data?.updatedTokens) {
+      if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
         setShowRewardModal(true);
       }

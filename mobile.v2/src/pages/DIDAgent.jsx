@@ -153,14 +153,17 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
 
   const startRecording = async () => {
     try {
-      const status = await navigator.permissions.query({ name: 'microphone' });
-      if (status.state === 'prompt') {
-        setShowMicModal(true);
-        return;
+      if (navigator.permissions && navigator.permissions.query) {
+        const status = await navigator.permissions.query({ name: 'microphone' });
+        if (status.state === 'prompt') {
+          setShowMicModal(true);
+          return;
+        }
       }
       proceedWithMic();
     } catch (e) {
-      setShowMicModal(true);
+      // Fallback to proceed directly if permissions API fails (common on mobile webviews)
+      proceedWithMic();
     }
   };
 
@@ -181,6 +184,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       setIsListening(true);
     } catch (err) {
       setError('Microphone access denied');
+      alert('Microphone access denied or not available. Please check app permissions.');
     }
   };
 
@@ -447,6 +451,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
             <video
               ref={videoRef}
               src={getCurrentVideo()}
+              poster={AVATAR_OPTIONS.find(a => a.id === selectedAgent)?.images[selectedOutfit] || AVATAR_OPTIONS.find(a => a.id === selectedAgent)?.images.default}
               className="didagent-video"
               playsInline
               loop={!isSpeaking && !isProcessing}

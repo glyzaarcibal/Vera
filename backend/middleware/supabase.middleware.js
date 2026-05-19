@@ -53,6 +53,18 @@ export async function unsetSession(req, res, next) {
   next();
 }
 
+// Helper to safely parse JWT payloads locally without external service calls
+const parseJwt = (token) => {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = Buffer.from(base64, "base64").toString("utf8");
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+};
+
 export async function setSupabaseSession(req, res, next) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
   const bearerToken =
@@ -89,14 +101,36 @@ export async function setSupabaseSession(req, res, next) {
     });
   }
 
+  // 1. Check if the current access token is valid locally (bypasses GoTrue rate-limits)
+  const jwtPayload = parseJwt(access_token);
+  if (jwtPayload && jwtPayload.exp && jwtPayload.exp > (Date.now() / 1000) + 10) {
+    req.userId = jwtPayload.sub;
+    req.user = {
+      id: jwtPayload.sub,
+      email: jwtPayload.email,
+      role: jwtPayload.role,
+      app_metadata: jwtPayload.app_metadata || {},
+      user_metadata: jwtPayload.user_metadata || {},
+    };
+    return next();
+  }
+
+  // 2. If access token is expired or close to it, call refreshSession and set new cookies
   try {
     const { data, error } = await supabaseAnon.auth.refreshSession({
       refresh_token,
     });
     if (error) throw new Error(error.message);
-    if (data.user) {
-      req.user = data.user;
-      req.userId = data.user.id;
+
+    const { session, user } = data;
+    if (session) {
+      res.cookie("access_token", session.access_token, cookieConfig);
+      res.cookie("refresh_token", session.refresh_token, refreshCookieConfig);
+    }
+
+    if (user) {
+      req.user = user;
+      req.userId = user.id;
     }
 
     next();

@@ -266,7 +266,7 @@ const TakeABreath = () => {
         activityType: "breath",
         data: newEntry
       });
-      if (res.data?.updatedTokens) {
+      if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
         setShowRewardModal(true);
       }
