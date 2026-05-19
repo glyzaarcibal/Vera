@@ -12,6 +12,20 @@ import ModalPortal from "../../components/ModalPortal";
 import ReusableModal from "../../components/ReusableModal";
 import "./Resources.css";
 
+const getDescriptionPreview = (description) => {
+  const fallback = "No description provided.";
+  const text = description?.trim();
+
+  if (!text) return fallback;
+
+  const firstSentenceMatch = text.match(/^.*?[.!?](?=\s|$)/);
+  const firstSentence = firstSentenceMatch?.[0]?.trim();
+
+  if (!firstSentence) return text;
+
+  return firstSentence.length < text.length ? `${firstSentence}...` : firstSentence;
+};
+
 const Resources = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -289,7 +303,9 @@ const Resources = () => {
               {/* Title */}
               <div className="row-cell title-cell">{resource.title}</div>
               {/* Description */}
-              <div className="row-cell desc-cell">{resource.description || 'No description provided.'}</div>
+              <div className="row-cell desc-cell" title={resource.description || 'No description provided.'}>
+                {getDescriptionPreview(resource.description)}
+              </div>
               {/* Category */}
               <div className="row-cell cat-cell">
                 <span className="cat-badge">

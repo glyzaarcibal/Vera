@@ -1,5 +1,4 @@
-import { saveActivityToDB, getActivitiesFromDB, deleteActivityFromDB } from "../service/Activities.service.js";
-import { addTokens } from "../service/Auth/Token.service.js";
+import { saveActivityToDB, getActivitiesFromDB } from "../service/Activities.service.js";
 
 // Save activity for a user
 export const saveActivity = async (req, res) => {
@@ -35,20 +34,6 @@ export const getActivities = async (req, res) => {
     const userId = req.userId;
     const activities = await getActivitiesFromDB(userId);
     res.status(200).json({ activities });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-// Delete activity for a user
-export const deleteActivity = async (req, res) => {
-  try {
-    const userId = req.userId;
-    const { activityId } = req.params;
-    if (!userId || !activityId) {
-      return res.status(400).json({ message: "Missing required fields." });
-    }
-    await deleteActivityFromDB(userId, activityId);
-    res.status(200).json({ message: "Activity deleted successfully!" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

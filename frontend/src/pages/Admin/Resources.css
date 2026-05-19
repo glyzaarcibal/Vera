@@ -70,8 +70,20 @@
   overflow: hidden;
 }
 
+.listing-header,
+.listing-row {
+  display: grid;
+  grid-template-columns:
+    56px
+    minmax(150px, 1.15fr)
+    minmax(210px, 1.65fr)
+    minmax(130px, 0.95fr)
+    minmax(260px, 1.8fr)
+    96px;
+  column-gap: 16px;
+}
+
 .listing-header {
-  display: flex;
   align-items: center;
   padding: 0 24px;
   font-weight: 700;
@@ -82,20 +94,41 @@
 }
 
 .header-cell, .row-cell {
-  padding: 0 8px;
+  min-width: 0;
 }
 
-.avatar-cell { width: 56px; min-width: 56px; display: flex; justify-content: center; }
-.title-cell { flex: 2; font-weight: 600; }
-.desc-cell { flex: 3; color: #6b7280; font-size: 14px; }
-.cat-cell { flex: 1.5; }
-.link-cell { flex: 2.5; display: flex; flex-wrap: wrap; gap: 6px; }
-.action-cell { width: 100px; display: flex; justify-content: center; gap: 8px; }
+.avatar-cell { display: flex; justify-content: center; }
+.title-cell {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.desc-cell {
+  color: #6b7280;
+  font-size: 14px;
+}
 
-.listing-row {
+.listing-row .desc-cell {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-cell {
   display: flex;
   align-items: center;
-  padding: 16px 24px;
+}
+.link-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.action-cell { display: flex; justify-content: center; gap: 8px; }
+
+.listing-row {
+  align-items: center;
+  min-height: 86px;
+  padding: 14px 24px;
   border-bottom: 1px solid #f1f5f9;
   transition: background 0.2s;
 }
@@ -125,6 +158,8 @@
 }
 
 .cat-badge {
+  display: inline-block;
+  max-width: 100%;
   background: #eef2ff;
   color: #6366f1;
   border: 1px solid #e0e7ff;
@@ -134,6 +169,25 @@
   padding: 4px 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.resource-card-link {
+  color: #111827;
+  line-height: 1.45;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.resource-card-link:hover {
+  color: #4f46e5;
+}
+
+.no-links {
+  color: #9ca3af;
+  font-size: 14px;
 }
 
 .action-btn {
@@ -160,7 +214,16 @@
 /* ── RESPONSIVE ── */
 @media (max-width: 1024px) {
   .desc-cell { display: none; }
-  .link-cell { flex: 3; }
+
+  .listing-header,
+  .listing-row {
+    grid-template-columns:
+      56px
+      minmax(150px, 1.2fr)
+      minmax(130px, 0.9fr)
+      minmax(220px, 1.7fr)
+      96px;
+  }
 }
 
 @media (max-width: 768px) {

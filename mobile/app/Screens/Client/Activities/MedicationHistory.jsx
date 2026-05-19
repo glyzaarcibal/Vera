@@ -91,8 +91,24 @@ export default function MedicationHistory({ navigation }) {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          setHistory(currentHistory => currentHistory.filter(item => item.id !== id))
+        onPress: async () => {
+          if (!id) {
+            Alert.alert('Delete failed', 'Unable to delete this entry.')
+            return
+          }
+
+          try {
+            setIsLoading(true)
+            await axiosInstance.delete(`/activities/${id}`)
+            setHistory(currentHistory =>
+              currentHistory.filter(item => item.id !== id),
+            )
+          } catch (error) {
+            console.error('Failed to delete medication', error)
+            Alert.alert('Delete failed', 'Failed to delete medication entry.')
+          } finally {
+            setIsLoading(false)
+          }
         },
       },
     ])
