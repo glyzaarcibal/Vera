@@ -104,55 +104,99 @@ export async function getUserInfo(userId) {
 
 export async function createUser(userData) {
   const { email, password, username, birthday, role } = userData;
+  const normalizedEmail = typeof email === "string" ? email.trim() : "";
+
+  if (!normalizedEmail) {
+    throw new Error("Email is required");
+  }
+
+  console.log("Creating Supabase auth user for:", normalizedEmail);
+  
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email,
+    email: normalizedEmail,
     password,
     user_metadata: { name: username, birthday },
     email_confirm: true,
   });
 
   if (error) {
+    console.error("Supabase auth creation error:", error);
     throw error;
   }
 
   const userId = data.user.id;
+  console.log("Auth user created:", userId, "- Now upserting profile...");
 
   // Upsert so admin-created users still get profile data if the trigger row is not present yet.
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .upsert({ id: userId, role, username, birthday }, { onConflict: "id" });
+    .upsert(
+      {
+        id: userId,
+        email: normalizedEmail,
+        role,
+        username,
+        birthday: birthday || null,
+      },
+      { onConflict: "id" }
+    );
 
   if (profileError) {
-    console.error("Error updating profile role:", profileError);
+    console.error("Error upserting profile:", profileError);
     throw profileError;
   }
 
+  console.log("Profile upserted successfully for user:", userId);
   return data;
 }
 
 export async function updateUser(userId, userData) {
   const { email, password, username, birthday, role } = userData;
+  const normalizedEmail = typeof email === "string" ? email.trim() : "";
 
-  let authUpdates = { email, user_metadata: { name: username, birthday } };
+  if (!normalizedEmail) {
+    throw new Error("Email is required");
+  }
+
+  console.log("Updating Supabase auth user:", userId, "email:", normalizedEmail);
+
+  let authUpdates = {
+    email: normalizedEmail,
+    user_metadata: { name: username, birthday },
+  };
   if (password && password.trim() !== "") {
     authUpdates.password = password;
+    console.log("Password update included in auth update");
   }
 
   const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, authUpdates);
 
   if (error) {
+    console.error("Supabase auth update error:", error);
     throw error;
   }
 
+  console.log("Auth user updated successfully - Now upserting profile...");
+
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
-    .upsert({ id: userId, role, username, birthday }, { onConflict: "id" });
+    .upsert(
+      {
+        id: userId,
+        email: normalizedEmail,
+        role,
+        username,
+        birthday: birthday || null,
+      },
+      { onConflict: "id" }
+    );
 
   if (profileError) {
     console.error("Error updating profile:", profileError);
     throw profileError;
   }
 
+  console.log("Profile upserted successfully for user:", userId);
   return data;
 }
 

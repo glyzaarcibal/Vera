@@ -58,11 +58,13 @@ export const fetchUserActivities = async (req, res) => {
 
 export const createAdminUser = async (req, res) => {
   try {
+    console.log("Creating admin user with data:", req.body);
     const userData = req.body;
     const result = await createUser(userData);
+    console.log("User created successfully:", result.user?.id);
     return res.status(201).json({ message: "User created successfully", user: result });
   } catch (e) {
-    console.error("Error creating user:", e);
+    console.error("Error creating user:", e.message, e);
     return res.status(400).json({ message: e.message || "Failed to create user" });
   }
 };
@@ -70,11 +72,13 @@ export const createAdminUser = async (req, res) => {
 export const updateAdminUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    console.log("Updating admin user:", userId, "with data:", req.body);
     const userData = req.body;
     const result = await updateUser(userId, userData);
+    console.log("User updated successfully:", userId);
     return res.status(200).json({ message: "User updated successfully", user: result });
   } catch (e) {
-    console.error("Error updating user:", e);
+    console.error("Error updating user:", e.message, e);
     return res.status(400).json({ message: e.message || "Failed to update user" });
   }
 };
