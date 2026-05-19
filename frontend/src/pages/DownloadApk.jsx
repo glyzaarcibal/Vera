@@ -7,10 +7,10 @@ const DownloadApk = () => {
 
   const triggerDownload = () => {
     setDownloadStarted(true);
-    const downloadUrl = "/app-debug.apk";
+    const downloadUrl = "/VERA.apk";
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.setAttribute("download", "app-debug.apk");
+    link.setAttribute("download", "VERA.apk");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -51,7 +51,7 @@ const DownloadApk = () => {
           className="w-full py-4.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mb-4 group cursor-pointer"
         >
           <MdDownload className="text-xl group-hover:translate-y-0.5 transition-transform" />
-          <span>{downloadStarted ? "Downloading Started..." : "Download APK File"}</span>
+          <span>{downloadStarted ? "Downloading Started..." : "Download VERA.apk"}</span>
         </button>
 
         <p className="text-xs text-slate-500 mb-8">
