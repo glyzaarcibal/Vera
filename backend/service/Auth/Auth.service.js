@@ -153,6 +153,7 @@ export async function verifyUserRegistration(code) {
       .from("profiles")
       .upsert({
         id: finalUser.id,
+        email: finalUser.email || pendingUser.email,
         username: pendingUser.user_metadata?.name || finalUser.email.split('@')[0],
         first_name: firstName,
         last_name: lastName,

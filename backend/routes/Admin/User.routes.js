@@ -10,17 +10,19 @@ import {
   deleteAdminUser,
 } from "../../controllers/Admin/User.controller.js";
 import { getAllSessionsOfByUser } from "../../controllers/Chat/Session.controller.js";
+import { setSupabaseSession } from "../../middleware/supabase.middleware.js";
+import { checkAdminRole } from "../../middleware/admin.middleware.js";
 const router = express.Router();
 
-router.get("/get-all-users", fetchUsers);
-router.get("/get-sessions-by-user/:userId", getAllSessionsOfByUser);
-router.get("/get-user-info/:userId", fetchUserInfo);
-router.get("/avatar-risk-stats", fetchAvatarRiskStats);
-router.get("/get-emotion-words/:userId", getUserEmotionWords);
-router.get("/get-user-activities/:userId", fetchUserActivities);
+router.get("/get-all-users", setSupabaseSession, checkAdminRole, fetchUsers);
+router.get("/get-sessions-by-user/:userId", setSupabaseSession, checkAdminRole, getAllSessionsOfByUser);
+router.get("/get-user-info/:userId", setSupabaseSession, checkAdminRole, fetchUserInfo);
+router.get("/avatar-risk-stats", setSupabaseSession, checkAdminRole, fetchAvatarRiskStats);
+router.get("/get-emotion-words/:userId", setSupabaseSession, checkAdminRole, getUserEmotionWords);
+router.get("/get-user-activities/:userId", setSupabaseSession, checkAdminRole, fetchUserActivities);
 
-router.post("/create-user", createAdminUser);
-router.put("/update-user/:userId", updateAdminUser);
-router.delete("/delete-user/:userId", deleteAdminUser);
+router.post("/create-user", setSupabaseSession, checkAdminRole, createAdminUser);
+router.put("/update-user/:userId", setSupabaseSession, checkAdminRole, updateAdminUser);
+router.delete("/delete-user/:userId", setSupabaseSession, checkAdminRole, deleteAdminUser);
 
 export default router;
