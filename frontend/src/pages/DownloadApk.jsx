@@ -90,7 +90,7 @@ const DownloadApk = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-200">Open & Install</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Open the downloaded VERA.apk file and follow the install prompt.</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Open the downloaded app-debug.apk file and follow the install prompt.</p>
             </div>
           </div>
         </div>
