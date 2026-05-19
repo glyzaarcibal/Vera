@@ -28,10 +28,10 @@ export async function checkAdminRole(req, res, next) {
       });
     }
 
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "psychology")) {
       return res.status(403).json({
         message: "Access denied",
-        error: "Admin privileges required",
+        error: "Admin or Psychology privileges required",
       });
     }
 
