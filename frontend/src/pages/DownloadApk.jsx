@@ -7,10 +7,10 @@ const DownloadApk = () => {
 
   const triggerDownload = () => {
     setDownloadStarted(true);
-    const downloadUrl = "/VERA.apk";
+    const downloadUrl = "/app-debug.apk";
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.setAttribute("download", "VERA.apk");
+    link.setAttribute("download", "Vera.apk");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
