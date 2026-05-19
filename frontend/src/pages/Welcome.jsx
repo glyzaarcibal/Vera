@@ -5,7 +5,6 @@ import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import ModalPortal from "../components/ModalPortal";
 import mentalImg from "../assets/mental.png";
-import veraApk from "../assets/VERA.apk";
 import voiceWaveImg from "../assets/voice-wave.png";
 import qrCodeImg from "../assets/qr-code.png";
 import { setUser } from "../store/slices/authSlice";
