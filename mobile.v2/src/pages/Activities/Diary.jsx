@@ -90,8 +90,7 @@ const Diary = () => {
         activityType: "diary",
         data: newEntry
       });
-      
-      if (res.data?.updatedTokens !== null) {
+      if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
         setShowRewardModal(true);
       }

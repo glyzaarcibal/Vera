@@ -328,6 +328,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             <video
               ref={videoRef}
               src={ANIMAL_GUIDES.find(g => g.id === animalType)?.video}
+              poster={ANIMAL_GUIDES.find(g => g.id === animalType)?.image}
               className="didagent-video"
               style={{ objectFit: 'cover' }}
               playsInline

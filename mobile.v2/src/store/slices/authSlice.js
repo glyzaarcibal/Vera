@@ -15,7 +15,10 @@ const authSlice = createSlice({
     },
     updateTokens: (state, action) => {
       if (state.user) {
-        state.user.tokens = action.payload;
+        state.user = {
+          ...state.user,
+          tokens: action.payload,
+        };
       }
     },
     clearUser: (state) => {

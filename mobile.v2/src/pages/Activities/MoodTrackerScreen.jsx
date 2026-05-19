@@ -428,7 +428,7 @@ const MoodTrackerScreen = ({ navigation }) => {
         data: newEntry
       });
 
-      if (res.data?.updatedTokens !== null) {
+      if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
         setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
         setShowRewardModal(true);
