@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
+import { setUser, updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Smile, Palette, Trash2, ArrowLeft, Book, Heart, Trees } from "lucide-react";
@@ -91,10 +91,22 @@ const Diary = () => {
         data: newEntry
       });
       
-      if (res.data?.updatedTokens !== null) {
-        dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
+      const tokenBalance = Number(res.data?.updatedTokens);
+      if (!Number.isNaN(tokenBalance)) {
+        dispatch(updateTokens(tokenBalance));
       }
+      setShowRewardModal(true);
+
+      axiosInstance
+        .get("/auth/fetch-profile")
+        .then((profileRes) => {
+          if (profileRes.data?.profile) {
+            dispatch(setUser(profileRes.data.profile));
+          }
+        })
+        .catch((syncError) => {
+          console.error("Error syncing profile after diary save:", syncError);
+        });
       
       loadEntries();
     } catch (error) {
@@ -419,4 +431,3 @@ const Diary = () => {
 };
 
 export default Diary;
-

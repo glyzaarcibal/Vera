@@ -147,8 +147,8 @@ const SleepTracker = () => {
 
       if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
       }
+      setShowRewardModal(true);
 
       loadSleepData();
     } catch (error) {

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Smile, Frown, Meh, Sun, X, CheckCircle, ChevronRight, ChevronLeft } from "lucide-react";
 import axiosInstance from "../utils/axios.instance";
 import { useDispatch } from "react-redux";
-import { updateTokens } from "../store/slices/authSlice";
+import { setUser, updateTokens } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
 import { MOOD_LEVELS } from "../utils/moodData";
 import "./MoodTrackerModal.css";
@@ -38,11 +38,24 @@ const MoodTrackerModal = ({ isOpen, onClose, onLogged }) => {
         data: moodData
       });
 
-      if (res.data?.updatedTokens) {
-        dispatch(updateTokens(res.data.updatedTokens));
+      const tokenBalance = Number(res.data?.updatedTokens);
+      if (!Number.isNaN(tokenBalance)) {
+        dispatch(updateTokens(tokenBalance));
       }
 
       setIsSuccess(true);
+
+      axiosInstance
+        .get("/auth/fetch-profile")
+        .then((profileRes) => {
+          if (profileRes.data?.profile) {
+            dispatch(setUser(profileRes.data.profile));
+          }
+        })
+        .catch((syncError) => {
+          console.error("Error syncing profile after mood save:", syncError);
+        });
+
       setTimeout(() => {
         onLogged();
         onClose();

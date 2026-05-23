@@ -32,6 +32,7 @@ const PsychologyUserManagement = () => {
     email: "",
     password: "",
     username: "",
+    birthday: "",
     role: "user",
   });
 
@@ -70,7 +71,11 @@ const PsychologyUserManagement = () => {
       }
 
       const formattedUsers = usersData.map((user) => {
-        const birthDateStr = user.profile?.birthday || user.profile?.birthDate;
+        const birthDateStr =
+          user.profile?.birthday ||
+          user.profile?.birthDate ||
+          user.user_metadata?.birthday ||
+          user.user_metadata?.birthDate;
         let ageGroup = "Unknown";
         if (birthDateStr) {
           const birthDate = new Date(birthDateStr);
@@ -124,7 +129,7 @@ const PsychologyUserManagement = () => {
         type: "success"
       });
       setShowAddModal(false);
-      setFormData({ email: "", password: "", username: "", role: "user" });
+      setFormData({ email: "", password: "", username: "", birthday: "", role: "user" });
       fetchAllUsers();
     } catch (error) {
       console.error("Error creating user:", error);
@@ -313,7 +318,7 @@ const PsychologyUserManagement = () => {
         isOpen={showAddModal}
         onClose={() => {
           setShowAddModal(false);
-          setFormData({ email: "", password: "", username: "", role: "user" });
+          setFormData({ email: "", password: "", username: "", birthday: "", role: "user" });
         }}
         title="Create New User"
         type="confirm"
@@ -357,6 +362,17 @@ const PsychologyUserManagement = () => {
                 />
               </div>
               <div className="group">
+                <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Birthday</label>
+                <input
+                  type="date"
+                  required
+                  value={formData.birthday}
+                  onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                  max={new Date().toISOString().split("T")[0]}
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-700"
+                />
+              </div>
+              <div className="group">
                 <label className="block text-[11px] font-black text-indigo-600 uppercase tracking-widest mb-2 ml-1">Assigned Role</label>
                 <select
                   value={formData.role}
@@ -373,7 +389,7 @@ const PsychologyUserManagement = () => {
                 type="button"
                 onClick={() => {
                   setShowAddModal(false);
-                  setFormData({ email: "", password: "", username: "", role: "user" });
+                  setFormData({ email: "", password: "", username: "", birthday: "", role: "user" });
                 }}
                 className="flex-1 px-6 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-2xl font-black text-[12px] tracking-widest transition-all"
               >
