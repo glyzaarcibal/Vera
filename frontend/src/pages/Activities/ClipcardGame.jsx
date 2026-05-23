@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
+import { setUser, updateTokens } from "../../store/slices/authSlice";
 import axiosInstance from "../../utils/axios.instance";
 import { motion, AnimatePresence } from "framer-motion";
 import TokenRewardModal from "../../components/TokenRewardModal";
@@ -223,10 +223,22 @@ const ClipCardGame = () => {
         activityType: "clipcard",
         data: { score, mode: mode.name, timestamp: new Date().toISOString() }
       });
-      if (res.data?.updatedTokens) {
-        dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
+      const tokenBalance = Number(res.data?.updatedTokens);
+      if (!Number.isNaN(tokenBalance)) {
+        dispatch(updateTokens(tokenBalance));
       }
+      setShowRewardModal(true);
+
+      axiosInstance
+        .get("/auth/fetch-profile")
+        .then((profileRes) => {
+          if (profileRes.data?.profile) {
+            dispatch(setUser(profileRes.data.profile));
+          }
+        })
+        .catch((syncError) => {
+          console.error("Error syncing profile after clipcard save:", syncError);
+        });
     } catch (e) {
       console.error("Save failed", e);
     }

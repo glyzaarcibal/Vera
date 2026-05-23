@@ -273,7 +273,7 @@ import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
 import { useLanguage } from "../../context/LanguageContext";
 import axiosInstance from "../../utils/axios.instance.js";
-import { updateTokens } from "../../store/slices/authSlice";
+import { setUser, updateTokens } from "../../store/slices/authSlice";
 
 // Use a local api constant to avoid scope issues
 const api = axiosInstance;
@@ -419,14 +419,27 @@ const MoodTrackerScreen = ({ navigation }) => {
         data: newEntry
       });
 
-      if (res.data?.updatedTokens !== null) {
-        dispatch(updateTokens(res.data.updatedTokens));
-        setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
-        setShowRewardModal(true);
+      const tokenBalance = Number(res.data?.updatedTokens);
+      if (!Number.isNaN(tokenBalance)) {
+        dispatch(updateTokens(tokenBalance));
       }
 
-      // Refetch history after saving
-      await loadMoodHistory();
+      setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
+      setShowRewardModal(true);
+
+      // Non-blocking sync: show modal immediately, refresh profile/history in background.
+      api
+        .get("/auth/fetch-profile")
+        .then((profileRes) => {
+          if (profileRes.data?.profile) {
+            dispatch(setUser(profileRes.data.profile));
+          }
+        })
+        .catch((syncError) => {
+          console.error("Error syncing profile after mood save:", syncError);
+        });
+
+      loadMoodHistory();
 
       setSelectedMood(null);
       setReason("");

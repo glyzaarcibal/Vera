@@ -4,7 +4,7 @@ import autoTable from "jspdf-autotable";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axios.instance";
 import { useSelector, useDispatch } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
+import { setUser, updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import { 
   Heart, History, MessageSquare, CheckCircle, ArrowLeft, X, Download, Plus, Pill, Star
@@ -90,10 +90,22 @@ const MedicationTracker = () => {
                 data: newEntry,
             });
 
-            if (res.data?.updatedTokens !== null) {
-                dispatch(updateTokens(res.data.updatedTokens));
-                setShowRewardModal(true);
+            const tokenBalance = Number(res.data?.updatedTokens);
+            if (!Number.isNaN(tokenBalance)) {
+                dispatch(updateTokens(tokenBalance));
             }
+            setShowRewardModal(true);
+
+            axiosInstance
+                .get("/auth/fetch-profile")
+                .then((profileRes) => {
+                    if (profileRes.data?.profile) {
+                        dispatch(setUser(profileRes.data.profile));
+                    }
+                })
+                .catch((syncError) => {
+                    console.error("Error syncing profile after medication save:", syncError);
+                });
 
             setMedicationName("");
             setDosage("");

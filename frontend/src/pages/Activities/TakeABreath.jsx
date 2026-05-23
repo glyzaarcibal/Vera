@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { updateTokens } from "../../store/slices/authSlice";
+import { setUser, updateTokens } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/authSelectors";
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutGrid, Wind, Moon, Sun, Timer, ArrowLeft, Sparkles, Cloud } from "lucide-react";
@@ -266,10 +266,23 @@ const TakeABreath = () => {
         activityType: "breath",
         data: newEntry
       });
-      if (res.data?.updatedTokens) {
-        dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
+      const tokenBalance = Number(res.data?.updatedTokens);
+      if (!Number.isNaN(tokenBalance)) {
+        dispatch(updateTokens(tokenBalance));
       }
+      setShowRewardModal(true);
+
+      axiosInstance
+        .get("/auth/fetch-profile")
+        .then((profileRes) => {
+          if (profileRes.data?.profile) {
+            dispatch(setUser(profileRes.data.profile));
+          }
+        })
+        .catch((syncError) => {
+          console.error("Error syncing profile after breath save:", syncError);
+        });
+
       loadHistory();
     } catch (e) { 
       console.error(e); 
@@ -445,4 +458,4 @@ const TakeABreath = () => {
   );
 };
 
-export default TakeABreath;
+export default TakeABreath;

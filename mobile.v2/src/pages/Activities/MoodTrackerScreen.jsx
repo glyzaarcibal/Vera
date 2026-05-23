@@ -430,9 +430,9 @@ const MoodTrackerScreen = ({ navigation }) => {
 
       if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
-        setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
-        setShowRewardModal(true);
       }
+      setRewardData({ amount: 5, message: "Your mood has been logged. Keep up the great work on your wellness journey!" });
+      setShowRewardModal(true);
 
       // Refetch history after saving
       await loadMoodHistory();

@@ -225,8 +225,8 @@ const ClipCardGame = () => {
       });
       if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
       }
+      setShowRewardModal(true);
     } catch (e) {
       console.error("Save failed", e);
     }

@@ -268,8 +268,8 @@ const TakeABreath = () => {
       });
       if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
       }
+      setShowRewardModal(true);
       loadHistory();
     } catch (e) { 
       console.error(e); 

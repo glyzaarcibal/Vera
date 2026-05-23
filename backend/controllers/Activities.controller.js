@@ -1,4 +1,5 @@
 import { saveActivityToDB, getActivitiesFromDB } from "../service/Activities.service.js";
+import { addTokens } from "../service/Auth/Token.service.js";
 
 // Save activity for a user
 export const saveActivity = async (req, res) => {
@@ -10,14 +11,9 @@ export const saveActivity = async (req, res) => {
     }
     await saveActivityToDB(userId, activityType, data);
 
-    // Award 5 tokens for completing an activity
-    let updatedTokens = null;
-    try {
-      updatedTokens = await addTokens(userId, 5, `Completed activity: ${activityType}`);
-    } catch (tokenError) {
-      console.error("[saveActivity] Failed to award tokens:", tokenError);
-      // Don't fail the request if token awarding fails
-    }
+    // Award 5 tokens for completing an activity.
+    // If this fails, return an error so the client won't show a false reward success.
+    const updatedTokens = await addTokens(userId, 5, `Completed activity: ${activityType}`);
 
     res.status(200).json({
       message: "Activity saved successfully and 5 tokens earned!",

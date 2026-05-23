@@ -92,8 +92,8 @@ const Diary = () => {
       });
       if (res.data && typeof res.data.updatedTokens === 'number') {
         dispatch(updateTokens(res.data.updatedTokens));
-        setShowRewardModal(true);
       }
+      setShowRewardModal(true);
       
       loadEntries();
     } catch (error) {
