@@ -28,7 +28,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const streamRef = useRef(null);
 
   const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
 
   const ANIMAL_GUIDES = [
     {
@@ -39,7 +39,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       image: CatImg,
       video: meowVideo,
       voiceId: '21m00Tcm4TlvDq8ikWAM',
-      personality: 'You are Luna, a playful, slightly sassy but deeply empathetic cat AI companion. Respond with feline charm and occasional "meows."'
+      personality: 'You are Luna, a playful, slightly sassy but deeply empathetic cat AI companion. Respond warmly and naturally without roleplay actions or animal sound effects.'
     },
     {
       id: 'dog',
@@ -49,9 +49,19 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       image: DogImg,
       video: arfarfVideo,
       voiceId: 'JBFqnCBsd6RMkjVDRZzb',
-      personality: 'You are Cooper, an enthusiastic, loyal dog AI companion. Respond with boundless energy, warmth, and occasional "woofs!"'
+      personality: 'You are Cooper, an enthusiastic, loyal dog AI companion. Respond with boundless energy and warmth, without roleplay actions or animal sound effects.'
     }
   ];
+
+  const sanitizeAnimalReply = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    let cleaned = text;
+    cleaned = cleaned.replace(/\*[^*]*\*/g, ' ');
+    cleaned = cleaned.replace(/\([^)]*\)/g, ' ');
+    cleaned = cleaned.replace(/\b(woof|woofs|meow|meows|bark|barks|arf|purr|purrs|ooh|aah|ook|hoo)\b/gi, ' ');
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+    return cleaned;
+  };
 
   const initializeSession = async (type) => {
     try {
@@ -71,6 +81,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
 
   const startRecording = async () => {
     try {
+      localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
@@ -140,54 +151,31 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
 
-        // Save user message and trigger backend emotion persistence
+        // Save user message and get AI response from backend
         try {
-          await axiosInstance.post(`/messages/process-message/${sessionId}`, {
+          const aiRes = await axiosInstance.post(`/messages/process-message/${sessionId}`, {
             message: { text: data.text },
             audioBase64,
-            messages: updatedMessages
+            messages: updatedMessages,
+            systemPrompt: ANIMAL_GUIDES.find(g => g.id === animalType)?.personality
           });
-        } catch (saveErr) {
-          console.error("Failed to save message to session:", saveErr);
-        }
 
-        await getAIResponse(data.text, updatedMessages);
+          const aiMsg = sanitizeAnimalReply(aiRes?.data?.response);
+          if (aiMsg) {
+            const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
+            onTranscript?.(aiMsg, { author: guide.name, source: 'animal' });
+            setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
+            await speakText(aiMsg);
+          }
+        } catch (saveErr) {
+          console.error("Failed to process message on backend:", saveErr);
+          setError('AI error');
+        }
       }
     } catch (e) {
       setError('Transcription failed');
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const getAIResponse = async (text, currentMessages) => {
-    setIsProcessing(true);
-    try {
-      const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: guide.personality },
-            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: text }
-          ],
-          max_tokens: 150
-        })
-      });
-      const data = await res.json();
-      const aiMsg = data.choices[0]?.message?.content;
-      if (aiMsg) {
-        onTranscript?.(aiMsg, { author: guide.name, source: 'animal' });
-        setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
-        await speakText(aiMsg);
-      }
-    } catch (e) {
-      setError('AI error');
-    } finally {
-      if (!isSpeaking) setIsProcessing(false);
     }
   };
 
@@ -222,6 +210,15 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       // Fallback to browser TTS
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
+        const animalVoiceStyles = {
+          cat: { pitch: 1.35, rate: 1.08 },
+          dog: { pitch: 0.9, rate: 1.0 },
+          monkey: { pitch: 1.2, rate: 1.14 },
+          panda: { pitch: 0.82, rate: 0.92 }
+        };
+        const style = animalVoiceStyles[animalType] || { pitch: 1.0, rate: 1.0 };
+        utterance.pitch = style.pitch;
+        utterance.rate = style.rate;
         utterance.onstart = () => {
           setIsSpeaking(true);
           videoRef.current?.play();

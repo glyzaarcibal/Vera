@@ -6,15 +6,11 @@ import './AvatarAI.css';
 import ReusableModal from "../components/ReusableModal";
 
 // Assets
-import womanAmericaVideo from '../assets/Unleash+yo.mp4';
 import americanGirlVideo from '../assets/american-girl.mp4';
 import americanGirl1Video from '../assets/american-girl-1.mp4';
 import americanGirl1ThinkingVideo from '../assets/american-girl-1-thinking.mp4';
 import americanGirl2Video from '../assets/american-girl-2.mp4';
 import americanGirl3Video from '../assets/american-girl-3.mp4';
-import manAmericaVideo from '../assets/_Removed+D.mp4';
-import womanFilipinoVideo from '../assets/pinoywomen.mp4';
-import manFilipinoVideo from '../assets/filipino-boy.mp4';
 import americanBoyVideo from '../assets/american-boy.mp4';
 import americanBoy1Video from '../assets/american-boy-1.mp4';
 import americanBoy2Video from '../assets/american-boy-2.mp4';
@@ -72,7 +68,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const streamRef = useRef(null);
 
   const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
-  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
 
   const AVATAR_OPTIONS = [
     {
@@ -156,6 +152,11 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       if (navigator.permissions && navigator.permissions.query) {
         const status = await navigator.permissions.query({ name: 'microphone' });
         if (status.state === 'prompt') {
+          const hasSeenGuide = localStorage.getItem(MIC_ACCESS_GUIDE_KEY) === '1';
+          if (hasSeenGuide) {
+            proceedWithMic();
+            return;
+          }
           setShowMicModal(true);
           return;
         }
@@ -169,6 +170,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
 
   const proceedWithMic = async () => {
     setShowMicModal(false);
+    localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -206,26 +208,41 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     });
   };
 
+  const inferEmotionFromText = (text) => {
+    const normalized = (text || '').toLowerCase();
+    const happyKeywords = ['happy', 'joy', 'joyful', 'excited', 'glad', 'cheerful', 'masaya', 'saya', 'tuwang-tuwa'];
+    const sadKeywords = ['sad', 'down', 'lonely', 'depressed', 'malungkot'];
+    const angryKeywords = ['angry', 'mad', 'furious', 'galit', 'inis'];
+    const anxiousKeywords = ['anxious', 'nervous', 'worried', 'stressed', 'kabado', 'balisa'];
+
+    if (happyKeywords.some((w) => normalized.includes(w))) return 'joyful';
+    if (sadKeywords.some((w) => normalized.includes(w))) return 'sad';
+    if (angryKeywords.some((w) => normalized.includes(w))) return 'angry';
+    if (anxiousKeywords.some((w) => normalized.includes(w))) return 'anxious';
+    return null;
+  };
+
   const transcribeAudio = async (blob) => {
     setIsProcessing(true);
     try {
       const audioBase64 = await convertBlobToBase64(blob);
       
+      let voiceEmotion = null;
+      let voiceScore = 0;
+
       // Real-time emotion detection for UI
-      axiosInstance.post("/emotion-from-voice", { audioBase64 })
-        .then(res => {
-          if (res.data?.mappedScores) {
-            console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
-          }
-          if (res.data?.emotion) {
-            setDetectedEmotion({
-              emotion: res.data.emotion,
-              score: res.data.score ?? 0,
-              source: "Hume AI"
-            });
-          }
-        })
-        .catch(err => console.error("Emotion detection UI error:", err));
+      try {
+        const emotionRes = await axiosInstance.post("/emotion-from-voice", { audioBase64 });
+        if (emotionRes.data?.mappedScores) {
+          console.log("HUME AI Mapped Emotion Scores:", emotionRes.data.mappedScores);
+        }
+        if (emotionRes.data?.emotion) {
+          voiceEmotion = emotionRes.data.emotion;
+          voiceScore = emotionRes.data.score ?? 0;
+        }
+      } catch (err) {
+        console.error("Emotion detection UI error:", err);
+      }
 
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
@@ -237,60 +254,51 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       });
       const data = await res.json();
       if (data.text) {
+        const textEmotion = inferEmotionFromText(data.text);
+        const shouldUseTextEmotion =
+          !!textEmotion &&
+          (
+            !voiceEmotion ||
+            voiceEmotion.toLowerCase() === 'neutral' ||
+            voiceScore < 0.45
+          );
+
+        setDetectedEmotion({
+          emotion: shouldUseTextEmotion ? textEmotion : (voiceEmotion || textEmotion || 'neutral'),
+          score: shouldUseTextEmotion ? 0.85 : voiceScore,
+          source: shouldUseTextEmotion ? "Text + Voice" : "Hume AI"
+        });
+
         onTranscript?.(data.text, { author: 'User', source: 'did' });
         
         const newUserMessage = { role: 'user', content: data.text, text: data.text, type: 'user' };
         const updatedMessages = [...messages, newUserMessage];
         setMessages(updatedMessages);
 
-        // Save user message and trigger backend emotion detection
+        // Save user message and get AI response from backend
         try {
-          await axiosInstance.post(`/messages/process-message/${sessionId}`, {
+          const aiRes = await axiosInstance.post(`/messages/process-message/${sessionId}`, {
             message: { text: data.text },
             audioBase64,
             messages: updatedMessages
           });
-        } catch (saveErr) {
-          console.error("Failed to save message to session:", saveErr);
-        }
 
-        await getAIResponse(data.text, updatedMessages);
+          const aiMsg = aiRes?.data?.response;
+          if (aiMsg) {
+            const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
+            onTranscript?.(aiMsg, { author: agent?.name || 'AI', source: 'did' });
+            setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
+            await speakText(aiMsg);
+          }
+        } catch (saveErr) {
+          console.error("Failed to process message on backend:", saveErr);
+          setError('AI error');
+        }
       }
     } catch (e) {
       setError('Transcription failed');
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const getAIResponse = async (text, currentMessages) => {
-    setIsProcessing(true);
-    try {
-      const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: `You are ${agent.name}, a compassionate therapeutic companion. ${agent.description}` },
-            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: text }
-          ],
-          max_tokens: 150
-        })
-      });
-      const data = await res.json();
-      const aiMsg = data.choices[0]?.message?.content;
-      if (aiMsg) {
-        onTranscript?.(aiMsg, { author: agent?.name || 'AI', source: 'did' });
-        setMessages(prev => [...prev, { role: 'assistant', content: aiMsg, text: aiMsg, type: 'bot' }]);
-        await speakText(aiMsg);
-      }
-    } catch (e) {
-      setError('AI error');
-    } finally {
-      if (!isSpeaking) setIsProcessing(false);
     }
   };
 
@@ -530,4 +538,4 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       )}
     </div>
   );
-}
+}

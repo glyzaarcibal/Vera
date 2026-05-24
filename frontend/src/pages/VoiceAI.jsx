@@ -79,6 +79,7 @@ const VoiceAI = () => {
   const user = useSelector((state) => state.auth.user);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showMicModal, setShowMicModal] = useState(false);
+  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -330,6 +331,11 @@ const VoiceAI = () => {
       try {
         const status = await navigator.permissions.query({ name: 'microphone' });
         if (status.state === 'prompt') {
+          const hasSeenGuide = localStorage.getItem(MIC_ACCESS_GUIDE_KEY) === '1';
+          if (hasSeenGuide) {
+            proceedWithMic();
+            return;
+          }
           setShowMicModal(true);
           return;
         }
@@ -362,6 +368,7 @@ const VoiceAI = () => {
 
   const proceedWithMic = async () => {
     setShowMicModal(false);
+    localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;

@@ -77,6 +77,7 @@ const VoiceAI = () => {
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
   const [showMicModal, setShowMicModal] = useState(false);
+  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -260,6 +261,11 @@ const VoiceAI = () => {
         if (navigator.permissions && navigator.permissions.query) {
           const status = await navigator.permissions.query({ name: 'microphone' });
           if (status.state === 'prompt') {
+            const hasSeenGuide = localStorage.getItem(MIC_ACCESS_GUIDE_KEY) === '1';
+            if (hasSeenGuide) {
+              proceedWithMic();
+              return;
+            }
             setShowMicModal(true);
             return;
           }
@@ -290,6 +296,7 @@ const VoiceAI = () => {
 
   const proceedWithMic = async () => {
     setShowMicModal(false);
+    localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
     setIsCallActive(true);
     setIsListening(false);
     setTranscript("");
