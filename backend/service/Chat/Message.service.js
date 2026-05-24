@@ -16,11 +16,16 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function generateResponse(message, conversationHistory = []) {
+export async function generateResponse(message, conversationHistory = [], systemPrompt = null) {
+  const resolvedPrompt =
+    typeof systemPrompt === "string" && systemPrompt.trim().length > 0
+      ? systemPrompt.trim()
+      : PROMPT;
+
   const messages = [
     {
       role: "system",
-      content: PROMPT,
+      content: resolvedPrompt,
     },
     ...conversationHistory,
     {

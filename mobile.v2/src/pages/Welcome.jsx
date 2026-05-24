@@ -5,7 +5,6 @@ import { selectUser } from "../store/slices/authSelectors";
 import axiosInstance from "../utils/axios.instance";
 import ModalPortal from "../components/ModalPortal";
 import mentalImg from "../assets/mental.png";
-import qrCodeScanImg from "../assets/qrcode.jpg";
 import voiceWaveImg from "../assets/voice-wave.png";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";

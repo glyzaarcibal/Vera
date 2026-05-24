@@ -13,7 +13,7 @@ export const processMessage = async (req, res) => {
   try {
     const userId = req.userId;
     const { sessionId } = req.params;
-    const { message, messages = [], audioBase64 } = req.body;
+    const { message, messages = [], audioBase64, systemPrompt } = req.body;
     const permissions = await fetchPermissions(userId);
     console.log("Permission to save:", permissions.permit_store);
     console.log("Permission to analyze:", permissions.permit_analyze);
@@ -52,7 +52,8 @@ export const processMessage = async (req, res) => {
 
     const response = await generateResponse(
       userMessage.content,
-      conversationHistory
+      conversationHistory,
+      systemPrompt
     );
     const botMessage = {
       ...userMessage,
