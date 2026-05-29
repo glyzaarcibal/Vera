@@ -17,25 +17,32 @@ export async function getAllUsers(params = {}) {
     throw error;
   }
 
-  // Fetch profiles for all users in parallel (maybeSingle: no row = null, no error)
-  const usersWithProfiles = await Promise.all(
-    data.users.map(async (user) => {
-      const { data: profile, error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
+  // Fetch profiles for all users in a single query
+  const userIds = data.users.map((user) => user.id);
+  
+  // Only query if we have users to avoid syntax errors with empty arrays
+  let profilesMap = {};
+  if (userIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .in("id", userIds);
 
-      if (profileError) {
-        throw profileError;
-      }
+    if (profilesError) {
+      throw profilesError;
+    }
 
-      return {
-        ...user,
-        profile: profile ?? null,
-      };
-    })
-  );
+    // Create a map for fast lookup
+    profilesMap = profiles.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {});
+  }
+
+  const usersWithProfiles = data.users.map((user) => ({
+    ...user,
+    profile: profilesMap[user.id] ?? null,
+  }));
 
   // Apply filters
   let filteredUsers = usersWithProfiles;
