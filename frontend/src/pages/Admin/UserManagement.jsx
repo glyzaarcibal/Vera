@@ -41,6 +41,10 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [ageGroupFilter, setAgeGroupFilter] = useState("all");
+  const [sortOrderFilter, setSortOrderFilter] = useState("desc");
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [availableAgeGroups, setAvailableAgeGroups] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -74,8 +78,30 @@ const UserManagement = () => {
   }, [searchTerm]);
 
   useEffect(() => {
+    const fetchFiltersData = async () => {
+      try {
+        const [rolesRes, ageGroupsRes] = await Promise.all([
+          axiosInstance.get('/admin/users/roles'),
+          axiosInstance.get('/admin/users/age-groups')
+        ]);
+        
+        const baseRoles = ["admin", "psychology", "user"];
+        const fetchedRoles = rolesRes.data.roles || [];
+        const combinedRoles = [...new Set([...baseRoles, ...fetchedRoles])];
+        setAvailableRoles(combinedRoles);
+
+        const fetchedAgeGroups = ageGroupsRes.data.ageGroups || [];
+        setAvailableAgeGroups(fetchedAgeGroups);
+      } catch (err) {
+        console.error("Error fetching filters data:", err);
+      }
+    };
+    fetchFiltersData();
+  }, []);
+
+  useEffect(() => {
     fetchAllUsers();
-  }, [currentPage, debouncedSearch, roleFilter, statusFilter]);
+  }, [currentPage, debouncedSearch, roleFilter, statusFilter, ageGroupFilter, sortOrderFilter]);
 
   const fetchAllUsers = async () => {
     try {
@@ -85,6 +111,8 @@ const UserManagement = () => {
         search: debouncedSearch,
         role: roleFilter,
         status: statusFilter,
+        ageGroup: ageGroupFilter,
+        sortOrder: sortOrderFilter,
       });
 
       const res = await axiosInstance.get(
@@ -104,13 +132,16 @@ const UserManagement = () => {
           user.user_metadata?.birthday ||
           user.user_metadata?.birthDate;
 
+        const joinedDate = new Date(user.profile?.created_at || user.created_at);
+        const formattedJoined = `${String(joinedDate.getMonth() + 1).padStart(2, '0')}-${String(joinedDate.getDate()).padStart(2, '0')}-${joinedDate.getFullYear()}`;
+
         return {
           id: user.id,
           username: user.profile?.username || "Unknown",
           email: user.email,
           role: user.profile?.role || "user",
           status: user.is_anonymous ? "Inactive" : "Active",
-          joined: new Date(user.created_at).toISOString().split("T")[0],
+          joined: formattedJoined,
           avatar_url: user.profile?.avatar_url || null,
           birthday: birthDateStr || "",
           ageGroup: getAgeGroup(birthDateStr)
@@ -230,9 +261,11 @@ const UserManagement = () => {
               className="filter-select-field"
             >
               <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="psychology">Psychology</option>
-              <option value="user">User</option>
+              {availableRoles.map(r => (
+                <option key={r} value={r}>
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                </option>
+              ))}
             </select>
             <select
               value={statusFilter}
@@ -242,6 +275,26 @@ const UserManagement = () => {
               <option value="all">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
+            </select>
+            <select
+              value={ageGroupFilter}
+              onChange={(e) => setAgeGroupFilter(e.target.value)}
+              className="filter-select-field"
+            >
+              <option value="all">All Age Groups</option>
+              {availableAgeGroups.map((ageGroup) => (
+                <option key={ageGroup} value={ageGroup}>
+                  {ageGroup}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sortOrderFilter}
+              onChange={(e) => setSortOrderFilter(e.target.value)}
+              className="filter-select-field"
+            >
+              <option value="desc">Newest First</option>
+              <option value="asc">Oldest First</option>
             </select>
             <button
               onClick={() => setShowAddModal(true)}

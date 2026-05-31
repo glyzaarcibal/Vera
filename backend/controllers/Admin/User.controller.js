@@ -1,4 +1,4 @@
-import { getAllUsers, getUserInfo, detectEmotionWords, createUser, updateUser, deleteUser } from "../../service/Admin/User.service.js";
+import { getAllUsers, getUserInfo, detectEmotionWords, createUser, updateUser, deleteUser, getDistinctRoles, getDistinctAgeGroups } from "../../service/Admin/User.service.js";
 import { getAvatarRiskStats } from "../../service/Chat/Session.service.js";
 import { getActivitiesFromDB } from "../../service/Activities.service.js";
 
@@ -14,11 +14,33 @@ export const fetchAvatarRiskStats = async (req, res) => {
 
 export const fetchUsers = async (req, res) => {
   try {
-    const { page, limit, search, role, status, exclude_roles } = req.query;
-    const result = await getAllUsers({ page, limit, search, role, status, exclude_roles });
+    const { page, limit, search, role, status, ageGroup, exclude_roles, sortOrder } = req.query;
+    const currentUserRole = req.userProfile?.role;
+    const result = await getAllUsers({ page, limit, search, role, status, ageGroup, exclude_roles, sortOrder, currentUserRole });
     return res.status(200).json(result);
   } catch (e) {
     console.error("Error fetching users:", e);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+export const fetchRoles = async (req, res) => {
+  try {
+    const currentUserRole = req.userProfile?.role;
+    const roles = await getDistinctRoles(currentUserRole);
+    return res.status(200).json({ roles });
+  } catch (e) {
+    console.error("Error fetching roles:", e);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+export const fetchAgeGroups = async (req, res) => {
+  try {
+    const ageGroups = await getDistinctAgeGroups();
+    return res.status(200).json({ ageGroups });
+  } catch (e) {
+    console.error("Error fetching age groups:", e);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };

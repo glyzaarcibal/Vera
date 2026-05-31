@@ -12,6 +12,9 @@ const PsychologyUserManagement = () => {
   const [users, setUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [ageGroupFilter, setAgeGroupFilter] = useState("all");
+  const [availableAgeGroups, setAvailableAgeGroups] = useState([]);
+  const [sortOrderFilter, setSortOrderFilter] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [notification, setNotification] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [pagination, setPagination] = useState({
@@ -38,6 +41,19 @@ const PsychologyUserManagement = () => {
 
   // Debounce search term
   useEffect(() => {
+    const fetchFiltersData = async () => {
+      try {
+        const ageGroupsRes = await axiosInstance.get('/admin/users/age-groups');
+        const fetchedAgeGroups = ageGroupsRes.data.ageGroups || [];
+        setAvailableAgeGroups(fetchedAgeGroups);
+      } catch (err) {
+        console.error("Error fetching filters data:", err);
+      }
+    };
+    fetchFiltersData();
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
@@ -48,7 +64,7 @@ const PsychologyUserManagement = () => {
 
   useEffect(() => {
     fetchAllUsers();
-  }, [currentPage, debouncedSearch, roleFilter, statusFilter]);
+  }, [currentPage, debouncedSearch, roleFilter, statusFilter, ageGroupFilter, sortOrderFilter]);
 
   const fetchAllUsers = async () => {
     try {
@@ -58,6 +74,8 @@ const PsychologyUserManagement = () => {
         search: debouncedSearch,
         role: roleFilter,
         status: statusFilter,
+        ageGroup: ageGroupFilter,
+        sortOrder: sortOrderFilter,
         exclude_roles: "admin",
       });
 
@@ -91,13 +109,16 @@ const PsychologyUserManagement = () => {
           else ageGroup = "Seniors";
         }
 
+        const joinedDate = new Date(user.profile?.created_at || user.created_at);
+        const formattedJoined = `${String(joinedDate.getMonth() + 1).padStart(2, '0')}-${String(joinedDate.getDate()).padStart(2, '0')}-${joinedDate.getFullYear()}`;
+
         return {
           id: user.id,
           username: user.profile?.username || "Unknown",
           email: user.email,
           role: user.profile?.role || "user",
           status: user.is_anonymous ? "Inactive" : "Active",
-          joined: new Date(user.created_at).toISOString().split("T")[0],
+          joined: formattedJoined,
           avatar_url: user.profile?.avatar_url || null,
           ageGroup: ageGroup
         };
@@ -144,7 +165,6 @@ const PsychologyUserManagement = () => {
     }
   };
 
-
   return (
     <div className="user-management-container relative" style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 0', minHeight: '100vh' }}>
       <div className="page-header" style={{ marginBottom: 32 }}>
@@ -156,7 +176,7 @@ const PsychologyUserManagement = () => {
 
       <div className="design-section" style={{ background: '#fff', borderRadius: 24, boxShadow: '0 8px 32px rgba(102,126,234,0.08)', padding: 32, marginBottom: 32 }}>
         <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-10 relative">
-          <div className="relative w-full md:w-96 mb-4 md:mb-0">
+          <div className="relative w-full md:w-64 lg:w-80 mb-4 md:mb-0 shrink-0">
             <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl" />
             <input
               type="text"
@@ -167,12 +187,12 @@ const PsychologyUserManagement = () => {
               style={{ marginBottom: 0, fontSize: 16 }}
             />
           </div>
-          <div className="flex flex-wrap gap-4 w-full md:w-auto items-center">
+          <div className="flex flex-wrap xl:flex-nowrap gap-3 w-full md:w-auto items-center">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
-              style={{ minWidth: 120, fontSize: 15 }}
+              className="flex-1 md:flex-none px-3 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+              style={{ minWidth: 110, fontSize: 14 }}
             >
               <option value="all">All Roles</option>
               <option value="psychology">Psychology</option>
@@ -181,18 +201,40 @@ const PsychologyUserManagement = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:flex-none px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
-              style={{ minWidth: 120, fontSize: 15 }}
+              className="flex-1 md:flex-none px-3 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+              style={{ minWidth: 110, fontSize: 14 }}
             >
               <option value="all">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+            <select
+              value={ageGroupFilter}
+              onChange={(e) => setAgeGroupFilter(e.target.value)}
+              className="flex-1 md:flex-none px-3 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+              style={{ minWidth: 110, fontSize: 14 }}
+            >
+              <option value="all">All Age Groups</option>
+              {availableAgeGroups.map((ageGroup) => (
+                <option key={ageGroup} value={ageGroup}>
+                  {ageGroup}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sortOrderFilter}
+              onChange={(e) => setSortOrderFilter(e.target.value)}
+              className="flex-1 md:flex-none px-3 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#667eea] shadow-sm cursor-pointer"
+              style={{ minWidth: 110, fontSize: 14 }}
+            >
+              <option value="desc">Newest First</option>
+              <option value="asc">Oldest First</option>
+            </select>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95"
+              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-2xl font-bold hover:opacity-90 transition-all shadow-md active:scale-95 whitespace-nowrap"
               type="button"
-              style={{ fontSize: 15 }}
+              style={{ fontSize: 14 }}
             >
               <MdAdd className="text-xl" />
               <span>Add User</span>
