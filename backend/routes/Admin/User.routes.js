@@ -2,6 +2,8 @@ import express from "express";
 import {
   fetchUserInfo,
   fetchUsers,
+  fetchRoles,
+  fetchAgeGroups,
   fetchAvatarRiskStats,
   getUserEmotionWords,
   fetchUserActivities,
@@ -15,6 +17,8 @@ import { checkAdminRole } from "../../middleware/admin.middleware.js";
 const router = express.Router();
 
 router.get("/get-all-users", setSupabaseSession, checkAdminRole, fetchUsers);
+router.get("/roles", setSupabaseSession, checkAdminRole, fetchRoles);
+router.get("/age-groups", setSupabaseSession, checkAdminRole, fetchAgeGroups);
 router.get("/get-sessions-by-user/:userId", setSupabaseSession, checkAdminRole, getAllSessionsOfByUser);
 router.get("/get-user-info/:userId", setSupabaseSession, checkAdminRole, fetchUserInfo);
 router.get("/avatar-risk-stats", setSupabaseSession, checkAdminRole, fetchAvatarRiskStats);

@@ -94,20 +94,27 @@ const PsychologyReports = () => {
         const fetchedUsers = response.data?.users || [];
         setUsers(fetchedUsers);
 
-        const userReports = await Promise.allSettled(
-          fetchedUsers.map(async (user) => {
-            const [activitiesRes, sessionsRes] = await Promise.all([
-              axiosInstance.get(`/admin/users/get-user-activities/${user.id}`),
-              axiosInstance.get(`/admin/users/get-sessions-by-user/${user.id}?page=1&limit=200&type=all`),
-            ]);
-            return {
-              user,
-              activities: activitiesRes?.data?.activities || [],
-              sessions: sessionsRes?.data?.sessions || [],
-              totalSessions: sessionsRes?.data?.pagination?.totalSessions || sessionsRes?.data?.sessions?.length || 0,
-            };
-          })
-        );
+        const userReports = [];
+        const chunkSize = 5;
+        for (let i = 0; i < fetchedUsers.length; i += chunkSize) {
+          const chunk = fetchedUsers.slice(i, i + chunkSize);
+          const results = await Promise.allSettled(
+            chunk.map(async (user) => {
+              const [activitiesRes, sessionsRes] = await Promise.all([
+                axiosInstance.get(`/admin/users/get-user-activities/${user.id}`),
+                axiosInstance.get(`/admin/users/get-sessions-by-user/${user.id}?page=1&limit=200&type=all`),
+              ]);
+              return {
+                user,
+                activities: activitiesRes?.data?.activities || [],
+                sessions: sessionsRes?.data?.sessions || [],
+                totalSessions: sessionsRes?.data?.pagination?.totalSessions || sessionsRes?.data?.sessions?.length || 0,
+              };
+            })
+          );
+          userReports.push(...results);
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
 
         const riskStatsRes = await axiosInstance.get("/admin/users/risk-stats");
         const riskStats = riskStatsRes?.data || {};

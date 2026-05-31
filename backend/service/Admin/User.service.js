@@ -1,5 +1,26 @@
 import supabaseAdmin from "../../utils/supabase.utils.js";
 
+const getAgeGroup = (birthday) => {
+  if (!birthday) return "Unknown";
+
+  const [year, month, day] = birthday.split("T")[0].split("-").map(Number);
+  if (!year || !month || !day) return "Unknown";
+
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  const hasBirthdayPassed =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day);
+
+  if (!hasBirthdayPassed) age -= 1;
+  if (age < 0) return "Unknown";
+  if (age <= 12) return "Children";
+  if (age <= 19) return "Teens";
+  if (age <= 35) return "Young Adults";
+  if (age <= 55) return "Adults";
+  return "Seniors";
+};
+
 export async function getAllUsers(params = {}) {
   const {
     page = 1,
@@ -7,18 +28,32 @@ export async function getAllUsers(params = {}) {
     search = "",
     role = "all",
     status = "all",
+    ageGroup = "all",
+    sortOrder = "desc",
     exclude_roles = "",
+    currentUserRole,
   } = params;
 
-  // Fetch all users from auth
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  // Fetch all users from auth (paginate because listUsers caps at 50 per page by default)
+  let allAuthUsers = [];
+  let currentPage = 1;
+  const perPage = 50;
 
-  if (error) {
-    throw error;
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: currentPage, perPage });
+    if (error) throw error;
+    if (!data || !data.users || data.users.length === 0) break;
+    
+    allAuthUsers.push(...data.users);
+    
+    // Stop if we received fewer users than perPage (means we hit the last page)
+    if (data.users.length < perPage) break;
+    
+    currentPage++;
   }
 
   // Fetch profiles for all users in a single query
-  const userIds = data.users.map((user) => user.id);
+  const userIds = allAuthUsers.map((user) => user.id);
   
   // Only query if we have users to avoid syntax errors with empty arrays
   let profilesMap = {};
@@ -39,13 +74,20 @@ export async function getAllUsers(params = {}) {
     }, {});
   }
 
-  const usersWithProfiles = data.users.map((user) => ({
+  const usersWithProfiles = allAuthUsers.map((user) => ({
     ...user,
     profile: profilesMap[user.id] ?? null,
   }));
 
   // Apply filters
   let filteredUsers = usersWithProfiles;
+
+  // Restrict what Psychology users can see
+  if (currentUserRole === 'psychology') {
+    filteredUsers = filteredUsers.filter(
+      (user) => (user.profile?.role || "user").toLowerCase() !== "admin"
+    );
+  }
 
   // Search filter (username or email)
   if (search) {
@@ -80,6 +122,26 @@ export async function getAllUsers(params = {}) {
     });
   }
 
+  // Age group filter
+  if (ageGroup && ageGroup !== "all") {
+    filteredUsers = filteredUsers.filter((user) => {
+      const birthDateStr =
+        user.profile?.birthday ||
+        user.profile?.birthDate ||
+        user.user_metadata?.birthday ||
+        user.user_metadata?.birthDate;
+      const userAgeGroup = getAgeGroup(birthDateStr);
+      return userAgeGroup.toLowerCase() === ageGroup.toLowerCase();
+    });
+  }
+
+  // Sort by Joined Date
+  filteredUsers.sort((a, b) => {
+    const dateA = new Date(a.profile?.created_at || a.created_at).getTime();
+    const dateB = new Date(b.profile?.created_at || b.created_at).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+  });
+
   // Calculate pagination
   const totalUsers = filteredUsers.length;
   const totalPages = Math.ceil(totalUsers / limit);
@@ -97,6 +159,41 @@ export async function getAllUsers(params = {}) {
       hasPrev: page > 1,
     },
   };
+}
+
+export async function getDistinctRoles(currentUserRole) {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("role");
+  if (error) throw error;
+  
+  let roles = [...new Set(data.map(profile => profile.role).filter(Boolean))];
+
+  if (currentUserRole === 'psychology') {
+    roles = roles.filter(r => r.toLowerCase() !== 'admin');
+  }
+
+  return roles.sort();
+}
+
+export async function getDistinctAgeGroups() {
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("birthday");
+  if (error) throw error;
+  
+  const ageGroups = new Set();
+  
+  for (const profile of data) {
+    const ageGroup = getAgeGroup(profile.birthday);
+    if (ageGroup) {
+      ageGroups.add(ageGroup);
+    }
+  }
+
+  // Pre-defined sort order
+  const order = ["Children", "Teens", "Young Adults", "Adults", "Seniors", "Unknown"];
+  return Array.from(ageGroups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
 export async function getUserInfo(userId) {

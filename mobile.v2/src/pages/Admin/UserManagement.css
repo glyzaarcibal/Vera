@@ -50,19 +50,18 @@
 
 .filters-wrapper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-wrap: nowrap;
+  gap: 12px;
   align-items: center;
 }
 
 .filter-select-field {
-  flex: 1;
-  min-width: 140px;
-  padding: 12px 16px;
+  min-width: 110px;
+  padding: 12px 14px;
   background: white;
   border: 1px solid #f3f4f6;
   border-radius: 16px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
@@ -72,8 +71,8 @@
 .add-user-action-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 6px;
+  padding: 12px 20px;
   background: linear-gradient(to right, #667eea, #764ba2);
   color: white;
   border-radius: 16px;
