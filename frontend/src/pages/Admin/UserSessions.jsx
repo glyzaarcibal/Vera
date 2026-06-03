@@ -21,6 +21,8 @@ const UserSessions = () => {
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [allReportSessions, setAllReportSessions] = useState([]);
+  const [analysisRange, setAnalysisRange] = useState("week");
   const [view, setView] = useState("card");
   const [sortOrder, setSortOrder] = useState("desc"); // desc = newest / highest risk first
   const [sortBy, setSortBy] = useState("date"); // "date" = recent to past, "risk" = by risk score
@@ -151,11 +153,11 @@ const UserSessions = () => {
       }
 
       // --- RISK PROGRESSION CHART ---
-      if (sessionRiskHistory.length > 0) {
+      if (filteredSessionRiskHistory.length > 0) {
         doc.addPage();
         doc.setFontSize(16);
         doc.setTextColor(31, 41, 55);
-        doc.text("3. Session Risk Progression", 14, 20);
+        doc.text(`3. Session Risk Progression (${analysisRangeLabel})`, 14, 20);
 
         // Simple manual chart drawing
         const chartX = 20;
@@ -168,11 +170,11 @@ const UserSessions = () => {
         doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // X Axis
         
         const maxRisk = 100;
-        const stepX = chartW / Math.max(sessionRiskHistory.length - 1, 1);
+        const stepX = chartW / Math.max(filteredSessionRiskHistory.length - 1, 1);
         
         doc.setDrawColor(239, 68, 68); // Red-500
         doc.setLineWidth(0.8);
-        sessionRiskHistory.forEach((point, i) => {
+        filteredSessionRiskHistory.forEach((point, i) => {
           const px = chartX + (i * stepX);
           const py = chartY + chartH - ((point.score / maxRisk) * chartH);
           
@@ -181,7 +183,7 @@ const UserSessions = () => {
           
           if (i > 0) {
             const prevPx = chartX + ((i - 1) * stepX);
-            const prevPy = chartY + chartH - ((sessionRiskHistory[i-1].score / maxRisk) * chartH);
+            const prevPy = chartY + chartH - ((filteredSessionRiskHistory[i-1].score / maxRisk) * chartH);
             doc.line(prevPx, prevPy, px, py);
           }
         });
@@ -297,6 +299,7 @@ const UserSessions = () => {
         `/admin/users/get-sessions-by-user/${userId}?page=1&limit=1000&type=all`
       );
       const allSessions = allSessionsRes.data.sessions || [];
+      setAllReportSessions(allSessions);
 
       // Calculate AI usage stats
       const stats = {
@@ -311,6 +314,7 @@ const UserSessions = () => {
         .filter((s) => s.risk_score != null)
         .map((s) => ({
           date: new Date(s.created_at).toLocaleDateString(),
+          rawDate: s.created_at,
           time: new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           score: s.risk_score,
           level: s.risk_level,
@@ -724,6 +728,46 @@ const UserSessions = () => {
     });
   };
 
+  const getRangeStartDate = (range = analysisRange) => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    if (range === "day") return start;
+    if (range === "week") {
+      start.setDate(start.getDate() - 6);
+      return start;
+    }
+    if (range === "month") {
+      start.setMonth(start.getMonth() - 1);
+      return start;
+    }
+
+    start.setFullYear(start.getFullYear() - 1);
+    return start;
+  };
+
+  const getSessionDate = (session) => {
+    const parsed = session?.created_at ? new Date(session.created_at) : null;
+    return parsed && !isNaN(parsed.getTime()) ? parsed : null;
+  };
+
+  const analysisRangeLabel = {
+    day: "Today",
+    week: "Last 7 Days",
+    month: "Last Month",
+    year: "Last Year",
+  }[analysisRange];
+
+  const analysisSessions = (allReportSessions.length > 0 ? allReportSessions : sessions).filter((session) => {
+    const sessionDate = getSessionDate(session);
+    return sessionDate && sessionDate >= getRangeStartDate();
+  });
+
+  const filteredSessionRiskHistory = sessionRiskHistory.filter((point) => {
+    const pointDate = point?.rawDate ? new Date(point.rawDate) : new Date(point.date);
+    return pointDate && !isNaN(pointDate.getTime()) && pointDate >= getRangeStartDate();
+  });
+
   const getRiskStats = () => {
     const stats = {
       low: 0,
@@ -733,7 +777,7 @@ const UserSessions = () => {
       notAssessed: 0,
     };
 
-    sessions.forEach((session) => {
+    analysisSessions.forEach((session) => {
       if (!session.risk_level) {
         stats.notAssessed++;
       } else {
@@ -745,9 +789,9 @@ const UserSessions = () => {
   };
 
   const getOverallRisk = () => {
-    if (sessions.length === 0) return { level: null, score: 0 };
+    if (analysisSessions.length === 0) return { level: null, score: 0 };
 
-    const assessedSessions = sessions.filter((s) => s.risk_score != null);
+    const assessedSessions = analysisSessions.filter((s) => s.risk_score != null);
     if (assessedSessions.length === 0) return { level: null, score: 0 };
 
     // Calculate average risk score
@@ -883,12 +927,37 @@ const UserSessions = () => {
         <div className="design-section user-risk-section">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
             <div>
-              <h3 className="section-title mb-1">Overall Risk Assessment</h3>
+              <h3 className="section-title mb-1">Risk Assessment ({analysisRangeLabel})</h3>
               <p className="text-sm text-gray-500">
-                Analysis based on {sessions.filter((s) => s.risk_score != null).length} sessions
+                Analysis based on {analysisSessions.filter((s) => s.risk_score != null).length} assessed sessions in this range
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                This reflects the selected period only, not the user's entire history.
               </p>
             </div>
-            <div className="flex items-center gap-6 bg-gray-50 p-4 rounded-2xl">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "day", label: "Day" },
+                  { key: "week", label: "Week" },
+                  { key: "month", label: "Month" },
+                  { key: "year", label: "Year" },
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setAnalysisRange(option.key)}
+                    className={`px-4 py-2 rounded-full text-xs font-black border transition-all ${
+                      analysisRange === option.key
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100"
+                        : "bg-white text-indigo-500 border-indigo-100 hover:bg-indigo-50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-6 bg-gray-50 p-4 rounded-2xl">
               <div className="text-right">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Risk Score</div>
                 <div className="text-3xl font-bold text-gray-800">
@@ -901,6 +970,7 @@ const UserSessions = () => {
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Category</div>
                 <RiskBadge level={overallRisk.level} size="lg" />
               </div>
+            </div>
             </div>
           </div>
 
@@ -1099,13 +1169,13 @@ const UserSessions = () => {
 
                   {/* Session Risk Progression Graph */}
                   <div className="user-analytics-block">
-                    <h4 className="user-analytics-block-title">Session Risk Progression</h4>
-                    {sessionRiskHistory.length === 0 ? (
-                      <div className="user-analytics-empty">No assessed sessions to display risk progression.</div>
+                    <h4 className="user-analytics-block-title">Session Risk Progression ({analysisRangeLabel})</h4>
+                    {filteredSessionRiskHistory.length === 0 ? (
+                      <div className="user-analytics-empty">No assessed sessions to display risk progression for this range.</div>
                     ) : (
                       <div className="user-analytics-chart-wrap">
                         <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={sessionRiskHistory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                          <LineChart data={filteredSessionRiskHistory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                             <XAxis dataKey="date" />
                             <YAxis domain={[0, 100]} />

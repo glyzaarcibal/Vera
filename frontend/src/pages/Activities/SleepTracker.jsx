@@ -17,6 +17,7 @@ const SleepTracker = () => {
   const userId = user?.id;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const MotionDiv = motion.div;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -26,10 +27,11 @@ const SleepTracker = () => {
   
   const [showPicker, setShowPicker] = useState(null); // 'sleep' or 'wake'
   const [sleepData, setSleepData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -174,13 +176,40 @@ const SleepTracker = () => {
   };
 
   // ── CALENDAR LOGIC ──
+  const renderSleepHistoryItem = (log, i, isModal = false) => (
+    <MotionDiv 
+      key={log.id || i} 
+      className={`history-item ${isModal ? "history-modal-item" : ""}`}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: isModal ? i * 0.03 : 0.3 + (i * 0.1) }}
+    >
+      <div className="mood-icon">😴</div>
+      <div className="log-details">
+        <div className="log-date">{new Date(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+        <div className="log-duration">{log.duration} Duration</div>
+      </div>
+      <div className="log-time-range">
+        <span className="time-range">{log.sleep_time} — {log.wake_time}</span>
+        <span className={`sleep-quality ${log.totalMinutes > 420 ? 'quality-deep' : 'quality-restless'}`}>
+          {log.totalMinutes > 420 ? 'DEEP SLEEP' : 'RESTLESS'}
+        </span>
+        <button 
+          onClick={() => setConfirmDeleteId(log.id)} 
+          className="delete-history-btn"
+          aria-label="Delete sleep record"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </MotionDiv>
+  );
+
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
   
   const calendarDays = useMemo(() => {
     const days = [];
-    const prevMonthDays = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0).getDate();
-    
     // Fill previous month days (grayed out usually, but here we just leave empty for clean look)
     for (let i = 0; i < firstDayOfMonth; i++) {
       days.push({ day: null });
@@ -326,7 +355,13 @@ const SleepTracker = () => {
           <div className="history-section">
             <h2>
               Sleep History
-              <span className="view-all">View All</span>
+              <button
+                type="button"
+                className="view-all"
+                onClick={() => setShowHistoryModal(true)}
+              >
+                View All
+              </button>
             </h2>
 
             <div className="history-list">
@@ -444,6 +479,42 @@ const SleepTracker = () => {
                 <button className="picker-confirm" onClick={() => setShowPicker(null)}>Confirm Time</button>
               </motion.div>
             </motion.div>
+          </ModalPortal>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showHistoryModal && (
+          <ModalPortal>
+            <MotionDiv
+              className="sleep-history-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistoryModal(false)}
+            >
+              <MotionDiv
+                className="sleep-history-modal"
+                initial={{ scale: 0.94, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.94, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="sleep-history-modal-header">
+                  <div>
+                    <h2>Sleep History</h2>
+                    <p>{sleepData.length} saved sleep record{sleepData.length === 1 ? "" : "s"}</p>
+                  </div>
+                  <button className="history-modal-close" onClick={() => setShowHistoryModal(false)}>×</button>
+                </div>
+
+                <div className="sleep-history-modal-list">
+                  {sleepData.length > 0 ? sleepData.map((log, i) => renderSleepHistoryItem(log, i, true)) : (
+                    <div className="history-item" style={{ justifyContent: 'center', color: '#9ca3af' }}>No logs yet</div>
+                  )}
+                </div>
+              </MotionDiv>
+            </MotionDiv>
           </ModalPortal>
         )}
       </AnimatePresence>

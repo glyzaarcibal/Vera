@@ -10,7 +10,7 @@ import "./VoiceAI.css";
 
 const VOICES = [
   {
-    id: "JBFqnCBsd6RMkjVDRZzb",
+    id: "CwhRBWXzGAHq8TQ4Fs17",
     gender: "Man",
     name: "Atlas",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -18,7 +18,7 @@ const VOICES = [
     desc: "voice_atlas_desc"
   },
   {
-    id: "EXAVITQu4vr4xnSDxMaL",
+    id: "cgSgspJ2msm6clMCkdW9",
     gender: "Woman",
     name: "Nova",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg",
@@ -26,7 +26,7 @@ const VOICES = [
     desc: "voice_nova_desc"
   },
   {
-    id: "CwhRBWXzGAHq8TQ4Fs17",
+    id: "iP95p4xoKVk53GoZ742B",
     gender: "Man",
     name: "Orion",
     avatar: "https://randomuser.me/api/portraits/men/46.jpg",
@@ -34,7 +34,7 @@ const VOICES = [
     desc: "voice_orion_desc"
   },
   {
-    id: "SAz9YHcvj6GT2YYXdXww",
+    id: "hpp4J3VqNfWAUOO0d1Us",
     gender: "Woman",
     name: "Luna",
     avatar: "https://randomuser.me/api/portraits/women/17.jpg",
@@ -42,7 +42,7 @@ const VOICES = [
     desc: "voice_luna_desc"
   },
   {
-    id: "TX3LPaxmHKxFdv7VOQHJ",
+    id: "SAz9YHcvj6GT2YYXdXww",
     gender: "Man",
     name: "Sage",
     avatar: "https://randomuser.me/api/portraits/men/62.jpg",
@@ -50,7 +50,7 @@ const VOICES = [
     desc: "voice_sage_desc"
   },
   {
-    id: "cgSgspJ2msm6clMCkdW9",
+    id: "pFZP5JQG7iQjIQuC4Bku",
     gender: "Woman",
     name: "Ember",
     avatar: "https://randomuser.me/api/portraits/women/31.jpg",
@@ -58,6 +58,41 @@ const VOICES = [
     desc: "voice_ember_desc"
   },
 ];
+
+const getTopEmotionScores = (voiceEmotion) => {
+  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
+    return voiceEmotion.topScores;
+  }
+
+  return Object.entries(voiceEmotion?.mappedScores || {})
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, 3)
+    .map(([emotion, score]) => ({ emotion, score }));
+};
+
+const getTtsErrorMessage = async (error) => {
+  const data = error?.response?.data;
+
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      if (text) {
+        const parsed = JSON.parse(text);
+        return parsed.message || parsed.error || text;
+      }
+    } catch (_) {
+      return error?.message || "Failed to generate speech";
+    }
+  }
+
+  return (
+    data?.message ||
+    data?.error ||
+    error?.message ||
+    "Failed to generate speech"
+  );
+};
 
 const VoiceAI = () => {
   const { t } = useLanguage();
@@ -218,50 +253,36 @@ const VoiceAI = () => {
       );
       return res.data;
     } catch (e) {
-      alert("Internal Server Error");
+      const message =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        "AI response is temporarily unavailable. Please try again.";
+      setSpeechError(message);
+      setConversationMode("listening");
       return null;
     }
   };
 
   const speakText = async (text) => {
     try {
-      const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
       const voiceId = VOICES[selectedVoiceIndex].id;
 
-      if (!apiKey) {
-        alert(
-          "ElevenLabs API key is not configured. Please check your .env file and restart the dev server."
-        );
-        setConversationMode("listening");
-        return;
-      }
-
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      const response = await axiosInstance.post(
+        `/elevenlabs/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
         {
-          method: "POST",
-          headers: {
-            "xi-api-key": apiKey,
-            "Content-Type": "application/json",
+          text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.38,
+            similarity_boost: 0.82,
+            style: 0.28,
+            use_speaker_boost: true,
           },
-          body: JSON.stringify({
-            text: text,
-            model_id: "eleven_multilingual_v2",
-          }),
-        }
+        },
+        { responseType: "blob", timeout: 90000 }
       );
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("ElevenLabs API key is invalid or unauthorized.");
-        }
-        if (response.status === 402) {
-          throw new Error("ElevenLabs quota exceeded");
-        }
-        throw new Error("Failed to generate speech");
-      }
-
-      const audioBlob = await response.blob();
+      const audioBlob = response.data;
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audioPlayerRef.current = audio;
@@ -274,11 +295,12 @@ const VoiceAI = () => {
 
       audio.play();
     } catch (error) {
-      console.error('Voice AI TTS error:', error);
+      const errorMessage = await getTtsErrorMessage(error);
+      console.warn("Voice AI TTS fallback:", errorMessage);
       
       // Native Browser TTS Fallback if ElevenLabs fails
       if ('speechSynthesis' in window) {
-          console.log("ElevenLabs failed, falling back to browser Web Speech API...");
+          setSpeechError(`Using browser voice because ElevenLabs is unavailable: ${errorMessage}`);
           const utterance = new SpeechSynthesisUtterance(text);
           const voiceDef = VOICES[selectedVoiceIndex];
           
@@ -294,7 +316,7 @@ const VoiceAI = () => {
           
           window.speechSynthesis.speak(utterance);
       } else {
-          alert(error.message === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : error.message || "Failed to generate speech");
+          alert(errorMessage === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : errorMessage);
           setConversationMode("listening");
       }
     }
@@ -431,50 +453,27 @@ const VoiceAI = () => {
         setMessages((prev) => [...prev, userMessage]);
         setConversationMode("thinking");
 
-        if (hasValidAudio) {
-          axiosInstance
-            .post("/emotion-from-voice", { audioBase64 }, { timeout: 90000 })
-            .then((res) => {
-              const d = res.data;
-              if (d?.emotion) {
-                setDetectedEmotion({
-                  emotion: d.emotion,
-                  score: d.score ?? 0,
-                  source: d?.source || "Hume AI",
-                });
-              } else if (d?.error) {
-                setDetectedEmotion({
-                  emotion: null,
-                  score: 0,
-                  source: "Hume AI",
-                  error: d.error,
-                });
-              }
-            })
-            .catch((e) => {
-              const msg =
-                e.response?.data?.error ??
-                e.response?.data?.message ??
-                (e.code === "ECONNABORTED"
-                  ? "Request timed out"
-                  : "Unavailable");
-              setDetectedEmotion({
-                emotion: null,
-                score: 0,
-                source: "Hume AI",
-                error: msg,
-              });
-            });
-        }
-
         const botResult = await fetchBotResponse(
           userMessage,
           hasValidAudio ? audioBase64 : null
         );
         const botResponse = botResult?.response ?? botResult;
-        const messageId = botResult?.messageId ?? botResult?.message_id;
+        const voiceEmotion = botResult?.voiceEmotion;
+        if (botResult?.responseWarning) {
+          setSpeechError(botResult.responseWarning);
+        }
 
         if (botResponse) {
+          if (voiceEmotion?.emotion || voiceEmotion?.error) {
+            setDetectedEmotion({
+              emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
+              score: voiceEmotion.score ?? 0,
+              topScores: getTopEmotionScores(voiceEmotion),
+              source: voiceEmotion.source || "Hume AI",
+              error: voiceEmotion.error,
+            });
+          }
+
           const botMessage = {
             id: messages.length + 2,
             type: "bot",
@@ -482,17 +481,6 @@ const VoiceAI = () => {
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, botMessage]);
-
-          if (messageId && hasValidAudio && audioBase64) {
-            axiosInstance
-              .post("/emotion-from-voice", { audioBase64, messageId })
-              .then(res => {
-                 if (res.data?.mappedScores) {
-                   console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
-                 }
-              })
-              .catch(() => { });
-          }
 
           setConversationMode("speaking");
           await speakText(botResponse);
@@ -678,7 +666,21 @@ const VoiceAI = () => {
                 {detectedEmotion?.emotion && (
                   <div className="live-emotion-indicator">
                     <span className="emotion-icon">✨</span>
-                    <span className="emotion-text">{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
+                    <div className="emotion-text">
+                      <span>{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
+                      {detectedEmotion.topScores?.length > 0 && (
+                        <div className="emotion-top-scores">
+                          {detectedEmotion.topScores.map((item) => (
+                            <span key={item.emotion}>
+                              {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <small className="emotion-disclaimer">
+                        Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                      </small>
+                    </div>
                   </div>
                 )}
               </div>

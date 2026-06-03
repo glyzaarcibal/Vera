@@ -9,7 +9,7 @@ export const initSession = async (req, res) => {
   try {
     const userId = req.userId;
     const { type } = req.params;
-    const { voice } = req.body ?? {};
+    const { voice, avatar } = req.body ?? {};
 
     // Deduct token for AI Voice/Avatar sessions
     let updatedTokens = null;
@@ -26,7 +26,28 @@ export const initSession = async (req, res) => {
       }
     }
 
-    const session = await createSession(userId, type, voice);
+    const sessionMeta = voice
+      ? {
+          companionKind: "voice",
+          voiceName: voice.name,
+          voiceId: voice.id,
+          gender: voice.gender,
+        }
+      : avatar
+        ? {
+            companionKind: avatar.type && ["cat", "dog", "monkey", "panda"].includes(avatar.type)
+              ? "animal"
+              : "avatar",
+            selectedAgent: avatar.type,
+            agentName: avatar.label,
+            companionName: avatar.label,
+            animalType: avatar.type,
+            language: avatar.language,
+            outfit: avatar.outfit,
+          }
+        : null;
+
+    const session = await createSession(userId, type, sessionMeta);
     return res.status(200).json({ session, updatedTokens });
   } catch (e) {
     console.log(e);

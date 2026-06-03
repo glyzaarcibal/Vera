@@ -4,14 +4,13 @@ import axiosInstance from "../utils/axios.instance";
 import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
-import PullToRefresh from "../components/PullToRefresh.jsx";
 import { useLanguage } from "../context/LanguageContext";
-import ReusableModal from "../components/ReusableModal.jsx";
+import ReusableModal from "../components/ReusableModal";
 import "./VoiceAI.css";
 
 const VOICES = [
   {
-    id: "JBFqnCBsd6RMkjVDRZzb",
+    id: "CwhRBWXzGAHq8TQ4Fs17",
     gender: "Man",
     name: "Atlas",
     avatar: "https://randomuser.me/api/portraits/men/32.jpg",
@@ -19,7 +18,7 @@ const VOICES = [
     desc: "voice_atlas_desc"
   },
   {
-    id: "EXAVITQu4vr4xnSDxMaL",
+    id: "cgSgspJ2msm6clMCkdW9",
     gender: "Woman",
     name: "Nova",
     avatar: "https://randomuser.me/api/portraits/women/44.jpg",
@@ -27,7 +26,7 @@ const VOICES = [
     desc: "voice_nova_desc"
   },
   {
-    id: "CwhRBWXzGAHq8TQ4Fs17",
+    id: "iP95p4xoKVk53GoZ742B",
     gender: "Man",
     name: "Orion",
     avatar: "https://randomuser.me/api/portraits/men/46.jpg",
@@ -35,7 +34,7 @@ const VOICES = [
     desc: "voice_orion_desc"
   },
   {
-    id: "SAz9YHcvj6GT2YYXdXww",
+    id: "hpp4J3VqNfWAUOO0d1Us",
     gender: "Woman",
     name: "Luna",
     avatar: "https://randomuser.me/api/portraits/women/17.jpg",
@@ -43,7 +42,7 @@ const VOICES = [
     desc: "voice_luna_desc"
   },
   {
-    id: "TX3LPaxmHKxFdv7VOQHJ",
+    id: "SAz9YHcvj6GT2YYXdXww",
     gender: "Man",
     name: "Sage",
     avatar: "https://randomuser.me/api/portraits/men/62.jpg",
@@ -51,7 +50,7 @@ const VOICES = [
     desc: "voice_sage_desc"
   },
   {
-    id: "cgSgspJ2msm6clMCkdW9",
+    id: "pFZP5JQG7iQjIQuC4Bku",
     gender: "Woman",
     name: "Ember",
     avatar: "https://randomuser.me/api/portraits/women/31.jpg",
@@ -59,6 +58,41 @@ const VOICES = [
     desc: "voice_ember_desc"
   },
 ];
+
+const getTopEmotionScores = (voiceEmotion) => {
+  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
+    return voiceEmotion.topScores;
+  }
+
+  return Object.entries(voiceEmotion?.mappedScores || {})
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, 3)
+    .map(([emotion, score]) => ({ emotion, score }));
+};
+
+const getTtsErrorMessage = async (error) => {
+  const data = error?.response?.data;
+
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      if (text) {
+        const parsed = JSON.parse(text);
+        return parsed.message || parsed.error || text;
+      }
+    } catch (_) {
+      return error?.message || "Failed to generate speech";
+    }
+  }
+
+  return (
+    data?.message ||
+    data?.error ||
+    error?.message ||
+    "Failed to generate speech"
+  );
+};
 
 const VoiceAI = () => {
   const { t } = useLanguage();
@@ -76,11 +110,11 @@ const VoiceAI = () => {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
-  const [showMicModal, setShowMicModal] = useState(false);
-  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showMicModal, setShowMicModal] = useState(false);
+  const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -113,7 +147,62 @@ const VoiceAI = () => {
     return () => clearInterval(interval);
   }, [isCallActive]);
 
-  // Simplified state initialization without native STT
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = "en-US";
+      // Disable filtering of critical words for raw emotion detection
+      recognitionInstance.profanityFilter = false;
+
+      recognitionInstance.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          const transcriptPiece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcriptPiece + " ";
+          } else {
+            interimTranscript += transcriptPiece;
+          }
+        }
+        setTranscript(finalTranscript || interimTranscript);
+      };
+
+      recognitionInstance.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        setIsRecording(false);
+        const message =
+          event.error === "network"
+            ? "Check your internet connection. Speech recognition needs network access."
+            : event.error === "not-allowed"
+              ? "Microphone access was denied."
+              : event.error === "no-speech"
+                ? "No speech detected. Try again."
+                : event.error === "audio-capture"
+                  ? "No microphone found."
+                  : `Speech recognition error: ${event.error}. You can still type below.`;
+        setSpeechError(message);
+      };
+
+      recognitionInstance.onend = () => {
+        recognitionStartedRef.current = false;
+        setIsRecording(false);
+      };
+
+      setRecognition(recognitionInstance);
+
+      return () => {
+        recognitionStartedRef.current = false;
+        try {
+          recognitionInstance.stop();
+        } catch (_) { }
+      };
+    }
+  }, []);
 
   const initializeSession = async () => {
     try {
@@ -164,50 +253,36 @@ const VoiceAI = () => {
       );
       return res.data;
     } catch (e) {
-      alert("Internal Server Error");
+      const message =
+        e.response?.data?.message ||
+        e.response?.data?.error ||
+        "AI response is temporarily unavailable. Please try again.";
+      setSpeechError(message);
+      setConversationMode("listening");
       return null;
     }
   };
 
   const speakText = async (text) => {
     try {
-      const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
       const voiceId = VOICES[selectedVoiceIndex].id;
 
-      if (!apiKey) {
-        alert(
-          "ElevenLabs API key is not configured. Please check your .env file and restart the dev server."
-        );
-        setConversationMode("listening");
-        return;
-      }
-
-      const response = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+      const response = await axiosInstance.post(
+        `/elevenlabs/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
         {
-          method: "POST",
-          headers: {
-            "xi-api-key": apiKey,
-            "Content-Type": "application/json",
+          text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.38,
+            similarity_boost: 0.82,
+            style: 0.28,
+            use_speaker_boost: true,
           },
-          body: JSON.stringify({
-            text: text,
-            model_id: "eleven_multilingual_v2",
-          }),
-        }
+        },
+        { responseType: "blob", timeout: 90000 }
       );
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("ElevenLabs API key is invalid or unauthorized.");
-        }
-        if (response.status === 402) {
-          throw new Error("ElevenLabs quota exceeded");
-        }
-        throw new Error("Failed to generate speech");
-      }
-
-      const audioBlob = await response.blob();
+      const audioBlob = response.data;
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audioPlayerRef.current = audio;
@@ -220,11 +295,12 @@ const VoiceAI = () => {
 
       audio.play();
     } catch (error) {
-      console.error('Voice AI TTS error:', error);
+      const errorMessage = await getTtsErrorMessage(error);
+      console.warn("Voice AI TTS fallback:", errorMessage);
       
       // Native Browser TTS Fallback if ElevenLabs fails
       if ('speechSynthesis' in window) {
-          console.log("ElevenLabs failed, falling back to browser Web Speech API...");
+          setSpeechError(`Using browser voice because ElevenLabs is unavailable: ${errorMessage}`);
           const utterance = new SpeechSynthesisUtterance(text);
           const voiceDef = VOICES[selectedVoiceIndex];
           
@@ -240,7 +316,7 @@ const VoiceAI = () => {
           
           window.speechSynthesis.speak(utterance);
       } else {
-          alert(error.message === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : error.message || "Failed to generate speech");
+          alert(errorMessage === "ElevenLabs quota exceeded" ? "Out of ElevenLabs characters" : errorMessage);
           setConversationMode("listening");
       }
     }
@@ -255,30 +331,48 @@ const VoiceAI = () => {
   };
 
   const handleCallToggle = async () => {
+    if (sessionId === null) await initializeSession();
+    setIsCallActive(!isCallActive);
     if (!isCallActive) {
-      if (sessionId === null) await initializeSession();
+      setIsListening(true);
+      setTranscript("");
+      setSpeechError(null);
+      if (recognition) {
+        try {
+          if (!recognitionStartedRef.current) {
+            recognition.start();
+            recognitionStartedRef.current = true;
+          }
+          setIsRecording(true);
+        } catch (err) {
+          if (err.name === "InvalidStateError") {
+            recognitionStartedRef.current = false;
+          }
+        }
+      }
       try {
-        if (navigator.permissions && navigator.permissions.query) {
-          const status = await navigator.permissions.query({ name: 'microphone' });
-          if (status.state === 'prompt') {
-            const hasSeenGuide = localStorage.getItem(MIC_ACCESS_GUIDE_KEY) === '1';
-            if (hasSeenGuide) {
-              proceedWithMic();
-              return;
-            }
-            setShowMicModal(true);
+        const status = await navigator.permissions.query({ name: 'microphone' });
+        if (status.state === 'prompt') {
+          const hasSeenGuide = localStorage.getItem(MIC_ACCESS_GUIDE_KEY) === '1';
+          if (hasSeenGuide) {
+            proceedWithMic();
             return;
           }
+          setShowMicModal(true);
+          return;
         }
         proceedWithMic();
       } catch (e) {
-        proceedWithMic();
+        setShowMicModal(true);
       }
     } else {
-      setIsCallActive(false);
       setIsListening(false);
       setIsMuted(false);
-      setIsRecording(false);
+      if (recognition && isRecording) {
+        recognitionStartedRef.current = false;
+        recognition.stop();
+        setIsRecording(false);
+      }
       if (
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state !== "inactive"
@@ -297,17 +391,17 @@ const VoiceAI = () => {
   const proceedWithMic = async () => {
     setShowMicModal(false);
     localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
-    setIsCallActive(true);
-    setIsListening(false);
-    setTranscript("");
-    setSpeechError(null);
-    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
     } catch (error) {
-      alert("Failed to access microphone or permission denied.");
-      setIsCallActive(false);
+      alert("Failed to access microphone");
     }
   };
 
@@ -315,110 +409,71 @@ const VoiceAI = () => {
 
   const handleRecordingToggle = async () => {
     if (isRecording) {
-      setIsRecording(false);
-      setIsListening(false);
-      setConversationMode("thinking");
-      
-      let chunks = [];
-      let audioBase64 = null;
-      let hasValidAudio = false;
+      recognitionStartedRef.current = false;
+      recognition.stop();
 
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      let chunks = [];
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state === "recording"
+      ) {
         await new Promise((resolve) => {
           const mr = mediaRecorderRef.current;
           mr.onstop = resolve;
           mr.stop();
-          // Timeout to prevent infinite hang if onstop never fires
-          setTimeout(resolve, 500);
         });
         chunks = [...audioChunksRef.current];
         audioChunksRef.current = [];
-      }
 
-      let finalTranscript = "";
-      
-      if (chunks.length > 0) {
-        const audioBlob = new Blob(chunks, { type: "audio/webm" });
-        audioBase64 = await convertBlobToBase64(audioBlob);
-        hasValidAudio = typeof audioBase64 === "string" && audioBase64.length > 100;
-
-        // Use ElevenLabs STT
-        if (hasValidAudio) {
-          try {
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'audio.webm');
-            formData.append('model_id', 'scribe_v2');
-            const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-              method: 'POST',
-              headers: { 'xi-api-key': import.meta.env.VITE_ELEVENLABS_API_KEY },
-              body: formData
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.text) {
-                finalTranscript = data.text.trim();
-                setTranscript(finalTranscript);
-              }
-            }
-          } catch (e) {
-            console.error("STT error:", e);
-          }
+        if (streamRef.current) {
+          const mr = new MediaRecorder(streamRef.current);
+          mr.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunksRef.current.push(e.data);
+          };
+          mr.start();
+          mediaRecorderRef.current = mr;
         }
       }
 
-      if (finalTranscript) {
+      setIsRecording(false);
+      setIsListening(false);
+
+      if (transcript.trim()) {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        const audioBase64 = await convertBlobToBase64(audioBlob);
+        const hasValidAudio =
+          typeof audioBase64 === "string" && audioBase64.length > 100;
+
         const userMessage = {
           id: messages.length + 1,
           type: "user",
-          text: finalTranscript,
+          text: transcript.trim(),
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, userMessage]);
-
-        if (hasValidAudio) {
-          axiosInstance
-            .post("/emotion-from-voice", { audioBase64 }, { timeout: 90000 })
-            .then((res) => {
-              const d = res.data;
-              if (d?.emotion) {
-                setDetectedEmotion({
-                  emotion: d.emotion,
-                  score: d.score ?? 0,
-                  source: d?.source || "Hume AI",
-                });
-              } else if (d?.error) {
-                setDetectedEmotion({
-                  emotion: null,
-                  score: 0,
-                  source: "Hume AI",
-                  error: d.error,
-                });
-              }
-            })
-            .catch((e) => {
-              const msg =
-                e.response?.data?.error ??
-                e.response?.data?.message ??
-                (e.code === "ECONNABORTED"
-                  ? "Request timed out"
-                  : "Unavailable");
-              setDetectedEmotion({
-                emotion: null,
-                score: 0,
-                source: "Hume AI",
-                error: msg,
-              });
-            });
-        }
+        setConversationMode("thinking");
 
         const botResult = await fetchBotResponse(
           userMessage,
           hasValidAudio ? audioBase64 : null
         );
         const botResponse = botResult?.response ?? botResult;
-        const messageId = botResult?.messageId ?? botResult?.message_id;
+        const voiceEmotion = botResult?.voiceEmotion;
+        if (botResult?.responseWarning) {
+          setSpeechError(botResult.responseWarning);
+        }
 
         if (botResponse) {
+          if (voiceEmotion?.emotion || voiceEmotion?.error) {
+            setDetectedEmotion({
+              emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
+              score: voiceEmotion.score ?? 0,
+              topScores: getTopEmotionScores(voiceEmotion),
+              source: voiceEmotion.source || "Hume AI",
+              error: voiceEmotion.error,
+            });
+          }
+
           const botMessage = {
             id: messages.length + 2,
             type: "bot",
@@ -427,32 +482,35 @@ const VoiceAI = () => {
           };
           setMessages((prev) => [...prev, botMessage]);
 
-          if (messageId && hasValidAudio && audioBase64) {
-            axiosInstance
-              .post("/emotion-from-voice", { audioBase64, messageId })
-              .catch(() => { });
-          }
-
           setConversationMode("speaking");
           await speakText(botResponse);
         } else {
           setConversationMode("listening");
         }
-      } else {
-        setConversationMode("listening");
+
+        setTranscript("");
+        audioChunksRef.current = [];
       }
     } else {
       setSpeechError(null);
-      setTranscript("");
-      audioChunksRef.current = [];
-      if (streamRef.current) {
-        const mr = new MediaRecorder(streamRef.current);
-        mr.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunksRef.current.push(e.data);
-        };
-        mr.start();
-        mediaRecorderRef.current = mr;
+      try {
+        if (!recognitionStartedRef.current) {
+          recognition.start();
+          recognitionStartedRef.current = true;
+        }
+      } catch (err) {
+        if (err.name === "InvalidStateError") {
+          recognitionStartedRef.current = false;
+        }
       }
+
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state === "paused"
+      ) {
+        mediaRecorderRef.current.resume();
+      }
+
       setIsRecording(true);
       setIsListening(true);
       setConversationMode("listening");
@@ -494,8 +552,7 @@ const VoiceAI = () => {
   }
 
   return (
-    <PullToRefresh onRefresh={async () => { window.location.reload(); }}>
-      <div className="voice-ai-container">
+    <div className="voice-ai-container">
       {/* ── Page Header ── */}
       <div className="voice-ai-page-header">
         <div className="page-eyebrow">
@@ -609,7 +666,21 @@ const VoiceAI = () => {
                 {detectedEmotion?.emotion && (
                   <div className="live-emotion-indicator">
                     <span className="emotion-icon">✨</span>
-                    <span className="emotion-text">{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
+                    <div className="emotion-text">
+                      <span>{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
+                      {detectedEmotion.topScores?.length > 0 && (
+                        <div className="emotion-top-scores">
+                          {detectedEmotion.topScores.map((item) => (
+                            <span key={item.emotion}>
+                              {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <small className="emotion-disclaimer">
+                        Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                      </small>
+                    </div>
                   </div>
                 )}
               </div>
@@ -617,7 +688,7 @@ const VoiceAI = () => {
               {/* Interaction Panel */}
               <div className="interaction-panel">
                 <div className="transcript-container">
-                  <div className="transcript-label">Transcription</div>
+                  <div className="transcript-label">Live Transcription</div>
                   <div className="transcript-content">
                     {transcript ? (
                       <p className="active-transcript">{transcript}</p>
@@ -657,7 +728,7 @@ const VoiceAI = () => {
                         </div>
                       )}
                     </div>
-                    <span className="btn-label">{isRecording ? "Stop & Process" : "Tap to Speak"}</span>
+                    <span className="btn-label">{isRecording ? t("stop_process") : t("tap_to_speak")}</span>
                   </button>
 
                   <div className="volume-indicator">
@@ -686,14 +757,14 @@ const VoiceAI = () => {
           type="confirm"
           position="fixed"
         >
-          <div className="flex flex-col gap-6">
-            <p className="text-slate-600 text-center leading-relaxed">
+          <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <p className="text-slate-600 text-center leading-relaxed" style={{ color: '#475569', textAlign: 'center' }}>
               Vera needs access to your microphone so you can converse with your AI companion. 
               Please click "Allow" when your browser prompts you.
             </p>
             <button 
               onClick={proceedWithMic} 
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95"
+              style={{ width: '100%', padding: '16px', backgroundColor: '#4f46e5', color: 'white', borderRadius: '24px', fontWeight: 'bold' }}
             >
               Continue & Allow
             </button>
@@ -701,7 +772,6 @@ const VoiceAI = () => {
         </ReusableModal>
       )}
     </div>
-  </PullToRefresh>
   );
 };
 

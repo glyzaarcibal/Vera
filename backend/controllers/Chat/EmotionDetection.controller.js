@@ -44,6 +44,8 @@ export const emotionFromVoice = async (req, res) => {
     return res.status(200).json({
       emotion: result.emotion,
       score: result.score ?? 0,
+      topScores: result.topScores || [],
+      mappedScores: result.mappedScores || {},
       source: "Hume AI",
       model: "hume-ai-prosody",
       emotions: ["angry", "calm", "disgust", "doubt", "confusion", "fearful", "happy", "neutral", "sad", "surprised"],

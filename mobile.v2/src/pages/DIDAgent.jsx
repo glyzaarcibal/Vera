@@ -47,6 +47,18 @@ import FilipinoBoy3Img from '../assets/filipino-boy-3.png';
 
 import axiosInstance from '../utils/axios.instance';
 
+const getTopEmotionScores = (voiceEmotion) => {
+  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
+    return voiceEmotion.topScores;
+  }
+
+  return Object.entries(voiceEmotion?.mappedScores || {})
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, 3)
+    .map(([emotion, score]) => ({ emotion, score }));
+};
+
 export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [selectedOutfit, setSelectedOutfit] = useState('default');
@@ -67,7 +79,6 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
 
-  const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
   const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
 
   const AVATAR_OPTIONS = [
@@ -227,47 +238,16 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     try {
       const audioBase64 = await convertBlobToBase64(blob);
       
-      let voiceEmotion = null;
-      let voiceScore = 0;
-
-      // Real-time emotion detection for UI
-      try {
-        const emotionRes = await axiosInstance.post("/emotion-from-voice", { audioBase64 });
-        if (emotionRes.data?.mappedScores) {
-          console.log("HUME AI Mapped Emotion Scores:", emotionRes.data.mappedScores);
-        }
-        if (emotionRes.data?.emotion) {
-          voiceEmotion = emotionRes.data.emotion;
-          voiceScore = emotionRes.data.score ?? 0;
-        }
-      } catch (err) {
-        console.error("Emotion detection UI error:", err);
-      }
-
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
       formData.append('model_id', 'scribe_v2');
-      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-        method: 'POST',
-        headers: { 'xi-api-key': ELEVENLABS_API_KEY },
-        body: formData
+      const res = await axiosInstance.post('/elevenlabs/speech-to-text', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 90000,
       });
-      const data = await res.json();
+      const data = res.data;
       if (data.text) {
         const textEmotion = inferEmotionFromText(data.text);
-        const shouldUseTextEmotion =
-          !!textEmotion &&
-          (
-            !voiceEmotion ||
-            voiceEmotion.toLowerCase() === 'neutral' ||
-            voiceScore < 0.45
-          );
-
-        setDetectedEmotion({
-          emotion: shouldUseTextEmotion ? textEmotion : (voiceEmotion || textEmotion || 'neutral'),
-          score: shouldUseTextEmotion ? 0.85 : voiceScore,
-          source: shouldUseTextEmotion ? "Text + Voice" : "Hume AI"
-        });
 
         onTranscript?.(data.text, { author: 'User', source: 'did' });
         
@@ -284,6 +264,26 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
           });
 
           const aiMsg = aiRes?.data?.response;
+          const voiceEmotion = aiRes?.data?.voiceEmotion;
+          const voiceLabel = voiceEmotion?.emotion;
+          const voiceDisplayLabel = voiceEmotion?.toneLabel || voiceLabel;
+          const voiceScore = voiceEmotion?.score ?? 0;
+          const shouldUseTextEmotion =
+            !!textEmotion &&
+            (
+              !voiceLabel ||
+              voiceLabel.toLowerCase() === 'neutral' ||
+              voiceScore < 0.45
+            );
+
+          setDetectedEmotion({
+            emotion: shouldUseTextEmotion ? textEmotion : (voiceDisplayLabel || textEmotion || 'neutral'),
+            score: shouldUseTextEmotion ? 0.85 : voiceScore,
+            topScores: shouldUseTextEmotion ? [] : getTopEmotionScores(voiceEmotion),
+            source: shouldUseTextEmotion ? "Text + Voice" : (voiceEmotion?.source || "Hume AI"),
+            error: voiceEmotion?.error
+          });
+
           if (aiMsg) {
             const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
             onTranscript?.(aiMsg, { author: agent?.name || 'AI', source: 'did' });
@@ -306,18 +306,13 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     setIsProcessing(false);
     try {
       const agent = AVATAR_OPTIONS.find(a => a.id === selectedAgent);
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${agent.voiceId}`, {
-        method: 'POST',
-        headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
-      });
+      const res = await axiosInstance.post(
+        `/elevenlabs/text-to-speech/${agent.voiceId}`,
+        { text, model_id: 'eleven_multilingual_v2' },
+        { responseType: 'blob', timeout: 90000 }
+      );
 
-      if (!res.ok) {
-        if (res.status === 402) throw new Error("ElevenLabs quota exceeded");
-        throw new Error("Failed to generate speech");
-      }
-
-      const blob = await res.blob();
+      const blob = res.data;
       audioRef.current.src = URL.createObjectURL(blob);
       setIsSpeaking(true);
       audioRef.current.play();
@@ -485,7 +480,21 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
               {detectedEmotion && (
                 <div className="didagent-emotion-indicator">
                   <Sparkles size={14} />
-                  <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                  <div className="didagent-emotion-content">
+                    <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                    {detectedEmotion.topScores?.length > 0 && (
+                      <div className="didagent-emotion-top-scores">
+                        {detectedEmotion.topScores.map((item) => (
+                          <span key={item.emotion}>
+                            {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <small className="didagent-emotion-disclaimer">
+                      Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                    </small>
+                  </div>
                 </div>
               )}
 

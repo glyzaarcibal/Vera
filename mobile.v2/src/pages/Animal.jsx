@@ -14,6 +14,18 @@ import PandaImg from '../assets/panda.png';
 import axiosInstance from '../utils/axios.instance';
 import ReusableModal from "../components/ReusableModal";
 
+const getTopEmotionScores = (voiceEmotion) => {
+  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
+    return voiceEmotion.topScores;
+  }
+
+  return Object.entries(voiceEmotion?.mappedScores || {})
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, 3)
+    .map(([emotion, score]) => ({ emotion, score }));
+};
+
 export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [animalType, setAnimalType] = useState(null); 
   const [showMicModal, setShowMicModal] = useState(false);
@@ -35,8 +47,6 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
 
-  const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY;
-
   const ANIMAL_GUIDES = [
     {
       id: 'cat',
@@ -45,8 +55,14 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       description: 'Luna is a gentle calico who offers soft purrs and empathetic listening, perfect for moments when you just need a quiet, steady presence.',
       image: CatImg,
       video: meowVideo,
-      voiceId: '21m00Tcm4TlvDq8ikWAM',
-      personality: 'You are Luna, a playful, slightly sassy but deeply empathetic cat AI companion. Respond warmly and naturally without roleplay actions or animal sound effects.'
+      voiceId: 'cgSgspJ2msm6clMCkdW9',
+      voiceSettings: {
+        stability: 0.28,
+        similarity_boost: 0.88,
+        style: 0.55,
+        use_speaker_boost: true,
+      },
+      personality: 'You are Luna, a gentle female cat AI companion with a soft, affectionate, malambing voice. Respond warmly and naturally with tender, cat-like sweetness, without sounding robotic and without roleplay actions or animal sound effects.'
     },
     {
       id: 'dog',
@@ -55,8 +71,14 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       description: 'Cooper is a devoted golden retriever who brings boundless warmth and encouragement, acting as a joyful anchor for your emotional well-being.',
       image: DogImg,
       video: arfarfVideo,
-      voiceId: 'JBFqnCBsd6RMkjVDRZzb',
-      personality: 'You are Cooper, an enthusiastic, loyal dog AI companion. Respond with boundless energy and warmth, without roleplay actions or animal sound effects.'
+      voiceId: 'TX3LPaxmHKxFdv7VOQHJ',
+      voiceSettings: {
+        stability: 0.3,
+        similarity_boost: 0.82,
+        style: 0.62,
+        use_speaker_boost: true,
+      },
+      personality: 'You are Cooper, an enthusiastic male dog AI companion with a bright, hyper, loyal energy. Respond warmly, naturally, and playfully without sounding robotic, and without roleplay actions or animal sound effects.'
     },
     {
       id: 'monkey',
@@ -66,6 +88,12 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       image: MonkeyImg,
       video: monkeyVideo,
       voiceId: 'EXAVITQu4vr4xnSDxMaL',
+      voiceSettings: {
+        stability: 0.34,
+        similarity_boost: 0.82,
+        style: 0.35,
+        use_speaker_boost: true,
+      },
       personality: 'You are Miko, a playful and caring monkey AI companion. Be warm, funny, and reassuring with gentle energy, without roleplay actions or animal sound effects.'
     },
     {
@@ -76,6 +104,12 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       image: PandaImg,
       video: pandaVideo,
       voiceId: 'ErXwobaYiN019PkySvjV',
+      voiceSettings: {
+        stability: 0.45,
+        similarity_boost: 0.78,
+        style: 0.18,
+        use_speaker_boost: true,
+      },
       personality: 'You are Poko, a calm and kind panda AI companion. Speak softly and supportively, and help the user feel safe and steady, without roleplay actions or animal sound effects.'
     }
   ];
@@ -168,31 +202,14 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     try {
       const audioBase64 = await convertBlobToBase64(blob);
 
-      // Real-time emotion detection for UI
-      axiosInstance.post("/emotion-from-voice", { audioBase64 })
-        .then(res => {
-          if (res.data?.mappedScores) {
-            console.log("HUME AI Mapped Emotion Scores:", res.data.mappedScores);
-          }
-          if (res.data?.emotion) {
-            setDetectedEmotion({
-              emotion: res.data.emotion,
-              score: res.data.score ?? 0,
-              source: "Hume AI"
-            });
-          }
-        })
-        .catch(err => console.error("Emotion detection UI error:", err));
-
       const formData = new FormData();
       formData.append('file', blob, 'audio.webm');
       formData.append('model_id', 'scribe_v2');
-      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-        method: 'POST',
-        headers: { 'xi-api-key': ELEVENLABS_API_KEY },
-        body: formData
+      const res = await axiosInstance.post('/elevenlabs/speech-to-text', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 90000,
       });
-      const data = await res.json();
+      const data = res.data;
       if (data.text) {
         onTranscript?.(data.text, { author: 'User', source: 'animal' });
         
@@ -210,6 +227,17 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
           });
 
           const aiMsg = sanitizeAnimalReply(aiRes?.data?.response);
+          const voiceEmotion = aiRes?.data?.voiceEmotion;
+          if (voiceEmotion?.emotion || voiceEmotion?.error) {
+            setDetectedEmotion({
+              emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
+              score: voiceEmotion.score ?? 0,
+              topScores: getTopEmotionScores(voiceEmotion),
+              source: voiceEmotion.source || "Hume AI",
+              error: voiceEmotion.error,
+            });
+          }
+
           if (aiMsg) {
             const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
             onTranscript?.(aiMsg, { author: guide.name, source: 'animal' });
@@ -232,23 +260,17 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
     setIsProcessing(false);
     try {
       const guide = ANIMAL_GUIDES.find(g => g.id === animalType);
-      const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${guide.voiceId}`, {
-        method: 'POST',
-        headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2' })
-      });
+      const res = await axiosInstance.post(
+        `/elevenlabs/text-to-speech/${guide.voiceId}`,
+        {
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: guide.voiceSettings,
+        },
+        { responseType: 'blob', timeout: 90000 }
+      );
 
-      if (!res.ok) {
-        let errorMsg = "Failed to generate speech";
-        try {
-          const errData = await res.json();
-          errorMsg = errData.detail?.message || errData.message || errorMsg;
-        } catch (jsonErr) {}
-        if (res.status === 402) throw new Error("ElevenLabs quota exceeded: " + errorMsg);
-        throw new Error(errorMsg);
-      }
-
-      const blob = await res.blob();
+      const blob = res.data;
       audioRef.current.src = URL.createObjectURL(blob);
       setIsSpeaking(true);
       audioRef.current.play();
@@ -260,11 +282,24 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         const animalVoiceStyles = {
-          cat: { pitch: 1.35, rate: 1.08 },
-          dog: { pitch: 0.9, rate: 1.0 },
+          cat: { pitch: 1.28, rate: 0.94 },
+          dog: { pitch: 1.04, rate: 1.1 },
           monkey: { pitch: 1.2, rate: 1.14 },
           panda: { pitch: 0.82, rate: 0.92 }
         };
+        const browserVoices = window.speechSynthesis.getVoices?.() || [];
+        const softFemaleVoice = browserVoices.find((voice) =>
+          /female|woman|zira|susan|samantha|victoria|karen|moira/i.test(voice.name)
+        );
+        const upbeatMaleVoice = browserVoices.find((voice) =>
+          /male|man|david|mark|daniel|alex|fred|george|liam/i.test(voice.name)
+        );
+        if (animalType === 'cat' && softFemaleVoice) {
+          utterance.voice = softFemaleVoice;
+        }
+        if (animalType === 'dog' && upbeatMaleVoice) {
+          utterance.voice = upbeatMaleVoice;
+        }
         const style = animalVoiceStyles[animalType] || { pitch: 1.0, rate: 1.0 };
         utterance.pitch = style.pitch;
         utterance.rate = style.rate;
@@ -390,7 +425,21 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
               {detectedEmotion && (
                 <div className="didagent-emotion-indicator">
                   <Sparkles size={14} />
-                  <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                  <div className="didagent-emotion-content">
+                    <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
+                    {detectedEmotion.topScores?.length > 0 && (
+                      <div className="didagent-emotion-top-scores">
+                        {detectedEmotion.topScores.map((item) => (
+                          <span key={item.emotion}>
+                            {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <small className="didagent-emotion-disclaimer">
+                      Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                    </small>
+                  </div>
                 </div>
               )}
 

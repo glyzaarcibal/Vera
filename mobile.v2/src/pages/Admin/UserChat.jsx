@@ -67,6 +67,28 @@ const UserChat = () => {
     confusion: "#F59E0B",
   };
 
+  const getMixedUncertainTone = (emotionList) => {
+    const getValue = (name) =>
+      emotionList.find((emotion) => emotion.name.toLowerCase() === name)?.value || 0;
+    const uncertainTone = ["fearful", "doubt", "calm"]
+      .map((name) => ({ name, value: getValue(name) }))
+      .filter((emotion) => emotion.value >= 0.03);
+    const sad = getValue("sad");
+    const total = uncertainTone.reduce((sum, emotion) => sum + emotion.value, 0);
+
+    if (sad > 0 && uncertainTone.length >= 2 && total >= sad * 0.65) {
+      return {
+        name: uncertainTone.sort((a, b) => b.value - a.value)[0].name,
+        label: uncertainTone
+          .map((emotion) => emotion.name === "fearful" ? "Fear" : emotion.name.charAt(0).toUpperCase() + emotion.name.slice(1))
+          .join(" / "),
+        value: total,
+      };
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     getChatInfo();
   }, []);
@@ -82,12 +104,18 @@ const UserChat = () => {
       { name: "fearful", value: emotions.fearful },
       { name: "neutral", value: emotions.neutral },
       { name: "surprised", value: emotions.surprised },
+      { name: "calm", value: emotions.calm },
       { name: "doubt", value: emotions.doubt },
       { name: "confusion", value: emotions.confusion },
     ];
-    return emotionList.reduce((max, emotion) =>
+    const max = emotionList.reduce((max, emotion) =>
       emotion.value > max.value ? emotion : max
     );
+    const mixedUncertainTone = getMixedUncertainTone(emotionList);
+    if (mixedUncertainTone && max.name === "sad") {
+      return mixedUncertainTone;
+    }
+    return max;
   };
 
   const getEmotionArray = (msg) => {
@@ -142,9 +170,22 @@ const UserChat = () => {
     const dominant = sorted[0];
     const secondary = sorted[1];
     const tertiary = sorted[2];
+    const mixedUncertainTone = getMixedUncertainTone(
+      emotionsData.map((emotion) => ({
+        name: emotion.emotion.toLowerCase(),
+        value: emotion.value,
+      }))
+    );
+    const displayDominant = mixedUncertainTone && dominant.emotion === "Sad"
+      ? {
+          emotion: mixedUncertainTone.label,
+          value: mixedUncertainTone.value,
+          key: mixedUncertainTone.name,
+        }
+      : dominant;
 
     let summary = `Speech emotion detection (Hume AI Prosody) analyzed ${messagesWithEmotions.length} user utterance(s). `;
-    summary += `Dominant emotion: **${dominant.emotion}** (${dominant.value.toFixed(1)}%). `;
+    summary += `${mixedUncertainTone && dominant.emotion === "Sad" ? "Primary vocal tone" : "Dominant emotion"}: **${displayDominant.emotion}** (${displayDominant.value.toFixed(1)}%). `;
     if (secondary && secondary.value > 5) {
       summary += `Also present: ${secondary.emotion} (${secondary.value.toFixed(1)}%)`;
       if (tertiary && tertiary.value > 5) {
@@ -152,7 +193,9 @@ const UserChat = () => {
       }
       summary += ". ";
     }
-    if (dominant.emotion === "Sad" || dominant.emotion === "Fearful" || dominant.emotion === "Angry") {
+    if (mixedUncertainTone && dominant.emotion === "Sad") {
+      summary += "Tone shows uncertainty/fear signals with some calm regulation, so this should not be read as pure sadness.";
+    } else if (dominant.emotion === "Sad" || dominant.emotion === "Fearful" || dominant.emotion === "Angry") {
       summary += "Emotional tone may warrant follow-up.";
     } else if (dominant.emotion === "Calm" || dominant.emotion === "Neutral" || dominant.emotion === "Happy") {
       summary += "Overall tone suggests stable or positive state.";
@@ -162,7 +205,7 @@ const UserChat = () => {
       summary += "Mixed emotional signals detected.";
     }
 
-    return { summary, dominant, secondary, messagesCount: messagesWithEmotions.length };
+    return { summary, dominant: displayDominant, secondary, messagesCount: messagesWithEmotions.length };
   };
 
   const getChatInfo = async () => {
@@ -401,7 +444,7 @@ const UserChat = () => {
                             >
                               <MdSentimentSatisfiedAlt className="text-sm" />
                               <span className="capitalize">
-                                {dominantEmotion.name}
+                                {dominantEmotion.label || dominantEmotion.name}
                               </span>
                             </button>
                           )}
@@ -747,11 +790,11 @@ const UserChat = () => {
                                 <span
                                   className="text-xs font-semibold px-2 py-1 rounded"
                                   style={{
-                                    backgroundColor: (emotionColors[humeSummary.dominant.emotion.toLowerCase()] || "#94a3b8") + "20",
-                                    color: emotionColors[humeSummary.dominant.emotion.toLowerCase()] || "#64748b",
+                                    backgroundColor: (emotionColors[humeSummary.dominant.key || humeSummary.dominant.emotion.toLowerCase()] || "#94a3b8") + "20",
+                                    color: emotionColors[humeSummary.dominant.key || humeSummary.dominant.emotion.toLowerCase()] || "#64748b",
                                   }}
                                 >
-                                  Dominant: {humeSummary.dominant.emotion}
+                                  Tone: {humeSummary.dominant.emotion}
                                 </span>
                               )}
                             </div>
