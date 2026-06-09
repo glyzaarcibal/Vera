@@ -242,6 +242,17 @@ export const translations = {
     // Mood Tracker Activity
     mood_title: "Mood Tracker",
     mood_question: "How are you feeling today?",
+    feelings_wheel_title: "Feelings Wheel (Emotion Wheel)",
+    feelings_wheel_image_alt: "Feelings Wheel showing emotions from broad categories to specific feelings",
+    feelings_wheel_intro: "The Feelings Wheel is a visual tool that helps people identify and understand their emotions more clearly. Instead of simply saying \"I feel bad\" or \"I feel good,\" it guides users toward more specific feelings.",
+    feelings_wheel_center_label: "Center",
+    feelings_wheel_center: "Primary emotions such as Happy, Sad, Angry, Fearful, Disgusted, Surprised, and Bad.",
+    feelings_wheel_middle_label: "Middle Ring",
+    feelings_wheel_middle: "More detailed emotions related to the primary feeling.",
+    feelings_wheel_outer_label: "Outer Ring",
+    feelings_wheel_outer: "Specific emotions that provide a deeper understanding of what a person is experiencing.",
+    feelings_wheel_examples: "For example:",
+    feelings_wheel_benefit: "The Feelings Wheel improves emotional awareness, communication, self-reflection, and mental well-being by making emotions easier to describe accurately.",
     mood_positive: "Positive Moods",
     mood_negative: "Negative Moods",
     mood_low_energy: "Low Energy",
@@ -282,7 +293,7 @@ export const translations = {
 
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
-    wellness_mood_dist: "Mood Distribution (Past 30 Days)",
+    wellness_mood_dist: "Mood Distribution",
     wellness_sleep_dur: "Sleep Duration Report",
     wellness_breathing_sessions: "Breathing Sessions Per Day",
     wellness_sleep_trend: "Sleep trend",
@@ -625,6 +636,17 @@ export const translations = {
     // Mood Tracker Activity
     mood_title: "Mood Tracker",
     mood_question: "Ano ang nararamdaman mo ngayon?",
+    feelings_wheel_title: "Feelings Wheel (Emotion Wheel)",
+    feelings_wheel_image_alt: "Feelings Wheel na nagpapakita ng mga emosyon mula sa pangkalahatan hanggang sa mas tiyak na damdamin",
+    feelings_wheel_intro: "Ang Feelings Wheel ay isang visual tool na tumutulong para mas malinaw na matukoy at maunawaan ang mga emosyon. Sa halip na sabihing \"masama ang pakiramdam ko\" o \"maganda ang pakiramdam ko,\" ginagabayan nito ang user na tukuyin ang mas tiyak na damdamin.",
+    feelings_wheel_center_label: "Gitna",
+    feelings_wheel_center: "Mga pangunahing emosyon gaya ng Happy, Sad, Angry, Fearful, Disgusted, Surprised, at Bad.",
+    feelings_wheel_middle_label: "Gitnang Ring",
+    feelings_wheel_middle: "Mas detalyadong emosyon na kaugnay ng pangunahing damdamin.",
+    feelings_wheel_outer_label: "Panlabas na Ring",
+    feelings_wheel_outer: "Mga tiyak na emosyon na nagbibigay ng mas malalim na pag-unawa sa nararanasan ng isang tao.",
+    feelings_wheel_examples: "Halimbawa:",
+    feelings_wheel_benefit: "Nakakatulong ang Feelings Wheel sa emotional awareness, communication, self-reflection, at mental well-being dahil mas madaling mailarawan nang tama ang mga emosyon.",
     mood_positive: "Positibong Moods",
     mood_negative: "Negatibong Moods",
     mood_low_energy: "Mababang Enerhiya",
@@ -665,7 +687,7 @@ export const translations = {
 
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
-    wellness_mood_dist: "Mood Distribution (Past 30 Days)",
+    wellness_mood_dist: "Mood Distribution",
     wellness_sleep_dur: "Sleep Duration Report",
     wellness_breathing_sessions: "Breathing Sessions Bawat Araw",
     wellness_sleep_trend: "Sleep trend",

@@ -1,20 +1,16 @@
 import supabaseAdmin from "../../utils/supabase.utils.js";
 
 /**
- * Saves emotion scores (Hume AI Prosody). Columns must exist in message_emotion.
- * Run supabase/migrations/add_doubt_confusion_emotion.sql if PGRST204 occurs.
+ * Saves five basic emotion scores from Hume AI Prosody.
+ * Columns must exist in message_emotion.
  */
 const MESSAGE_EMOTION_COLUMNS = [
   "message_id",
-  "angry",
-  "disgust",
-  "doubt",
-  "confusion",
-  "fearful",
   "happy",
-  "neutral",
   "sad",
-  "surprised",
+  "angry",
+  "fearful",
+  "disgust",
   "model",
 ];
 

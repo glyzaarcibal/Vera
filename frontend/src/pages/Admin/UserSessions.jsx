@@ -15,12 +15,26 @@ import FilterChips from "../../components/FilterChips";
 import ReusableModal from "../../components/ReusableModal";
 import Loader from "../../components/Loader";
 
+const BASIC_EMOTION_KEYS = ["happy", "sad", "angry", "fearful", "disgust"];
+
+const normalizeBasicEmotion = (value) => {
+  const type = String(value || "").trim().toLowerCase();
+  if (["happy", "joy", "joyful", "excited", "excellent", "great", "ecstatic", "good", "fine", "relaxed", "calm", "okay", "content"].includes(type)) return "Happy";
+  if (["sad", "down", "tired", "depressed", "miserable", "terrible", "bad", "awful", "disappointed"].includes(type)) return "Sad";
+  if (["angry", "furious", "annoyed", "irritated", "frustrated", "mad"].includes(type)) return "Angry";
+  if (["fearful", "fear", "afraid", "scared", "anxious", "worried", "nervous", "panic", "panicked", "surprised", "shocked", "doubt", "confusion"].includes(type)) return "Fearful";
+  if (["disgust", "disgusted", "revolted", "sickened", "repulsed"].includes(type)) return "Disgust";
+  return "Happy";
+};
+
 const UserSessions = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [allReportSessions, setAllReportSessions] = useState([]);
+  const [analysisRange, setAnalysisRange] = useState("week");
   const [view, setView] = useState("card");
   const [sortOrder, setSortOrder] = useState("desc"); // desc = newest / highest risk first
   const [sortBy, setSortBy] = useState("date"); // "date" = recent to past, "risk" = by risk score
@@ -151,11 +165,11 @@ const UserSessions = () => {
       }
 
       // --- RISK PROGRESSION CHART ---
-      if (sessionRiskHistory.length > 0) {
+      if (filteredSessionRiskHistory.length > 0) {
         doc.addPage();
         doc.setFontSize(16);
         doc.setTextColor(31, 41, 55);
-        doc.text("3. Session Risk Progression", 14, 20);
+        doc.text(`3. Session Risk Progression (${analysisRangeLabel})`, 14, 20);
 
         // Simple manual chart drawing
         const chartX = 20;
@@ -168,11 +182,11 @@ const UserSessions = () => {
         doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // X Axis
         
         const maxRisk = 100;
-        const stepX = chartW / Math.max(sessionRiskHistory.length - 1, 1);
+        const stepX = chartW / Math.max(filteredSessionRiskHistory.length - 1, 1);
         
         doc.setDrawColor(239, 68, 68); // Red-500
         doc.setLineWidth(0.8);
-        sessionRiskHistory.forEach((point, i) => {
+        filteredSessionRiskHistory.forEach((point, i) => {
           const px = chartX + (i * stepX);
           const py = chartY + chartH - ((point.score / maxRisk) * chartH);
           
@@ -181,7 +195,7 @@ const UserSessions = () => {
           
           if (i > 0) {
             const prevPx = chartX + ((i - 1) * stepX);
-            const prevPy = chartY + chartH - ((sessionRiskHistory[i-1].score / maxRisk) * chartH);
+            const prevPy = chartY + chartH - ((filteredSessionRiskHistory[i-1].score / maxRisk) * chartH);
             doc.line(prevPx, prevPy, px, py);
           }
         });
@@ -195,7 +209,7 @@ const UserSessions = () => {
         // --- MOOD DISTRIBUTION ---
         const moodCounts = {};
         detailedActivities.mood.forEach(m => {
-          const type = m.moodType || "Neutral";
+          const type = normalizeBasicEmotion(m.moodType || "Happy");
           moodCounts[type] = (moodCounts[type] || 0) + 1;
         });
         
@@ -297,6 +311,7 @@ const UserSessions = () => {
         `/admin/users/get-sessions-by-user/${userId}?page=1&limit=1000&type=all`
       );
       const allSessions = allSessionsRes.data.sessions || [];
+      setAllReportSessions(allSessions);
 
       // Calculate AI usage stats
       const stats = {
@@ -311,6 +326,7 @@ const UserSessions = () => {
         .filter((s) => s.risk_score != null)
         .map((s) => ({
           date: new Date(s.created_at).toLocaleDateString(),
+          rawDate: s.created_at,
           time: new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           score: s.risk_score,
           level: s.risk_level,
@@ -359,16 +375,7 @@ const UserSessions = () => {
                 if (!emotionDataByDay[date]) {
                   emotionDataByDay[date] = {
                     date,
-                    sad: 0,
-                    angry: 0,
-                    happy: 0,
-                    disgust: 0,
-                    fearful: 0,
-                    neutral: 0,
-                    surprised: 0,
-                    calm: 0,
-                    doubt: 0,
-                    confusion: 0,
+                    ...Object.fromEntries(BASIC_EMOTION_KEYS.map((emotion) => [emotion, 0])),
                   };
                 }
 
@@ -423,7 +430,7 @@ const UserSessions = () => {
             date: formattedDate,
             fullDate: dayData.date,
             ...dayData,
-            dominantEmotion: emotions[0]?.emotion || "neutral",
+            dominantEmotion: emotions[0]?.emotion || "happy",
           };
         })
         .sort((a, b) => new Date(a.fullDate) - new Date(b.fullDate))
@@ -448,18 +455,18 @@ const UserSessions = () => {
         // Detailed Activity Parse
         const moodList = activities.filter(a => a.activity_type === 'mood').map(a => {
           // Extract literal text/type of mood
-          let typeStr = a.data?.mood || a.data?.moodType || "Neutral";
-          let type = typeof typeStr === 'string' ? typeStr.toLowerCase() : "neutral";
+          let typeStr = normalizeBasicEmotion(a.data?.mood || a.data?.moodType || "Happy");
+          let type = typeStr.toLowerCase();
 
           let val = a.data?.moodLevel; // check if number exists natively
           if (val == null) {
             // Try to map a realistic integer score from the text value so it plots dynamically on the visual chart
-            if (["happy", "joyful", "excited", "excellent", "great", "ecstatic"].includes(type)) val = 9;
-            else if (["good", "fine", "relaxed", "calm", "okay", "content"].includes(type)) val = 7;
-            else if (["neutral", "mixed", "average"].includes(type)) val = 5;
-            else if (["sad", "down", "tired", "stressed", "anxious", "worried", "nervous"].includes(type)) val = 3;
-            else if (["angry", "depressed", "miserable", "terrible", "bad", "furious", "awful"].includes(type)) val = 2;
-            else val = 5; // Default catch block
+            if (type === "happy") val = 9;
+            else if (type === "sad") val = 3;
+            else if (type === "fearful") val = 3;
+            else if (type === "angry") val = 2;
+            else if (type === "disgust") val = 2;
+            else val = 5;
           }
 
           // Format type back to capitalized purely for cosmetic Tooltip visuals
@@ -724,6 +731,46 @@ const UserSessions = () => {
     });
   };
 
+  const getRangeStartDate = (range = analysisRange) => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    if (range === "day") return start;
+    if (range === "week") {
+      start.setDate(start.getDate() - 6);
+      return start;
+    }
+    if (range === "month") {
+      start.setMonth(start.getMonth() - 1);
+      return start;
+    }
+
+    start.setFullYear(start.getFullYear() - 1);
+    return start;
+  };
+
+  const getSessionDate = (session) => {
+    const parsed = session?.created_at ? new Date(session.created_at) : null;
+    return parsed && !isNaN(parsed.getTime()) ? parsed : null;
+  };
+
+  const analysisRangeLabel = {
+    day: "Today",
+    week: "Last 7 Days",
+    month: "Last Month",
+    year: "Last Year",
+  }[analysisRange];
+
+  const analysisSessions = (allReportSessions.length > 0 ? allReportSessions : sessions).filter((session) => {
+    const sessionDate = getSessionDate(session);
+    return sessionDate && sessionDate >= getRangeStartDate();
+  });
+
+  const filteredSessionRiskHistory = sessionRiskHistory.filter((point) => {
+    const pointDate = point?.rawDate ? new Date(point.rawDate) : new Date(point.date);
+    return pointDate && !isNaN(pointDate.getTime()) && pointDate >= getRangeStartDate();
+  });
+
   const getRiskStats = () => {
     const stats = {
       low: 0,
@@ -733,7 +780,7 @@ const UserSessions = () => {
       notAssessed: 0,
     };
 
-    sessions.forEach((session) => {
+    analysisSessions.forEach((session) => {
       if (!session.risk_level) {
         stats.notAssessed++;
       } else {
@@ -745,9 +792,9 @@ const UserSessions = () => {
   };
 
   const getOverallRisk = () => {
-    if (sessions.length === 0) return { level: null, score: 0 };
+    if (analysisSessions.length === 0) return { level: null, score: 0 };
 
-    const assessedSessions = sessions.filter((s) => s.risk_score != null);
+    const assessedSessions = analysisSessions.filter((s) => s.risk_score != null);
     if (assessedSessions.length === 0) return { level: null, score: 0 };
 
     // Calculate average risk score
@@ -883,12 +930,37 @@ const UserSessions = () => {
         <div className="design-section user-risk-section">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
             <div>
-              <h3 className="section-title mb-1">Overall Risk Assessment</h3>
+              <h3 className="section-title mb-1">Risk Assessment ({analysisRangeLabel})</h3>
               <p className="text-sm text-gray-500">
-                Analysis based on {sessions.filter((s) => s.risk_score != null).length} sessions
+                Analysis based on {analysisSessions.filter((s) => s.risk_score != null).length} assessed sessions in this range
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                This reflects the selected period only, not the user's entire history.
               </p>
             </div>
-            <div className="flex items-center gap-6 bg-gray-50 p-4 rounded-2xl">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "day", label: "Day" },
+                  { key: "week", label: "Week" },
+                  { key: "month", label: "Month" },
+                  { key: "year", label: "Year" },
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => setAnalysisRange(option.key)}
+                    className={`px-4 py-2 rounded-full text-xs font-black border transition-all ${
+                      analysisRange === option.key
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100"
+                        : "bg-white text-indigo-500 border-indigo-100 hover:bg-indigo-50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-6 bg-gray-50 p-4 rounded-2xl">
               <div className="text-right">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Risk Score</div>
                 <div className="text-3xl font-bold text-gray-800">
@@ -901,6 +973,7 @@ const UserSessions = () => {
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Category</div>
                 <RiskBadge level={overallRisk.level} size="lg" />
               </div>
+            </div>
             </div>
           </div>
 
@@ -1021,13 +1094,8 @@ const UserSessions = () => {
                             <Bar dataKey="happy" stackId="a" fill="#10b981" name="Happy" />
                             <Bar dataKey="sad" stackId="a" fill="#3b82f6" name="Sad" />
                             <Bar dataKey="angry" stackId="a" fill="#ef4444" name="Angry" />
-                            <Bar dataKey="neutral" stackId="a" fill="#9ca3af" name="Neutral" />
-                            <Bar dataKey="calm" stackId="a" fill="#06b6d4" name="Calm" />
                             <Bar dataKey="fearful" stackId="a" fill="#f59e0b" name="Fearful" />
-                            <Bar dataKey="surprised" stackId="a" fill="#8b5cf6" name="Surprised" />
                             <Bar dataKey="disgust" stackId="a" fill="#ec4899" name="Disgust" />
-                            <Bar dataKey="doubt" stackId="a" fill="#a855f7" name="Doubt" />
-                            <Bar dataKey="confusion" stackId="a" fill="#f59e0b" name="Confusion" />
                           </BarChart>
                         </ResponsiveContainer>
                         <p className="text-xs text-gray-500 mt-2 text-center">
@@ -1055,14 +1123,9 @@ const UserSessions = () => {
                             angry: "bg-red-50 border-red-200 text-red-800",
                             happy: "bg-green-50 border-green-200 text-green-800",
                             fearful: "bg-orange-50 border-orange-200 text-orange-800",
-                            surprised: "bg-purple-50 border-purple-200 text-purple-800",
                             disgust: "bg-pink-50 border-pink-200 text-pink-800",
-                            calm: "bg-cyan-50 border-cyan-200 text-cyan-800",
-                            neutral: "bg-gray-50 border-gray-200 text-gray-800",
-                            doubt: "bg-violet-50 border-violet-200 text-violet-800",
-                            confusion: "bg-amber-50 border-amber-200 text-amber-800",
                           };
-                          const colorClass = emotionColors[emotion] || emotionColors.neutral;
+                          const colorClass = emotionColors[emotion] || emotionColors.happy;
 
                           return (
                             <div key={emotion} className={`p-4 rounded-lg border-2 ${colorClass}`}>
@@ -1099,13 +1162,13 @@ const UserSessions = () => {
 
                   {/* Session Risk Progression Graph */}
                   <div className="user-analytics-block">
-                    <h4 className="user-analytics-block-title">Session Risk Progression</h4>
-                    {sessionRiskHistory.length === 0 ? (
-                      <div className="user-analytics-empty">No assessed sessions to display risk progression.</div>
+                    <h4 className="user-analytics-block-title">Session Risk Progression ({analysisRangeLabel})</h4>
+                    {filteredSessionRiskHistory.length === 0 ? (
+                      <div className="user-analytics-empty">No assessed sessions to display risk progression for this range.</div>
                     ) : (
                       <div className="user-analytics-chart-wrap">
                         <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={sessionRiskHistory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                          <LineChart data={filteredSessionRiskHistory} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                             <XAxis dataKey="date" />
                             <YAxis domain={[0, 100]} />
@@ -1150,7 +1213,7 @@ const UserSessions = () => {
                             <PieChart>
                               <Pie
                                 data={Object.entries(detailedActivities.mood.reduce((acc, curr) => {
-                                  const type = curr.moodType || "Neutral";
+                                  const type = normalizeBasicEmotion(curr.moodType || "Happy");
                                   acc[type] = (acc[type] || 0) + 1;
                                   return acc;
                                 }, {})).map(([name, value]) => ({ name, value }))}
@@ -1162,11 +1225,11 @@ const UserSessions = () => {
                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                               >
                                 {Object.entries(detailedActivities.mood.reduce((acc, curr) => {
-                                  const type = curr.moodType || "Neutral";
+                                  const type = normalizeBasicEmotion(curr.moodType || "Happy");
                                   acc[type] = (acc[type] || 0) + 1;
                                   return acc;
                                 }, {})).map(([name], index) => {
-                                  const colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
+                                  const colors = ["#10b981", "#3b82f6", "#ef4444", "#f59e0b", "#8b5cf6"];
                                   return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                                 })}
                               </Pie>
@@ -1177,7 +1240,7 @@ const UserSessions = () => {
                         </div>
                         <div className="w-full md:w-1/2 grid grid-cols-2 gap-4">
                           {Object.entries(detailedActivities.mood.reduce((acc, curr) => {
-                            const type = curr.moodType || "Neutral";
+                            const type = normalizeBasicEmotion(curr.moodType || "Happy");
                             acc[type] = (acc[type] || 0) + 1;
                             return acc;
                           }, {})).sort((a, b) => b[1] - a[1]).map(([name, count], idx) => (

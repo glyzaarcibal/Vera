@@ -12,54 +12,89 @@ function getHumeApiKey() {
   return typeof key === "string" ? key.trim() : "";
 }
 
-/** Map Hume AI emotions to our database format. Hume provides 48+ dimensions; we map common ones. */
+export const BASIC_EMOTIONS = ["happy", "sad", "angry", "fearful", "disgust"];
+
+/** Map Hume AI emotions to the five basic emotions used by mood check-ins and trackers. */
 export function mapHumeEmotionsToDb(humeEmotions) {
   const mapped = {
-    angry: 0,
-    calm: 0,
-    disgust: 0,
-    doubt: 0,
-    confusion: 0,
-    fearful: 0,
     happy: 0,
-    neutral: 0,
     sad: 0,
-    surprised: 0,
+    angry: 0,
+    fearful: 0,
+    disgust: 0,
   };
 
   if (!humeEmotions || typeof humeEmotions !== "object") return mapped;
 
-  // Map Hume AI emotion names to our database fields (Hume uses various names e.g. Anger, Happiness)
+  // Hume returns many fine-grained labels. Collapse them into the app's five basic emotions.
   const emotionMap = {
-    anger: "angry",
-    angry: "angry",
-    calm: "calm",
-    calmness: "calm",
-    disgust: "disgust",
-    doubt: "doubt",
-    doubtful: "doubt",
-    uncertainty: "doubt",
-    uncertain: "doubt",
-    confusion: "confusion",
-    confused: "confusion",
-    perplexed: "confusion",
-    bewildered: "confusion",
-    puzzled: "confusion",
-    fear: "fearful",
-    fearful: "fearful",
+    admiration: "happy",
+    adoration: "happy",
+    aesthetic_appreciation: "happy",
+    aestheticappreciation: "happy",
+    amusement: "happy",
+    awe: "happy",
+    calm: "happy",
+    calmness: "happy",
+    contentment: "happy",
+    desire: "happy",
+    entrancement: "happy",
+    ecstasy: "happy",
+    excitement: "happy",
+    excited: "happy",
+    gratitude: "happy",
     happiness: "happy",
     happy: "happy",
-    joy: "happy",
     interest: "happy",
     interested: "happy",
-    excitement: "surprised",
-    excited: "surprised",
-    neutral: "neutral",
+    joy: "happy",
+    love: "happy",
+    pride: "happy",
+    relief: "happy",
+    romance: "happy",
+    satisfaction: "happy",
+    triumph: "happy",
+
+    boredom: "sad",
+    disappointment: "sad",
+    distress: "sad",
+    empathic_pain: "sad",
+    empathicpain: "sad",
+    embarrassment: "sad",
+    guilt: "sad",
+    nostalgia: "sad",
+    pain: "sad",
     sadness: "sad",
     sad: "sad",
-    surprise: "surprised",
-    surprised: "surprised",
-    Calmness:"neutral",
+    shame: "sad",
+    tiredness: "sad",
+
+    anger: "angry",
+    angry: "angry",
+    annoyance: "angry",
+    contempt: "angry",
+    determination: "angry",
+    envy: "angry",
+
+    anxiety: "fearful",
+    awkwardness: "fearful",
+    bewildered: "fearful",
+    confusion: "fearful",
+    confused: "fearful",
+    doubt: "fearful",
+    doubtful: "fearful",
+    fear: "fearful",
+    fearful: "fearful",
+    horror: "fearful",
+    perplexed: "fearful",
+    puzzled: "fearful",
+    realization: "fearful",
+    surprise: "fearful",
+    surprised: "fearful",
+    uncertainty: "fearful",
+    uncertain: "fearful",
+
+    disgust: "disgust",
   };
 
   Object.entries(humeEmotions).forEach(([key, value]) => {
@@ -73,23 +108,24 @@ export function mapHumeEmotionsToDb(humeEmotions) {
   return mapped;
 }
 
-/** Map raw Hume labels to user-friendly display labels (e.g. Interest -> Happy) */
-const RAW_TO_DISPLAY_LABEL = {
-  interest: "happy",
-  interested: "happy",
-  excitement: "surprised",
-  excited: "surprised",
-};
+export function getTopEmotionScores(emotionScores, limit = 3) {
+  if (!emotionScores || typeof emotionScores !== "object") return [];
+
+  return Object.entries(emotionScores)
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, limit)
+    .map(([emotion, score]) => ({ emotion, score }));
+}
 
 /** Get dominant emotion from Hume AI response. Returns { label, score }. */
 function getDominantEmotion(humeEmotions) {
   if (!humeEmotions || typeof humeEmotions !== "object") return null;
 
-  // Map to our core emotions first to avoid noise from raw Hume tags
+  // Map to the app's five basic emotions first to avoid noise from raw Hume tags.
   const mapped = mapHumeEmotionsToDb(humeEmotions);
-  
   let maxScore = 0;
-  let dominantLabel = "neutral";
+  let dominantLabel = null;
 
   Object.entries(mapped).forEach(([label, score]) => {
     // Only consider emotions with a decent confidence score to avoid defaulting to noise
@@ -99,7 +135,7 @@ function getDominantEmotion(humeEmotions) {
     }
   });
 
-  return { label: dominantLabel, score: maxScore || 1.0 }; // Default to 1.0 score if neutral fallback
+  return dominantLabel ? { label: dominantLabel, score: maxScore } : null;
 }
 
 /** Call Hume AI Expression Measurement API for speech emotion recognition. */
@@ -264,11 +300,17 @@ export async function transcribeAudio(audioBase64, messageId) {
       console.warn("[SpeechToText] No messageId provided, skipping emotion save");
     }
 
-    // Return array format for compatibility
-    return Object.entries(humeEmotions).map(([label, score]) => ({
-      label,
-      score: typeof score === "number" ? score : 0,
-    }));
+    const dominant = getDominantEmotion(humeEmotions);
+
+    return {
+      emotion: dominant?.label ?? null,
+      score: dominant?.score ?? 0,
+      toneLabel: dominant?.toneLabel,
+      topScores: getTopEmotionScores(emotionScores),
+      mappedScores: emotionScores,
+      rawScores: humeEmotions,
+      source: "Hume AI",
+    };
   } catch (error) {
     const data = error.response?.data;
     const status = error.response?.status;
@@ -299,10 +341,16 @@ export async function getEmotionFromAudio(audioBase64) {
     const dominant = getDominantEmotion(humeEmotions);
 
     if (!dominant) {
-      return { emotion: null, score: 0, mappedScores: humeEmotions };
+      return { emotion: null, score: 0, topScores: [], mappedScores: humeEmotions };
     }
 
-    return { emotion: dominant.label, score: dominant.score, mappedScores: humeEmotions };
+    const emotionScores = mapHumeEmotionsToDb(humeEmotions);
+    return {
+      emotion: dominant.label,
+      score: dominant.score,
+      topScores: getTopEmotionScores(emotionScores),
+      mappedScores: emotionScores,
+    };
   } catch (error) {
     const status = error.response?.status;
     const data = error.response?.data;

@@ -1,5 +1,9 @@
-import { getEmotionFromAudio } from "../../service/Chat/SpeechToText.service.js";
-import { callHumeEmotionModel, mapHumeEmotionsToDb } from "../../service/Chat/SpeechToText.service.js";
+import {
+  BASIC_EMOTIONS,
+  callHumeEmotionModel,
+  getEmotionFromAudio,
+  mapHumeEmotionsToDb,
+} from "../../service/Chat/SpeechToText.service.js";
 import { saveEmotionData } from "../../service/Chat/Emotion.service.js";
 
 /**
@@ -44,9 +48,11 @@ export const emotionFromVoice = async (req, res) => {
     return res.status(200).json({
       emotion: result.emotion,
       score: result.score ?? 0,
+      topScores: result.topScores || [],
+      mappedScores: result.mappedScores || {},
       source: "Hume AI",
       model: "hume-ai-prosody",
-      emotions: ["angry", "calm", "disgust", "doubt", "confusion", "fearful", "happy", "neutral", "sad", "surprised"],
+      emotions: BASIC_EMOTIONS,
       ...(result.error && { error: result.error }),
       ...(messageId && { saved: true }),
     });

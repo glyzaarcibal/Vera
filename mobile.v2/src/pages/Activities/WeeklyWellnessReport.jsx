@@ -75,7 +75,6 @@ const WeeklyWellnessReport = () => {
 
   const [moodCounts, setMoodCounts] = useState({});
   const [sleepData, setSleepData] = useState([]);
-  const [selectedEntry, setSelectedEntry] = useState(null);
   const [breathingData, setBreathingData] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState({});
@@ -83,17 +82,24 @@ const WeeklyWellnessReport = () => {
   const [isCloseButtonHovered, setIsCloseButtonHovered] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [allActivities, setAllActivities] = useState([]);
+  const [reportRange, setReportRange] = useState("week");
 
   useEffect(() => {
     fetchAllActivities();
   }, []);
+
+  useEffect(() => {
+    processAllActivities(allActivities, reportRange);
+  }, [allActivities, reportRange]);
 
   const fetchAllActivities = async () => {
     try {
       setIsLoading(true);
       const response = await axiosInstance.get("/activities");
       const activities = response.data.activities || [];
-      processAllActivities(activities);
+      setAllActivities(activities);
+      processAllActivities(activities, reportRange);
     } catch (error) {
       console.error("Error fetching activities:", error);
     } finally {
@@ -101,7 +107,46 @@ const WeeklyWellnessReport = () => {
     }
   };
 
-  const processAllActivities = (activities) => {
+  const getActivityDate = (activity) => {
+    const data = activity?.data || {};
+    const rawDate = data.date || activity?.created_at || data.timestamp;
+    const parsed = rawDate ? new Date(rawDate) : null;
+    return parsed && !isNaN(parsed.getTime()) ? parsed : null;
+  };
+
+  const getRangeStartDate = (range = reportRange) => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    if (range === "day") {
+      return start;
+    }
+
+    if (range === "week") {
+      start.setDate(start.getDate() - 6);
+      return start;
+    }
+
+    if (range === "month") {
+      start.setMonth(start.getMonth() - 1);
+      return start;
+    }
+
+    start.setFullYear(start.getFullYear() - 1);
+    return start;
+  };
+
+  const filterActivitiesByRange = (activities, range = reportRange) => {
+    const startDate = getRangeStartDate(range);
+    return activities.filter((activity) => {
+      const activityDate = getActivityDate(activity);
+      return activityDate && activityDate >= startDate;
+    });
+  };
+
+  const processAllActivities = (activities, range = reportRange) => {
+    const filteredActivities = filterActivitiesByRange(activities, range);
+
     // 1. Process Mood Data
     const moodScoreMap = {
       1: "Very Sad",
@@ -111,27 +156,13 @@ const WeeklyWellnessReport = () => {
       5: "Very Happy",
     };
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const moodLogs = activities.filter(act => 
+    const moodLogs = filteredActivities.filter(act => 
       (act.activity_type && act.activity_type.toLowerCase() === "mood") ||
       (act.activityType && act.activityType.toLowerCase() === "mood")
     );
 
     const counts = moodLogs.reduce((acc, log) => {
       const data = log.data || {};
-      // Fallback for date: data.timestamp, then log.created_at, then data.date
-      const rawDate = data.timestamp || log.created_at || data.date;
-      
-      if (rawDate) {
-        const entryDate = new Date(rawDate);
-        // Only filter out if it's clearly older than 30 days and is a valid date
-        if (!isNaN(entryDate.getTime()) && entryDate < thirtyDaysAgo) {
-          return acc;
-        }
-      }
-
       let moodLabel =
         (typeof data.mood === "string" && data.mood) ||
         (data.mood && typeof data.mood === "object" && data.mood.mood) ||
@@ -148,24 +179,24 @@ const WeeklyWellnessReport = () => {
     setMoodCounts(counts);
 
     // 2. Process Sleep Data
-    const sleepLogs = activities
+  const sleepLogs = filteredActivities
       .filter(act => act.activity_type === "sleep")
       .map(act => ({
         id: act.id,
         ...act.data
       }))
-      .sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
+      .sort((a, b) => new Date(a.date || a.timestamp) - new Date(b.date || b.timestamp));
     setSleepData(sleepLogs);
 
     // 3. Process Breathing Data
-    const breathLogs = activities
+  const breathLogs = filteredActivities
       .filter(act => act.activity_type === "breath")
       .map(act => ({
         ...act.data,
         type: act.data.type || "relaxing",
         typeLabel: act.data.typeLabel || BREATHING_TYPE_LABELS[act.data.type] || "Relaxing (6-7-8)",
       }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      .sort((a, b) => new Date(a.date || a.timestamp) - new Date(b.date || b.timestamp));
 
     const groupedByDay = {};
     const groupedByType = {};
@@ -221,7 +252,7 @@ const WeeklyWellnessReport = () => {
     };
   });
 
-  const pieData = Object.keys(moodCounts).map((key, index) => ({
+  const pieData = Object.keys(moodCounts).map((key) => ({
     name: key,
     value: moodCounts[key],
     color: getEmotionColor(key),
@@ -229,14 +260,23 @@ const WeeklyWellnessReport = () => {
 
   const byDay = breathingData?.byDay || breathingData || {};
   const byType = breathingData?.byType || {};
-  const breathingChartData = Object.keys(byDay).map((date) => ({
-    date,
-    sessions: byDay[date],
-  }));
+  const breathingChartData = Object.keys(byDay)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .map((date) => ({
+      date,
+      sessions: byDay[date],
+    }));
   const breathingByTypeChartData = Object.keys(byType).map((label) => ({
     name: label,
     sessions: byType[label],
   }));
+
+  const rangeLabel = {
+    day: language === 'tl' ? 'Ngayong Araw' : 'Today',
+    week: language === 'tl' ? 'Huling 7 Araw' : 'Last 7 Days',
+    month: language === 'tl' ? 'Huling Buwan' : 'Last Month',
+    year: language === 'tl' ? 'Huling Taon' : 'Last Year',
+  }[reportRange];
 
   const getSleepMessage = (duration) => {
     if (duration >= 8 && duration <= 10) {
@@ -509,6 +549,45 @@ const WeeklyWellnessReport = () => {
       boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
       fontSize: window.innerWidth <= 640 ? '14px' : '16px',
     },
+    filterCard: {
+      maxWidth: '1200px',
+      margin: '0 auto 20px',
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+      padding: '14px 18px',
+      background: 'rgba(255, 255, 255, 0.85)',
+      borderRadius: '16px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+      backdropFilter: 'blur(10px)',
+    },
+    filterLabel: {
+      fontWeight: '700',
+      color: '#4f46e5',
+      fontSize: '14px',
+    },
+    filterButtons: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+    },
+    filterButton: {
+      border: '1px solid rgba(102, 126, 234, 0.25)',
+      background: 'white',
+      color: '#667eea',
+      padding: '8px 14px',
+      borderRadius: '999px',
+      cursor: 'pointer',
+      fontWeight: '700',
+      transition: 'all 0.2s',
+    },
+    filterButtonActive: {
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      boxShadow: '0 6px 16px rgba(102, 126, 234, 0.28)',
+    },
     cardsContainer: {
       maxWidth: '1200px',
       margin: '0 auto',
@@ -763,6 +842,32 @@ const WeeklyWellnessReport = () => {
         content={modalContent}
       />
 
+      <div style={styles.filterCard}>
+        <span style={styles.filterLabel}>
+          {language === 'tl' ? 'I-filter ang report' : 'Filter report data'}
+        </span>
+        <div style={styles.filterButtons}>
+          {[
+            { key: "day", label: language === 'tl' ? "Araw" : "Day" },
+            { key: "week", label: language === 'tl' ? "Linggo" : "Week" },
+            { key: "month", label: language === 'tl' ? "Buwan" : "Month" },
+            { key: "year", label: language === 'tl' ? "Taon" : "Year" },
+          ].map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setReportRange(option.key)}
+              style={{
+                ...styles.filterButton,
+                ...(reportRange === option.key ? styles.filterButtonActive : {}),
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {isLoading ? (
         <div style={{ ...styles.card, textAlign: 'center', padding: '50px' }}>
           <h2 style={styles.sectionTitle}>Loading Wellness Report...</h2>
@@ -772,7 +877,7 @@ const WeeklyWellnessReport = () => {
         <div style={styles.cardsContainer}>
           {/* Mood Distribution Card */}
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>{t('wellness_mood_dist')}</h2>
+            <h2 style={styles.sectionTitle}>{t('wellness_mood_dist')} ({rangeLabel})</h2>
             {pieData.length > 0 ? (
               <div style={{ ...styles.chartWrapper, height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -796,7 +901,7 @@ const WeeklyWellnessReport = () => {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p style={styles.noData}>No mood data available for the past 30 days.</p>
+              <p style={styles.noData}>No mood data available for the selected range.</p>
             )}
 
             {/* Mood Summary Table */}
@@ -841,7 +946,7 @@ const WeeklyWellnessReport = () => {
 
           {/* Sleep Duration Card */}
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>Sleep Duration Report</h2>
+            <h2 style={styles.sectionTitle}>Sleep Duration Report ({rangeLabel})</h2>
             {sleepChartData.length > 0 ? (
               <div style={styles.chartWrapper}>
                 <div style={styles.chartContainer}>
@@ -874,7 +979,7 @@ const WeeklyWellnessReport = () => {
 
           {/* Breathing Sessions Card */}
           <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>Breathing Sessions Per Day</h2>
+            <h2 style={styles.sectionTitle}>Breathing Sessions Per Day ({rangeLabel})</h2>
             {breathingChartData.length > 0 ? (
               <div style={styles.chartWrapper}>
                 <div style={styles.chartContainer}>

@@ -282,7 +282,7 @@ export const translations = {
 
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
-    wellness_mood_dist: "Mood Distribution (Past 30 Days)",
+    wellness_mood_dist: "Mood Distribution",
     wellness_sleep_dur: "Sleep Duration Report",
     wellness_breathing_sessions: "Breathing Sessions Per Day",
     wellness_sleep_trend: "Sleep trend",
@@ -671,7 +671,7 @@ export const translations = {
 
     // Wellness Report
     wellness_title: "Weekly Wellness Report",
-    wellness_mood_dist: "Mood Distribution (Past 30 Days)",
+    wellness_mood_dist: "Mood Distribution",
     wellness_sleep_dur: "Sleep Duration Report",
     wellness_breathing_sessions: "Breathing Sessions Bawat Araw",
     wellness_sleep_trend: "Sleep trend",

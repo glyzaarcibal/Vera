@@ -20,6 +20,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [avatarRiskStats, setAvatarRiskStats] = useState(null);
   const [avatarRiskLoading, setAvatarRiskLoading] = useState(true);
+  const [sessionUsageStats, setSessionUsageStats] = useState(null);
+  const [sessionUsageLoading, setSessionUsageLoading] = useState(true);
   const [trendData, setTrendData] = useState([]);
 
   // Helper function to format time ago
@@ -95,7 +97,20 @@ const Dashboard = () => {
         setAvatarRiskLoading(false);
       }
     };
+    const fetchSessionUsageStats = async () => {
+      try {
+        setSessionUsageLoading(true);
+        const res = await axiosInstance.get("/admin/users/session-usage-stats");
+        setSessionUsageStats(res.data);
+      } catch (err) {
+        console.error("Error fetching session usage stats:", err);
+        setSessionUsageStats({ byType: [], byVoice: [], byAvatarAgent: [], byAnimalAvatar: [] });
+      } finally {
+        setSessionUsageLoading(false);
+      }
+    };
     fetchAvatarRiskStats();
+    fetchSessionUsageStats();
 
     // Mock trend data for visualization
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
@@ -146,6 +161,27 @@ const Dashboard = () => {
       { name: "Critical", sessions: avatarRiskStats.byLevel?.critical ?? 0, color: RISK_COLORS.critical },
     ]
     : [];
+
+  const usageColors = ["#6366f1", "#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#f97316"];
+  const renderUsageChart = (data, emptyText) => (
+    data && data.length > 0 ? (
+      <ResponsiveContainer width="100%" height={280}>
+        <BarChart data={data} margin={{ top: 16, right: 16, left: 16, bottom: 16 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+          <Tooltip formatter={(value) => [value, "Sessions"]} />
+          <Bar dataKey="sessions" name="Sessions" radius={[4, 4, 0, 0]}>
+            {data.map((entry, index) => (
+              <Cell key={`${entry.name}-${index}`} fill={usageColors[index % usageColors.length]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    ) : (
+      <p className="chart-empty">{emptyText}</p>
+    )
+  );
 
   return (
     <div className="dashboard">
@@ -230,6 +266,42 @@ const Dashboard = () => {
               <Legend verticalAlign="top" height={36}/>
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">Most Used AI Features</h2>
+          {sessionUsageLoading ? (
+            <p className="chart-loading">Loading usage chart...</p>
+          ) : (
+            renderUsageChart(sessionUsageStats?.byType, "No session usage data yet.")
+          )}
+        </div>
+
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">Most Used Voice AI Companion</h2>
+          {sessionUsageLoading ? (
+            <p className="chart-loading">Loading voice usage...</p>
+          ) : (
+            renderUsageChart(sessionUsageStats?.byVoice, "No Voice AI companion metadata yet.")
+          )}
+        </div>
+
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">Most Used Agent AI Avatar</h2>
+          {sessionUsageLoading ? (
+            <p className="chart-loading">Loading agent usage...</p>
+          ) : (
+            renderUsageChart(sessionUsageStats?.byAvatarAgent, "No Agent AI avatar metadata yet.")
+          )}
+        </div>
+
+        <div className="activity-card chart-card-full">
+          <h2 className="activity-title">Most Used Animal Avatar AI</h2>
+          {sessionUsageLoading ? (
+            <p className="chart-loading">Loading animal avatar usage...</p>
+          ) : (
+            renderUsageChart(sessionUsageStats?.byAnimalAvatar, "No Animal Avatar AI metadata yet.")
+          )}
         </div>
 
         <div className="activity-card">

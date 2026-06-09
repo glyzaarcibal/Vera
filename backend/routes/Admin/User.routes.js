@@ -5,6 +5,7 @@ import {
   fetchRoles,
   fetchAgeGroups,
   fetchAvatarRiskStats,
+  fetchSessionUsageStats,
   getUserEmotionWords,
   fetchUserActivities,
   createAdminUser,
@@ -23,6 +24,7 @@ router.get("/get-sessions-by-user/:userId", setSupabaseSession, checkAdminRole, 
 router.get("/get-user-info/:userId", setSupabaseSession, checkAdminRole, fetchUserInfo);
 router.get("/avatar-risk-stats", setSupabaseSession, checkAdminRole, fetchAvatarRiskStats);
 router.get("/risk-stats", setSupabaseSession, checkAdminRole, fetchAvatarRiskStats);
+router.get("/session-usage-stats", setSupabaseSession, checkAdminRole, fetchSessionUsageStats);
 router.get("/get-emotion-words/:userId", setSupabaseSession, checkAdminRole, getUserEmotionWords);
 router.get("/get-user-activities/:userId", setSupabaseSession, checkAdminRole, fetchUserActivities);
 
