@@ -322,13 +322,12 @@ export async function deleteUser(userId) {
 export async function detectEmotionWords(userId) {
   // Emotion word dictionaries
   const emotionWords = {
-    critical: [
-      'suicide', 'suicidal', 'kill myself', 'end my life', 'end it all', 'self-harm', 'cutting', 'worthless', 'goodbye', 'no reason to live', 'death', 'dying', 'overdose',
-      'magpakamatay', 'kitilin ang sarili', 'tapusin ang buhay', 'saktan ang sarili', 'walang kwenta', 'paalam', 'mamatay', 'kamatayan'
-    ],
     sad: [
       'sad', 'depressed', 'unhappy', 'down', 'miserable', 'lonely', 'empty', 'hopeless', 'crying', 'tears', 'hurt', 'pain', 'sorrow', 'grief', 'disappointed', 'upset',
-      'malungkot', 'depres', 'iyak', 'luha', 'sakit', 'pighati', 'bigo', 'sawis'
+      'suicide', 'suicidal', 'kill myself', 'end my life', 'end it all', 'self-harm', 'cutting', 'worthless', 'goodbye', 'no reason to live', 'death', 'dying', 'overdose',
+      'confused', 'confusion', 'perplexed', 'bewildered', 'puzzled', 'muddled', 'disoriented', 'lost', 'baffled',
+      'malungkot', 'depres', 'iyak', 'luha', 'sakit', 'pighati', 'bigo', 'sawis', 'lito', 'tarant',
+      'magpakamatay', 'kitilin ang sarili', 'tapusin ang buhay', 'saktan ang sarili', 'walang kwenta', 'paalam', 'mamatay', 'kamatayan'
     ],
     angry: [
       'angry', 'mad', 'furious', 'rage', 'annoyed', 'irritated', 'frustrated', 'hate', 'resent', 'bitter', 'hostile', 'aggressive', 'outraged',
@@ -336,18 +335,15 @@ export async function detectEmotionWords(userId) {
     ],
     happy: [
       'happy', 'joy', 'excited', 'glad', 'pleased', 'delighted', 'cheerful', 'ecstatic', 'thrilled', 'elated', 'content', 'satisfied', 'grateful',
-      'masaya', 'galak', 'tuwa', 'ligaya', 'aliw', 'salamat'
+      'calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'composed', 'at ease', 'okay', 'fine', 'alright', 'normal', 'regular', 'usual',
+      'masaya', 'galak', 'tuwa', 'ligaya', 'aliw', 'salamat', 'kalmado', 'payapa', 'pahinga', 'ayos', 'tama'
     ],
     fearful: [
       'afraid', 'scared', 'fear', 'anxious', 'worried', 'nervous', 'panic', 'terrified', 'dread', 'apprehensive', 'uneasy', 'frightened',
-      'takot', 'kaba', 'nerbyos', 'balisa', 'sindak', 'hilakbot'
+      'surprised', 'shocked', 'amazed', 'astonished', 'stunned', 'doubt', 'doubtful', 'uncertain', 'uncertainty', 'unsure', 'questioning', 'skeptical', 'hesitant', 'suspicious', 'suspicion',
+      'takot', 'kaba', 'nerbyos', 'balisa', 'sindak', 'hilakbot', 'gulat', 'mangha', 'duda', 'alinlangan'
     ],
-    surprised: ['surprised', 'shocked', 'amazed', 'astonished', 'stunned', 'gulat', 'mangha'],
     disgust: ['disgusted', 'revolted', 'sickened', 'repulsed', 'appalled', 'horrified', 'diri', 'suka'],
-    doubt: ['doubt', 'doubtful', 'uncertain', 'uncertainty', 'unsure', 'questioning', 'skeptical', 'hesitant', 'suspicious', 'suspicion', 'duda', 'alinlangan'],
-    confusion: ['confused', 'confusion', 'perplexed', 'bewildered', 'puzzled', 'muddled', 'disoriented', 'lost', 'baffled', 'lito', 'tarant'],
-    calm: ['calm', 'peaceful', 'relaxed', 'serene', 'tranquil', 'composed', 'at ease', 'content', 'kalmado', 'payapa', 'pahinga'],
-    neutral: ['okay', 'fine', 'alright', 'normal', 'regular', 'usual', 'ayos', 'tama']
   };
 
   // Get all sessions for the user
