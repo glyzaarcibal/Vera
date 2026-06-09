@@ -73,6 +73,16 @@ export function mapHumeEmotionsToDb(humeEmotions) {
   return mapped;
 }
 
+export function getTopEmotionScores(emotionScores, limit = 3) {
+  if (!emotionScores || typeof emotionScores !== "object") return [];
+
+  return Object.entries(emotionScores)
+    .filter(([, score]) => typeof score === "number")
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+    .slice(0, limit)
+    .map(([emotion, score]) => ({ emotion, score }));
+}
+
 /** Map raw Hume labels to user-friendly display labels (e.g. Interest -> Happy) */
 const RAW_TO_DISPLAY_LABEL = {
   interest: "happy",
@@ -87,6 +97,13 @@ function getDominantEmotion(humeEmotions) {
 
   // Map to our core emotions first to avoid noise from raw Hume tags
   const mapped = mapHumeEmotionsToDb(humeEmotions);
+  const mixedUncertainTone = ["fearful", "doubt"].filter(
+    (label) => (mapped[label] || 0) >= 0.03
+  );
+  const uncertainToneScore = mixedUncertainTone.reduce(
+    (total, label) => total + (mapped[label] || 0),
+    0
+  );
   
   let maxScore = 0;
   let dominantLabel = "neutral";
@@ -98,6 +115,25 @@ function getDominantEmotion(humeEmotions) {
       dominantLabel = label;
     }
   });
+
+  if (
+    dominantLabel === "sad" &&
+    mixedUncertainTone.length >= 2 &&
+    uncertainToneScore >= maxScore * 0.65
+  ) {
+    const toneLabel = mixedUncertainTone
+      .map((label) => label === "fearful" ? "fear" : label)
+      .join(" / ");
+    const strongestTone = mixedUncertainTone
+      .map((label) => ({ label, score: mapped[label] || 0 }))
+      .sort((a, b) => b.score - a.score)[0];
+
+    return {
+      label: strongestTone?.label || "fearful",
+      score: strongestTone?.score || uncertainToneScore,
+      toneLabel,
+    };
+  }
 
   return { label: dominantLabel, score: maxScore || 1.0 }; // Default to 1.0 score if neutral fallback
 }
@@ -264,11 +300,17 @@ export async function transcribeAudio(audioBase64, messageId) {
       console.warn("[SpeechToText] No messageId provided, skipping emotion save");
     }
 
-    // Return array format for compatibility
-    return Object.entries(humeEmotions).map(([label, score]) => ({
-      label,
-      score: typeof score === "number" ? score : 0,
-    }));
+    const dominant = getDominantEmotion(humeEmotions);
+
+    return {
+      emotion: dominant?.label ?? null,
+      score: dominant?.score ?? 0,
+      toneLabel: dominant?.toneLabel,
+      topScores: getTopEmotionScores(emotionScores),
+      mappedScores: emotionScores,
+      rawScores: humeEmotions,
+      source: "Hume AI",
+    };
   } catch (error) {
     const data = error.response?.data;
     const status = error.response?.status;
@@ -299,10 +341,16 @@ export async function getEmotionFromAudio(audioBase64) {
     const dominant = getDominantEmotion(humeEmotions);
 
     if (!dominant) {
-      return { emotion: null, score: 0, mappedScores: humeEmotions };
+      return { emotion: null, score: 0, topScores: [], mappedScores: humeEmotions };
     }
 
-    return { emotion: dominant.label, score: dominant.score, mappedScores: humeEmotions };
+    const emotionScores = mapHumeEmotionsToDb(humeEmotions);
+    return {
+      emotion: dominant.label,
+      score: dominant.score,
+      topScores: getTopEmotionScores(emotionScores),
+      mappedScores: emotionScores,
+    };
   } catch (error) {
     const status = error.response?.status;
     const data = error.response?.data;

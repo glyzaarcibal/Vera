@@ -839,9 +839,9 @@
   backdrop-filter: blur(8px);
   color: white;
   padding: 8px 16px;
-  border-radius: 99px;
+  border-radius: 18px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -849,6 +849,35 @@
   animation: slideInLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 10;
   pointer-events: none;
+}
+
+.didagent-emotion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.didagent-emotion-top-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.didagent-emotion-top-scores span {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  text-transform: capitalize;
+}
+
+.didagent-emotion-disclaimer {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 310px;
 }
 
 @keyframes slideInLeft {

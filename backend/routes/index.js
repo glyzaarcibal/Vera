@@ -9,6 +9,7 @@ import MoodsRoutes from "./Moods.routes.js";
 import DoctorRoutes from "./Doctor.routes.js";
 import ResourceRoutes from "./Resource.routes.js";
 import FeedbackRoutes from "./Feedback/Feedback.route.js";
+import ElevenLabsRoutes from "./ElevenLabs.routes.js";
 
 export default function registerRoutes(app) {
   app.use("/api/auth", AuthRoutes);
@@ -22,6 +23,7 @@ export default function registerRoutes(app) {
   app.use("/api/doctor", DoctorRoutes);
   app.use("/api/resources", ResourceRoutes);
   app.use("/api/feedback", FeedbackRoutes);
+  app.use("/api/elevenlabs", ElevenLabsRoutes);
 
   app.use("/", (req, res) => {
     res.send("Server is Up!");

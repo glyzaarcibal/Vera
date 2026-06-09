@@ -278,10 +278,13 @@
 }
 
 .view-all {
+  background: transparent;
+  border: none;
   color: #7c3aed;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  padding: 0;
 }
 
 .history-list {
@@ -331,6 +334,19 @@
 
 .log-time-range {
   text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.delete-history-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  margin-top: auto;
 }
 
 .time-range {
@@ -453,6 +469,75 @@
   cursor: pointer;
 }
 
+.sleep-history-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.sleep-history-modal {
+  background: #f8f9fc;
+  border-radius: 30px;
+  width: min(720px, 100%);
+  max-height: 86vh;
+  padding: 28px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+}
+
+.sleep-history-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sleep-history-modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.sleep-history-modal-header p {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.history-modal-close {
+  background: white;
+  border: none;
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.sleep-history-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.history-modal-item {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
 @media (max-width: 900px) {
   .sleep-grid {
     grid-template-columns: 1fr;
@@ -491,4 +576,3 @@
     margin-top: 5px;
   }
 }
-

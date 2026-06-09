@@ -1,13 +1,30 @@
 import supabaseAdmin from "../../utils/supabase.utils.js";
 import { analyzeConversation } from "./Analysis.service.js";
 
-export async function createSession(user_id, type, voice) {
-  const { data, error } = await supabaseAdmin
+export async function createSession(user_id, type, sessionMeta) {
+  const basePayload = { user_id, type };
+  const metaPayload =
+    sessionMeta && typeof sessionMeta === "object"
+      ? { ...basePayload, session_meta: sessionMeta }
+      : basePayload;
+
+  let { data, error } = await supabaseAdmin
     .from("chat_sessions")
-    .upsert({ user_id, type })
+    .insert(metaPayload)
     .select()
     .single();
-  console.log(error);
+
+  if (error && error.code === "PGRST204" && metaPayload.session_meta) {
+    console.warn("[Session.createSession] session_meta column missing; creating session without metadata.");
+    const fallback = await supabaseAdmin
+      .from("chat_sessions")
+      .insert(basePayload)
+      .select()
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+  }
+
   if (error) throw error;
   return data;
 }
@@ -179,5 +196,94 @@ export async function getAvatarRiskStats() {
     total,
     averageScore: withScore > 0 ? Math.round((scoreSum / withScore) * 10) / 10 : null,
     assessedCount: withScore,
+  };
+}
+
+function normalizeSessionType(type) {
+  const normalized = String(type || "").toLowerCase();
+  if (normalized === "text") return "Chat AI";
+  if (normalized === "voice") return "Voice AI";
+  if (normalized === "avatar") return "Avatar AI";
+  return type || "Unknown";
+}
+
+function incrementCount(map, key) {
+  const safeKey = key || "Unknown";
+  map[safeKey] = (map[safeKey] || 0) + 1;
+}
+
+function toChartData(map) {
+  return Object.entries(map)
+    .map(([name, sessions]) => ({ name, sessions }))
+    .sort((a, b) => b.sessions - a.sessions);
+}
+
+function getCompanionLabel(session) {
+  const meta = session.session_meta || {};
+  const type = String(session.type || "").toLowerCase();
+
+  if (type === "voice") {
+    return meta.voiceName || meta.name || meta.voiceId || "Unknown Voice";
+  }
+
+  if (type === "avatar") {
+    if (meta.companionKind === "animal") {
+      return meta.companionName || meta.animalType || "Animal Companion";
+    }
+    return meta.agentName || meta.selectedAgent || meta.companionName || "Avatar Agent";
+  }
+
+  return null;
+}
+
+export async function getSessionUsageStats() {
+  let { data, error } = await supabaseAdmin
+    .from("chat_sessions")
+    .select("type, session_meta, created_at");
+
+  if (error && error.code === "PGRST204") {
+    console.warn("[Session.getSessionUsageStats] session_meta column missing; returning type-only usage stats.");
+    const fallback = await supabaseAdmin
+      .from("chat_sessions")
+      .select("type, created_at");
+    data = fallback.data;
+    error = fallback.error;
+  }
+
+  if (error) throw error;
+
+  const byType = {};
+  const byVoice = {};
+  const byAvatarAgent = {};
+  const byAnimalAvatar = {};
+  const byAvatarCompanion = {};
+
+  (data || []).forEach((session) => {
+    const typeLabel = normalizeSessionType(session.type);
+    incrementCount(byType, typeLabel);
+
+    const type = String(session.type || "").toLowerCase();
+    const companion = getCompanionLabel(session);
+    if (type === "voice") {
+      incrementCount(byVoice, companion);
+    } else if (type === "avatar") {
+      const meta = session.session_meta || {};
+      if (meta.companionKind === "animal") {
+        incrementCount(byAnimalAvatar, companion);
+      } else {
+        incrementCount(byAvatarAgent, companion);
+      }
+      incrementCount(byAvatarCompanion, companion);
+    }
+  });
+
+  return {
+    total: data?.length || 0,
+    byType: toChartData(byType),
+    byVoice: toChartData(byVoice),
+    byAvatarAgent: toChartData(byAvatarAgent),
+    byAnimalAvatar: toChartData(byAnimalAvatar),
+    byAvatarCompanion: toChartData(byAvatarCompanion),
+    hasCompanionMetadata: (data || []).some((session) => !!session.session_meta),
   };
 }

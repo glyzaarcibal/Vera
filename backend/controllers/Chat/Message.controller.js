@@ -35,6 +35,7 @@ export const processMessage = async (req, res) => {
     };
 
     let savedMessageId = null;
+    let voiceEmotion = null;
     if (permissions.permit_store) {
       const messageId = await saveMessage(userMessage);
       savedMessageId = messageId.id;
@@ -42,7 +43,7 @@ export const processMessage = async (req, res) => {
       if (audioBase64 && typeof audioBase64 === "string" && audioBase64.length > 100 && savedMessageId != null) {
         console.log("[processMessage] Audio base64 received (len=" + audioBase64.length + "), transcribing and detecting emotions...");
         try {
-          await transcribeAudio(audioBase64, savedMessageId);
+          voiceEmotion = await transcribeAudio(audioBase64, savedMessageId);
           console.log("[processMessage] Emotion detection completed for message:", savedMessageId);
         } catch (err) {
           console.warn("[processMessage] Transcribe/emotion detection failed (non-fatal):", err.message);
@@ -50,11 +51,20 @@ export const processMessage = async (req, res) => {
       }
     }
 
-    const response = await generateResponse(
-      userMessage.content,
-      conversationHistory,
-      systemPrompt
-    );
+    let response;
+    let responseWarning = null;
+    try {
+      response = await generateResponse(
+        userMessage.content,
+        conversationHistory,
+        systemPrompt
+      );
+    } catch (err) {
+      responseWarning = "AI provider temporarily unavailable";
+      console.warn("[processMessage] generateResponse failed; returning fallback:", err.message);
+      response =
+        "I'm having trouble connecting to my response service right now, but I still heard you. Please try again in a moment.";
+    }
     const botMessage = {
       ...userMessage,
       content: response,
@@ -72,7 +82,9 @@ export const processMessage = async (req, res) => {
 
     return res.status(200).json({ 
       response,
-      messageId: savedMessageId // Return messageId so frontend can use it for additional operations
+      messageId: savedMessageId, // Return messageId so frontend can use it for additional operations
+      voiceEmotion,
+      responseWarning
     });
   } catch (e) {
     console.log(e);

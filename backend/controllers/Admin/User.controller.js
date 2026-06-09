@@ -1,5 +1,5 @@
 import { getAllUsers, getUserInfo, detectEmotionWords, createUser, updateUser, deleteUser, getDistinctRoles, getDistinctAgeGroups } from "../../service/Admin/User.service.js";
-import { getAvatarRiskStats } from "../../service/Chat/Session.service.js";
+import { getAvatarRiskStats, getSessionUsageStats } from "../../service/Chat/Session.service.js";
 import { getActivitiesFromDB } from "../../service/Activities.service.js";
 
 export const fetchAvatarRiskStats = async (req, res) => {
@@ -8,6 +8,16 @@ export const fetchAvatarRiskStats = async (req, res) => {
     return res.status(200).json(stats);
   } catch (e) {
     console.error("Error fetching avatar risk stats:", e);
+    return res.status(500).json({ message: "Internal Server Error." });
+  }
+};
+
+export const fetchSessionUsageStats = async (req, res) => {
+  try {
+    const stats = await getSessionUsageStats();
+    return res.status(200).json(stats);
+  } catch (e) {
+    console.error("Error fetching session usage stats:", e);
     return res.status(500).json({ message: "Internal Server Error." });
   }
 };

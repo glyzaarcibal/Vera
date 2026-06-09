@@ -12,8 +12,27 @@ const MODELS = [
   "google/gemma-7b-it"
 ];
 
+const MODEL_TIMEOUT_MS = 12000;
+const MAX_ATTEMPTS_PER_MODEL = 1;
+
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function withTimeout(promise, ms, model) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(`Inference timed out after ${ms}ms for ${model}`)),
+      ms
+    );
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function generateResponse(message, conversationHistory = [], systemPrompt = null) {
@@ -38,14 +57,17 @@ export async function generateResponse(message, conversationHistory = [], system
   
   // Try different models if one fails
   for (const model of MODELS) {
-    // Retry each model up to 2 times
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_MODEL; attempt++) {
       try {
         console.log(`[generateResponse] Attempting ${model} (Attempt ${attempt + 1})...`);
-        const chatCompletion = await client.chatCompletion({
-          model: model,
-          messages,
-        });
+        const chatCompletion = await withTimeout(
+          client.chatCompletion({
+            model,
+            messages,
+          }),
+          MODEL_TIMEOUT_MS,
+          model
+        );
 
         if (chatCompletion?.choices?.[0]?.message?.content) {
           return chatCompletion.choices[0].message.content;
