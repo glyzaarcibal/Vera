@@ -170,9 +170,15 @@ const SleepTracker = () => {
     }
   };
 
-  const confirmDelete = (id) => {
-    setSleepData(sleepData.filter(e => e.id !== id));
-    setConfirmDeleteId(null);
+  const confirmDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/activities/${id}`);
+      setSleepData(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error("Error deleting sleep record:", error);
+    } finally {
+      setConfirmDeleteId(null);
+    }
   };
 
   // ── CALENDAR LOGIC ──

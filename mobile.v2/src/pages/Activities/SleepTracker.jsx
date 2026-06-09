@@ -13,6 +13,24 @@ import { useLanguage } from "../../context/LanguageContext";
 
 import "./SleepTracker.css";
 
+// ── NSF Age-Based Sleep Range Helpers (Hirshkowitz et al., 2015) ──
+const getAgeFromBirthday = (birthday) => {
+  if (!birthday) return null;
+  const birthDate = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+  return age;
+};
+
+const getSleepRangeForAge = (age) => {
+  if (age === null) return { min: 420, max: 540 };    // fallback: adult default
+  if (age >= 14 && age <= 17) return { min: 480, max: 600 }; // Teenagers 8–10h
+  if (age >= 65)              return { min: 420, max: 480 }; // Older Adults 7–8h
+  return { min: 420, max: 540 };                             // 18–64 yrs 7–9h
+};
+
 const SleepTracker = () => {
   const { t, language } = useLanguage();
   const user = useSelector(selectUser);
@@ -20,6 +38,12 @@ const SleepTracker = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const MotionDiv = motion.div;
+
+  // Derived age-based sleep range for this user
+  const sleepRange = useMemo(() => {
+    const age = getAgeFromBirthday(user?.birthday);
+    return getSleepRangeForAge(age);
+  }, [user?.birthday]);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -45,23 +69,62 @@ const SleepTracker = () => {
 
   const weeklyInsight = useMemo(() => {
     if (sleepData.length === 0) return t('sleep_no_logs');
-    
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
+
+    const { min, max } = sleepRange;
+    const minHours = Math.floor(min / 60);
+    const maxHours = Math.floor(max / 60);
+
+    const now = new Date();
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(now.getDate() - 7);
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(now.getDate() - 14);
+
     const thisWeekLogs = sleepData.filter(log => new Date(log.date) >= oneWeekAgo);
-    
+    const prevWeekLogs = sleepData.filter(log => {
+      const d = new Date(log.date);
+      return d >= twoWeeksAgo && d < oneWeekAgo;
+    });
+
     if (thisWeekLogs.length === 0) return t('sleep_no_logs_week');
-    
+
     const avgMinutes = thisWeekLogs.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0) / thisWeekLogs.length;
-    const hours = Math.floor(avgMinutes / 60);
-    
-    if (avgMinutes >= 420) {
-      return t('sleep_insight_good').replace('{hours}', hours);
-    } else {
-      return t('sleep_insight_bad').replace('{hours}', hours);
+
+    // 🏥 CLINICAL REFERRAL — 14+ consecutive logged days below minimum
+    const sortedLogs = [...sleepData].sort((a, b) => new Date(b.date) - new Date(a.date));
+    let consecutiveLowDays = 0;
+    for (const log of sortedLogs) {
+      if ((log.totalMinutes || 0) < min) {
+        consecutiveLowDays++;
+      } else {
+        break;
+      }
     }
-  }, [sleepData, t]);
+    if (consecutiveLowDays >= 14) {
+      return t('sleep_insight_clinical');
+    }
+
+    // ✅ OPTIMAL — within recommended range
+    if (avgMinutes >= min && avgMinutes <= max) {
+      return t('sleep_insight_optimal');
+    }
+
+    // 📈 IMPROVING — rising from previous week but still below minimum
+    if (avgMinutes < min && prevWeekLogs.length > 0) {
+      const prevAvg = prevWeekLogs.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0) / prevWeekLogs.length;
+      if (avgMinutes > prevAvg) {
+        return t('sleep_insight_improving').replace('{min}', minHours).replace('{max}', maxHours);
+      }
+    }
+
+    // ⚠️ LOW — below minimum
+    if (avgMinutes < min) {
+      return t('sleep_insight_low').replace('{min}', minHours).replace('{max}', maxHours);
+    }
+
+    // 🚨 EXCESSIVE — above maximum
+    return t('sleep_insight_excessive').replace('{max}', maxHours);
+  }, [sleepData, t, sleepRange]);
 
   const loadSleepData = async () => {
     if (!userId) return;
@@ -123,8 +186,9 @@ const SleepTracker = () => {
   const { hours, minutes } = calculateDuration();
 
   const getStatusBadge = (totalMinutes) => {
-    if (totalMinutes >= 420 && totalMinutes <= 540) return t('sleep_optimal');
-    if (totalMinutes < 420) return t('sleep_low');
+    const { min, max } = sleepRange;
+    if (totalMinutes >= min && totalMinutes <= max) return t('sleep_optimal');
+    if (totalMinutes < min) return t('sleep_low');
     return t('sleep_excessive');
   };
 
@@ -160,9 +224,15 @@ const SleepTracker = () => {
     }
   };
 
-  const confirmDelete = (id) => {
-    setSleepData(sleepData.filter(e => e.id !== id));
-    setConfirmDeleteId(null);
+  const confirmDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/activities/${id}`);
+      setSleepData(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error("Error deleting sleep record:", error);
+    } finally {
+      setConfirmDeleteId(null);
+    }
   };
 
   // ── CALENDAR LOGIC ──
@@ -181,8 +251,8 @@ const SleepTracker = () => {
       </div>
       <div className="log-time-range">
         <span className="time-range">{log.sleep_time} — {log.wake_time}</span>
-        <span className={`sleep-quality ${log.totalMinutes > 420 ? 'quality-deep' : 'quality-restless'}`}>
-          {log.totalMinutes > 420 ? t('sleep_quality_deep') : t('sleep_quality_restless')}
+        <span className={`sleep-quality ${(log.totalMinutes || 0) >= sleepRange.min ? 'quality-deep' : 'quality-restless'}`}>
+          {(log.totalMinutes || 0) >= sleepRange.min ? t('sleep_quality_deep') : t('sleep_quality_restless')}
         </span>
         <button 
           onClick={() => setConfirmDeleteId(log.id)} 
@@ -370,8 +440,8 @@ const SleepTracker = () => {
                   </div>
                   <div className="log-time-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                     <span className="time-range">{log.sleep_time} — {log.wake_time}</span>
-                    <span className={`sleep-quality ${log.totalMinutes > 420 ? 'quality-deep' : 'quality-restless'}`}>
-                      {log.totalMinutes > 420 ? t('sleep_quality_deep') : t('sleep_quality_restless')}
+                    <span className={`sleep-quality ${(log.totalMinutes || 0) >= sleepRange.min ? 'quality-deep' : 'quality-restless'}`}>
+                      {(log.totalMinutes || 0) >= sleepRange.min ? t('sleep_quality_deep') : t('sleep_quality_restless')}
                     </span>
                     <button 
                       onClick={() => setConfirmDeleteId(log.id)} 
