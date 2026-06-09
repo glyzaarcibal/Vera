@@ -89,10 +89,11 @@ const UserDashboard = () => {
   }, [t]);
 
   const moodButtons = [
-    { label: t("radiant"), icon: <Sun size={24} />, color: "#FBBF24" },
-    { label: t("good"), icon: <Smile size={24} />, color: "#10B981" },
-    { label: t("okay"), icon: <Meh size={24} />, color: "#6B7280" },
-    { label: t("not_great"), icon: <Frown size={24} />, color: "#EF4444" },
+    { label: "Happy", icon: <Sun size={24} />, color: "#FBBF24" },
+    { label: "Sad", icon: <Frown size={24} />, color: "#5C6BC0" },
+    { label: "Angry", icon: <Zap size={24} />, color: "#EF4444" },
+    { label: "Fearful", icon: <Meh size={24} />, color: "#F59E0B" },
+    { label: "Disgust", icon: <Smile size={24} />, color: "#8B5CF6" },
   ];
 
   return (

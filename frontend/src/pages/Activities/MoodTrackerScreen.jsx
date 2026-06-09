@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import Lottie from "lottie-web";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -53,235 +53,96 @@ const sanitizePdfText = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
-// MOOD LEVELS CONFIGURATION
-// You can adjust the number of mood levels here
+// Five basic emotions used across mood check-ins, mood tracker, and Hume AI summaries.
 const MOOD_LEVELS = [
-  // POSITIVE - LOW ENERGY
   {
     category: "Positive",
-    subcategory: "Low Energy",
-    animation: "/animations/relax.json",
-    mood: "Calm",
-    color: "#4CAF50",
-    bgColor: "#E8F5E9",
-    emoji: "😌",
-    score: 4,
-  },
-  {
-    category: "Positive",
-    subcategory: "Low Energy",
-    animation: "/animations/relax.json",
-    mood: "Relaxed",
-    color: "#66BB6A",
-    bgColor: "#E8F5E9",
-    emoji: "😌",
-    score: 4,
-  },
-  {
-    category: "Positive",
-    subcategory: "Low Energy",
-    animation: "/animations/content.json",
-    mood: "Content",
-    color: "#26A69A",
-    bgColor: "#E0F2F1",
-    emoji: "😊",
-    score: 4.2,
-  },
-  {
-    category: "Positive",
-    subcategory: "Low Energy",
-    animation: "/animations/relax.json",
-    mood: "Peaceful",
-    color: "#00ACC1",
-    bgColor: "#E0F7FA",
-    emoji: "😇",
-    score: 4.5,
-  },
-  {
-    category: "Positive",
-    subcategory: "Low Energy",
+    subcategory: "Basic Emotion",
     animation: "/animations/happy.json",
-    mood: "Grateful",
-    color: "#673AB7",
-    bgColor: "#EDE7F6",
-    emoji: "🙏",
-    score: 5,
-  },
-
-  // POSITIVE - HIGH ENERGY
-  {
-    category: "Positive",
-    subcategory: "High Energy",
-    animation: "/animations/happy.json",
-    mood: "Excited",
-    color: "#FFD700",
-    bgColor: "#FFF9C4",
-    emoji: "🤩",
-    score: 5,
-  },
-  {
-    category: "Positive",
-    subcategory: "High Energy",
-    animation: "/animations/happy.json",
-    mood: "Joyful",
+    mood: "Happy",
     color: "#FFB300",
     bgColor: "#FFF8E1",
-    emoji: "😄",
+    emoji: "",
     score: 5,
   },
-  {
-    category: "Positive",
-    subcategory: "High Energy",
-    animation: "/animations/happy.json",
-    mood: "Thrilled",
-    color: "#FF8F00",
-    bgColor: "#FFF3E0",
-    emoji: "🥳",
-    score: 5,
-  },
-  {
-    category: "Positive",
-    subcategory: "High Energy",
-    animation: "/animations/happy.json",
-    mood: "Inspired",
-    color: "#9C27B0",
-    bgColor: "#F3E5F5",
-    emoji: "✨",
-    score: 4.7,
-  },
-  {
-    category: "Positive",
-    subcategory: "High Energy",
-    animation: "/animations/happy.json",
-    mood: "Playful",
-    color: "#E91E63",
-    bgColor: "#FCE4EC",
-    emoji: "😜",
-    score: 4.5,
-  },
-
-  // NEGATIVE - LOW ENERGY
   {
     category: "Negative",
-    subcategory: "Low Energy",
+    subcategory: "Basic Emotion",
     animation: "/animations/sad.json",
-    mood: "Depressed",
+    mood: "Sad",
     color: "#5C6BC0",
     bgColor: "#E8EAF6",
-    emoji: "😔",
-    score: 1.0,
+    emoji: "",
+    score: 2,
   },
   {
     category: "Negative",
-    subcategory: "Low Energy",
-    animation: "/animations/tired.json",
-    mood: "Tired",
-    color: "#8D6E63",
-    bgColor: "#EFEBE9",
-    emoji: "😴",
-    score: 2.0,
-  },
-  {
-    category: "Negative",
-    subcategory: "Low Energy",
-    animation: "/animations/sad.json",
-    mood: "Disappointed",
-    color: "#7E57C2",
-    bgColor: "#F3E5F5",
-    emoji: "😞",
-    score: 1.5,
-  },
-  {
-    category: "Negative",
-    subcategory: "Low Energy",
+    subcategory: "Basic Emotion",
     animation: "/animations/angry.json",
-    mood: "Annoyed",
-    color: "#FB8C00",
-    bgColor: "#FFF3E0",
-    emoji: "😒",
-    score: 2.5,
-  },
-  {
-    category: "Negative",
-    subcategory: "Low Energy",
-    animation: "/animations/sad.json",
-    mood: "Bored",
-    color: "#B0BEC5",
-    bgColor: "#F5F5F5",
-    emoji: "😑",
-    score: 2.2,
-  },
-
-  // NEGATIVE - HIGH ENERGY
-  {
-    category: "Negative",
-    subcategory: "High Energy",
-    animation: "/animations/anxious.json",
-    mood: "Anxious",
-    color: "#FFA726",
-    bgColor: "#FFF3E0",
-    emoji: "😰",
-    score: 1.5,
-  },
-  {
-    category: "Negative",
-    subcategory: "High Energy",
-    animation: "/animations/anxious.json",
-    mood: "Overwhelmed",
-    color: "#F44336",
-    bgColor: "#FFEBEE",
-    emoji: "🤯",
-    score: 1.0,
-  },
-  {
-    category: "Negative",
-    subcategory: "High Energy",
-    animation: "/animations/anxious.json",
-    mood: "Panicked",
+    mood: "Angry",
     color: "#D32F2F",
     bgColor: "#FFEBEE",
-    emoji: "😱",
-    score: 0.5,
+    emoji: "",
+    score: 1,
   },
   {
     category: "Negative",
-    subcategory: "High Energy",
-    animation: "/animations/angry.json",
-    mood: "Irritated",
-    color: "#E64A19",
-    bgColor: "#FBE9E7",
-    emoji: "😤",
-    score: 2.0,
+    subcategory: "Basic Emotion",
+    animation: "/animations/anxious.json",
+    mood: "Fearful",
+    color: "#F59E0B",
+    bgColor: "#FFF7ED",
+    emoji: "",
+    score: 2,
   },
   {
     category: "Negative",
-    subcategory: "High Energy",
-    animation: "/animations/angry.json",
-    mood: "Frustrated",
-    color: "#D84315",
-    bgColor: "#FBE9E7",
-    emoji: "😖",
-    score: 1.2,
+    subcategory: "Basic Emotion",
+    animation: "/animations/tired.json",
+    mood: "Disgust",
+    color: "#8B5CF6",
+    bgColor: "#F5F3FF",
+    emoji: "",
+    score: 1,
   },
 ];
 
 const moods = MOOD_LEVELS;
 
-import { useSelector, useDispatch } from "react-redux";
-import { selectUser } from "../../store/slices/authSelectors";
+import { useDispatch } from "react-redux";
 import TokenRewardModal from "../../components/TokenRewardModal";
 import ReusableModal from "../../components/ReusableModal";
 import { useLanguage } from "../../context/LanguageContext";
 import axiosInstance from "../../utils/axios.instance.js";
 import { setUser, updateTokens } from "../../store/slices/authSlice";
+import feelingsChart from "../../assets/images/Feelings Chart.jpg";
 
 // Use a local api constant to avoid scope issues
 const api = axiosInstance;
 
+const normalizeBasicMood = (value) => {
+  const mood = String(value || "").trim().toLowerCase();
+  if (["happy", "joy", "joyful", "excited", "excellent", "great", "ecstatic", "good", "fine", "relaxed", "calm", "okay", "content"].includes(mood)) return "Happy";
+  if (["sad", "down", "tired", "depressed", "miserable", "terrible", "bad", "awful", "disappointed"].includes(mood)) return "Sad";
+  if (["angry", "furious", "annoyed", "irritated", "frustrated", "mad"].includes(mood)) return "Angry";
+  if (["fearful", "fear", "afraid", "scared", "anxious", "worried", "nervous", "panic", "panicked", "surprised", "shocked", "doubt", "confusion"].includes(mood)) return "Fearful";
+  if (["disgust", "disgusted", "revolted", "sickened", "repulsed"].includes(mood)) return "Disgust";
+  return value || "Happy";
+};
+
+const getMoodDefinition = (mood) =>
+  moods.find((item) => item.mood === normalizeBasicMood(mood));
+
+const getMoodLevelLabel = (level) => {
+  if (level >= 5) return "5 - Positive";
+  if (level >= 4) return "4 - Stable";
+  if (level >= 3) return "3 - Mixed";
+  if (level >= 2) return "2 - Low";
+  return "1 - Intense";
+};
+
 const MoodTrackerScreen = ({ navigation }) => {
   const { t, language } = useLanguage();
-  const user = useSelector(selectUser);
-  const userId = user?.id;
   const dispatch = useDispatch();
 
   const [selectedMood, setSelectedMood] = useState(null);
@@ -305,10 +166,8 @@ const MoodTrackerScreen = ({ navigation }) => {
   }, {});
 
   useEffect(() => {
-    if (userId) {
-      loadMoodHistory();
-    }
-  }, [userId]);
+    loadMoodHistory();
+  }, []);
 
   // Initialize Lottie animations
   useEffect(() => {
@@ -368,7 +227,7 @@ const MoodTrackerScreen = ({ navigation }) => {
     moodHistory.forEach((item, index) => {
       const container = document.getElementById(`history-lottie-${index}`);
       if (container) {
-        const moodObj = moods.find(m => m.mood === item.mood);
+        const moodObj = getMoodDefinition(item.mood);
         if (moodObj) {
           loadLottieAnimation({ container, animationPath: moodObj.animation })
             .then((animation) => {
@@ -392,7 +251,7 @@ const MoodTrackerScreen = ({ navigation }) => {
   }, [moodHistory]);
 
   const saveMood = async () => {
-    if (!selectedMood || !userId) return;
+    if (!selectedMood) return;
 
     const newEntry = {
       mood: selectedMood.mood,
@@ -453,7 +312,6 @@ const MoodTrackerScreen = ({ navigation }) => {
   };
 
   const loadMoodHistory = async () => {
-    if (!userId) return;
     try {
       setIsLoading(true);
       const response = await api.get("/activities");
@@ -462,10 +320,20 @@ const MoodTrackerScreen = ({ navigation }) => {
       // Filter only mood activities and extract the data
       const history = activities
         .filter(act => act.activity_type === "mood")
-        .map(act => ({
-          id: act.id,
-          ...act.data
-        }))
+        .map(act => {
+          const normalizedMood = normalizeBasicMood(act.data?.mood || act.data?.moodType);
+          const moodObj = getMoodDefinition(normalizedMood);
+          return {
+            id: act.id,
+            ...act.data,
+            mood: normalizedMood,
+            moodEmoji: "",
+            moodColor: moodObj?.color || act.data?.moodColor,
+            timestamp: act.data?.timestamp || act.created_at,
+            date: act.data?.date || new Date(act.created_at).toLocaleDateString(),
+            time: act.data?.time || new Date(act.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          };
+        })
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       setMoodHistory(history);
@@ -523,7 +391,7 @@ const MoodTrackerScreen = ({ navigation }) => {
       stats.moods[entry.mood] = (stats.moods[entry.mood] || 0) + 1;
 
       // Category/Subcategory count
-      const moodObj = moods.find(m => m.mood === entry.mood);
+      const moodObj = getMoodDefinition(entry.mood);
       if (moodObj) {
         stats.categories[moodObj.category] = (stats.categories[moodObj.category] || 0) + 1;
         stats.subcategories[moodObj.subcategory] = (stats.subcategories[moodObj.subcategory] || 0) + 1;
@@ -669,6 +537,56 @@ const MoodTrackerScreen = ({ navigation }) => {
     window.history.back();
   };
 
+  const renderDateFilter = () => (
+    <div style={{ display: "flex", gap: "5px", background: "#f0f0f0", padding: "5px", borderRadius: "50px" }}>
+      <button
+        onClick={() => setFilter("all")}
+        style={{
+          padding: "8px 18px",
+          borderRadius: "50px",
+          border: "none",
+          background: filter === "all" ? "#667eea" : "transparent",
+          color: filter === "all" ? "white" : "#666",
+          cursor: "pointer",
+          fontWeight: filter === "all" ? "bold" : "normal",
+          transition: "all 0.2s",
+        }}
+      >
+        All
+      </button>
+      <button
+        onClick={() => setFilter("week")}
+        style={{
+          padding: "8px 18px",
+          borderRadius: "50px",
+          border: "none",
+          background: filter === "week" ? "#667eea" : "transparent",
+          color: filter === "week" ? "white" : "#666",
+          cursor: "pointer",
+          fontWeight: filter === "week" ? "bold" : "normal",
+          transition: "all 0.2s",
+        }}
+      >
+        Week
+      </button>
+      <button
+        onClick={() => setFilter("month")}
+        style={{
+          padding: "8px 18px",
+          borderRadius: "50px",
+          border: "none",
+          background: filter === "month" ? "#667eea" : "transparent",
+          color: filter === "month" ? "white" : "#666",
+          cursor: "pointer",
+          fontWeight: filter === "month" ? "bold" : "normal",
+          transition: "all 0.2s",
+        }}
+      >
+        Month
+      </button>
+    </div>
+  );
+
   return (
     <div
       style={{
@@ -709,6 +627,19 @@ const MoodTrackerScreen = ({ navigation }) => {
             50% { transform: translateY(-20px) rotate(5deg); }
             100% { transform: translateY(0px) rotate(0deg); }
           }
+
+          .feelings-wheel-card {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+            gap: 28px;
+            align-items: center;
+          }
+
+          @media (max-width: 800px) {
+            .feelings-wheel-card {
+              grid-template-columns: 1fr;
+            }
+          }
         `}
       </style>
 
@@ -743,7 +674,7 @@ const MoodTrackerScreen = ({ navigation }) => {
           onMouseEnter={(e) => e.target.style.transform = "scale(1.1)"}
           onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
         >
-          ←
+          Back
         </button>
 
         <h1
@@ -756,7 +687,7 @@ const MoodTrackerScreen = ({ navigation }) => {
             fontWeight: "bold",
           }}
         >
-          {t('mood_title')} 🌈
+          {t('mood_title')}
         </h1>
 
         <div style={{ width: "40px" }} /> {/* Spacer */}
@@ -768,6 +699,77 @@ const MoodTrackerScreen = ({ navigation }) => {
         {!selectedMood ? (
           <>
             <div style={{ marginBottom: "40px" }}>
+              <section
+                className="feelings-wheel-card"
+                style={{
+                  marginBottom: "32px",
+                  padding: "24px",
+                  borderRadius: "24px",
+                  background: "rgba(255, 255, 255, 0.82)",
+                  border: "1px solid rgba(102, 126, 234, 0.16)",
+                  boxShadow: "0 12px 32px rgba(76, 81, 191, 0.1)",
+                  backdropFilter: "blur(10px)",
+                }}
+                aria-labelledby="feelings-wheel-title"
+              >
+                <img
+                  src={feelingsChart}
+                  alt={t("feelings_wheel_image_alt")}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    maxHeight: "520px",
+                    objectFit: "contain",
+                    borderRadius: "18px",
+                    background: "#fff",
+                  }}
+                />
+
+                <div style={{ color: "#3f3f52", lineHeight: 1.7 }}>
+                  <h2
+                    id="feelings-wheel-title"
+                    style={{
+                      margin: "0 0 12px",
+                      color: "#5b5fc7",
+                      fontSize: "26px",
+                    }}
+                  >
+                    {t("feelings_wheel_title")}
+                  </h2>
+                  <p style={{ margin: "0 0 16px" }}>
+                    {t("feelings_wheel_intro")}
+                  </p>
+
+                  <ul style={{ margin: "0 0 16px", paddingLeft: "22px" }}>
+                    <li><strong>{t("feelings_wheel_center_label")}:</strong> {t("feelings_wheel_center")}</li>
+                    <li><strong>{t("feelings_wheel_middle_label")}:</strong> {t("feelings_wheel_middle")}</li>
+                    <li><strong>{t("feelings_wheel_outer_label")}:</strong> {t("feelings_wheel_outer")}</li>
+                  </ul>
+
+                  <p style={{ margin: "0 0 8px", fontWeight: 600 }}>
+                    {t("feelings_wheel_examples")}
+                  </p>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                      gap: "8px 16px",
+                      marginBottom: "16px",
+                      color: "#555a7a",
+                    }}
+                  >
+                    <span>Sad &rarr; Lonely &rarr; Abandoned</span>
+                    <span>Angry &rarr; Frustrated &rarr; Annoyed</span>
+                    <span>Happy &rarr; Proud &rarr; Confident</span>
+                    <span>Fearful &rarr; Anxious &rarr; Worried</span>
+                  </div>
+
+                  <p style={{ margin: 0 }}>
+                    {t("feelings_wheel_benefit")}
+                  </p>
+                </div>
+              </section>
+
               <h2
                 style={{
                   fontSize: "24px",
@@ -795,21 +797,23 @@ const MoodTrackerScreen = ({ navigation }) => {
                       alignItems: "center",
                       gap: "10px"
                     }}>
-                      {category === "Positive" ? `✨ ${t('mood_positive')}` : `⛈️ ${t('mood_negative')}`}
+                      {category === "Positive" ? t('mood_positive') : t('mood_negative')}
                     </h3>
 
                     {Object.entries(subcategories).map(([subcategory, subMoods]) => (
                       <div key={subcategory} style={{ marginBottom: "20px" }}>
-                        <h4 style={{
-                          fontSize: "14px",
-                          color: "#666",
-                          textTransform: "uppercase",
-                          letterSpacing: "1px",
-                          marginBottom: "10px",
-                          paddingLeft: "10px"
-                        }}>
-                          {t(subcategory.toLowerCase().replace(' ', '_')) || subcategory}
-                        </h4>
+                        {subcategory !== "Basic Emotion" && (
+                          <h4 style={{
+                            fontSize: "14px",
+                            color: "#666",
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                            marginBottom: "10px",
+                            paddingLeft: "10px"
+                          }}>
+                            {t(subcategory.toLowerCase().replace(' ', '_')) || subcategory}
+                          </h4>
+                        )}
                         <div
                           style={{
                             display: "grid",
@@ -861,7 +865,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                                     textAlign: "center"
                                   }}
                                 >
-                                  {mood.emoji} {mood.mood}
+                                  {mood.mood}
                                 </span>
                               </button>
                             );
@@ -926,7 +930,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                   color: selectedMood.color,
                 }}
               >
-                {selectedMood.emoji} {selectedMood.mood}
+                {selectedMood.mood}
               </span>
 
               {showReasonInput && (
@@ -967,7 +971,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
                       onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
                     >
-                      Save Mood ✨
+                      Save Mood
                     </button>
 
                     <button
@@ -1000,7 +1004,20 @@ const MoodTrackerScreen = ({ navigation }) => {
           </div>
         )}
 
-        {/* Mood over Time Chart */}
+        {/* Date Range Filter */}
+        {moodHistory.length > 0 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: "18px",
+            }}
+          >
+            {renderDateFilter()}
+          </div>
+        )}
+
+        {/* Mood Timeline Chart */}
         {filteredHistory.length > 0 && (
           <div
             style={{
@@ -1010,31 +1027,31 @@ const MoodTrackerScreen = ({ navigation }) => {
               marginBottom: "30px",
               boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
               backdropFilter: "blur(10px)",
-              height: "400px"
+              height: "360px"
             }}
           >
-            <h3 style={{ fontSize: "20px", color: "#333", marginBottom: "20px" }}>
-              📈 Mood Over Time
-            </h3>
-            <ResponsiveContainer width="100%" height="85%">
-              <AreaChart
+            <div style={{ marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "20px", color: "#333", margin: 0 }}>
+                Mood Timeline by Date
+              </h3>
+              <p style={{ margin: "6px 0 0", color: "#667085", fontSize: "13px" }}>
+                Each point shows the mood you logged on that date.
+              </p>
+            </div>
+            <ResponsiveContainer width="100%" height="82%">
+              <LineChart
                 data={[...filteredHistory].reverse().map(entry => {
-                  const moodObj = moods.find(m => m.mood === entry.mood);
+                  const moodObj = getMoodDefinition(entry.mood);
                   return {
                     date: entry.date,
-                    score: moodObj ? moodObj.score : 3,
                     mood: entry.mood,
-                    emoji: entry.moodEmoji
+                    time: entry.time,
+                    moodRank: moods.findIndex((item) => item.mood === normalizeBasicMood(entry.mood)) + 1,
+                    color: moodObj?.color || "#667eea",
                   };
                 })}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                margin={{ top: 10, right: 30, left: 20, bottom: 35 }}
               >
-                <defs>
-                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#764ba2" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                 <XAxis
                   dataKey="date"
@@ -1042,10 +1059,19 @@ const MoodTrackerScreen = ({ navigation }) => {
                   tick={{ fill: '#666' }}
                   axisLine={false}
                   tickLine={false}
+                  angle={-20}
+                  textAnchor="end"
+                  height={50}
                 />
                 <YAxis
-                  hide
-                  domain={[0, 6]}
+                  dataKey="moodRank"
+                  domain={[1, 5]}
+                  ticks={[1, 2, 3, 4, 5]}
+                  tickFormatter={(value) => moods[value - 1]?.mood || value}
+                  tick={{ fill: "#667085", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={80}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -1060,8 +1086,120 @@ const MoodTrackerScreen = ({ navigation }) => {
                           boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
                         }}>
                           <p style={{ margin: 0, fontWeight: 'bold' }}>{data.date}</p>
+                          {data.time && <p style={{ margin: 0, color: '#667085', fontSize: '12px' }}>{data.time}</p>}
+                          <p style={{ margin: 0, color: data.color }}>{data.mood}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="moodRank"
+                  name="Mood"
+                  stroke="#94a3b8"
+                  strokeWidth={2}
+                  dot={({ cx, cy, payload }) => (
+                    <circle cx={cx} cy={cy} r={5} fill={payload.color} stroke="white" strokeWidth={2} />
+                  )}
+                  activeDot={({ cx, cy, payload }) => (
+                    <circle cx={cx} cy={cy} r={7} fill={payload.color} stroke="white" strokeWidth={2} />
+                  )}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Mood Level Chart */}
+        {filteredHistory.length > 0 && (
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.85)",
+              borderRadius: "20px",
+              padding: "20px",
+              marginBottom: "30px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+              backdropFilter: "blur(10px)",
+              height: "400px"
+            }}
+          >
+            <div style={{ marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "20px", color: "#333", margin: 0 }}>
+                Mood Level by Date
+              </h3>
+              <p style={{ margin: "6px 0 0", color: "#667085", fontSize: "13px" }}>
+                Level 1-5 is an app wellness scale for comparing your check-ins over time.
+              </p>
+            </div>
+            <ResponsiveContainer width="100%" height="85%">
+              <AreaChart
+                data={[...filteredHistory].reverse().map(entry => {
+                  const moodObj = getMoodDefinition(entry.mood);
+                  const score = moodObj ? moodObj.score : 3;
+                  return {
+                    date: entry.date,
+                    score,
+                    level: getMoodLevelLabel(score),
+                    mood: entry.mood,
+                    time: entry.time,
+                  };
+                })}
+                margin={{ top: 10, right: 30, left: 20, bottom: 35 }}
+              >
+                <defs>
+                  <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#764ba2" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                <XAxis
+                  dataKey="date"
+                  fontSize={10}
+                  tick={{ fill: '#666' }}
+                  axisLine={false}
+                  tickLine={false}
+                  angle={-20}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis
+                  dataKey="score"
+                  domain={[1, 5]}
+                  ticks={[1, 2, 3, 4, 5]}
+                  tick={{ fill: "#667085", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={70}
+                  label={{
+                    value: "Mood Level",
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: "#667085",
+                    fontSize: 12,
+                  }}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div style={{
+                          background: 'white',
+                          padding: '10px',
+                          border: '1px solid #ddd',
+                          borderRadius: '10px',
+                          boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
+                        }}>
+                          <p style={{ margin: 0, fontWeight: 'bold' }}>{data.date}</p>
+                          {data.time && <p style={{ margin: 0, color: '#667085', fontSize: '12px' }}>{data.time}</p>}
                           <p style={{ margin: 0, color: '#667eea' }}>
-                            {data.emoji} {data.mood}
+                            {data.mood}
+                          </p>
+                          <p style={{ margin: 0, color: '#111827', fontSize: '12px' }}>
+                            Level: {data.level}
                           </p>
                         </div>
                       );
@@ -1072,6 +1210,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                 <Area
                   type="monotone"
                   dataKey="score"
+                  name="Mood Level"
                   stroke="#667eea"
                   strokeWidth={3}
                   fillOpacity={1}
@@ -1097,7 +1236,7 @@ const MoodTrackerScreen = ({ navigation }) => {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
               <h3 style={{ fontSize: "20px", color: "#333", margin: 0 }}>
-                📊 Your Mood Statistics
+                Your Mood Statistics
               </h3>
               <span style={{ fontSize: "14px", color: "#667eea", background: "#f0f0f0", padding: "5px 10px", borderRadius: "50px" }}>
                 Total: {filteredHistory.length} entries
@@ -1137,7 +1276,7 @@ const MoodTrackerScreen = ({ navigation }) => {
               }}
             >
               {Object.entries(moodStats.moods).map(([mood, count]) => {
-                const moodData = moods.find(m => m.mood === mood);
+                const moodData = getMoodDefinition(mood);
                 const percentage = ((count / filteredHistory.length) * 100).toFixed(1);
                 return (
                   <div
@@ -1150,7 +1289,6 @@ const MoodTrackerScreen = ({ navigation }) => {
                       border: `1px solid ${moodData?.color}20`
                     }}
                   >
-                    <span style={{ fontSize: "24px" }}>{moodData?.emoji}</span>
                     <div style={{ fontSize: "13px", color: "#666", fontWeight: "500" }}>{mood}</div>
                     <div style={{ fontSize: "18px", fontWeight: "bold", color: moodData?.color }}>
                       {count}
@@ -1186,59 +1324,10 @@ const MoodTrackerScreen = ({ navigation }) => {
             }}
           >
             <h2 style={{ fontSize: "24px", color: "#333", margin: 0 }}>
-              📝 Mood History
+              Mood History
             </h2>
 
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              {/* Filter Buttons */}
-              <div style={{ display: "flex", gap: "5px", background: "#f0f0f0", padding: "5px", borderRadius: "50px" }}>
-                <button
-                  onClick={() => setFilter("all")}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "50px",
-                    border: "none",
-                    background: filter === "all" ? "#667eea" : "transparent",
-                    color: filter === "all" ? "white" : "#666",
-                    cursor: "pointer",
-                    fontWeight: filter === "all" ? "bold" : "normal",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilter("week")}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "50px",
-                    border: "none",
-                    background: filter === "week" ? "#667eea" : "transparent",
-                    color: filter === "week" ? "white" : "#666",
-                    cursor: "pointer",
-                    fontWeight: filter === "week" ? "bold" : "normal",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  Week
-                </button>
-                <button
-                  onClick={() => setFilter("month")}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "50px",
-                    border: "none",
-                    background: filter === "month" ? "#667eea" : "transparent",
-                    color: filter === "month" ? "white" : "#666",
-                    cursor: "pointer",
-                    fontWeight: filter === "month" ? "bold" : "normal",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  Month
-                </button>
-              </div>
-
               {/* Download PDF Button - Always visible when there's history */}
               {filteredHistory.length > 0 && (
                 <button
@@ -1267,7 +1356,6 @@ const MoodTrackerScreen = ({ navigation }) => {
                     e.target.style.boxShadow = "0 3px 10px rgba(76, 175, 80, 0.3)";
                   }}
                 >
-                  <span style={{ fontSize: "16px" }}>📄</span>
                   Download PDF {filter !== 'all' && `(${filter === 'week' ? 'Week' : 'Month'})`}
                 </button>
               )}
@@ -1284,13 +1372,12 @@ const MoodTrackerScreen = ({ navigation }) => {
           >
             {filteredHistory.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", color: "#999" }}>
-                <span style={{ fontSize: "64px", display: "block", marginBottom: "20px" }}>📭</span>
                 <p style={{ fontSize: "18px", marginBottom: "10px" }}>No mood entries found</p>
                 <p style={{ fontSize: "14px" }}>Start tracking your mood to see your history here!</p>
               </div>
             ) : (
               filteredHistory.map((item, index) => {
-                const moodData = moods.find(m => m.mood === item.mood);
+                const moodData = getMoodDefinition(item.mood);
                 return (
                   <div
                     key={item.id || index}
@@ -1322,7 +1409,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px", flexWrap: "wrap" }}>
                           <span style={{ fontSize: "18px", fontWeight: "bold", color: moodData?.color }}>
-                            {item.moodEmoji} {item.mood}
+                            {item.mood}
                           </span>
                           <span style={{ fontSize: "12px", color: "#999", background: "white", padding: "2px 8px", borderRadius: "50px" }}>
                             {item.time}
@@ -1360,7 +1447,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                         e.target.style.background = "none";
                       }}
                     >
-                      🗑️
+                      Delete
                     </button>
                   </div>
                 );
@@ -1395,7 +1482,7 @@ const MoodTrackerScreen = ({ navigation }) => {
                 e.target.style.boxShadow = "0 5px 15px rgba(244, 67, 54, 0.3)";
               }}
             >
-              Clear All History 🗑️
+              Clear All History
             </button>
           )}
         </div>
@@ -1462,5 +1549,5 @@ const MoodTrackerScreen = ({ navigation }) => {
     </div>
   );
 };
-
 export default MoodTrackerScreen;
+
