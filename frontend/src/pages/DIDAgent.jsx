@@ -456,7 +456,6 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
                 <div className="didagent-emotion-indicator">
                   <Sparkles size={14} />
                   <div className="didagent-emotion-content">
-                    <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
                     {detectedEmotion.topScores?.length > 0 && (
                       <div className="didagent-emotion-top-scores">
                         {detectedEmotion.topScores.map((item) => (

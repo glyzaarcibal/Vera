@@ -1,5 +1,5 @@
 import express from "express";
-import { saveActivity, getActivities } from "../controllers/Activities.controller.js";
+import { saveActivity, getActivities, deleteActivity } from "../controllers/Activities.controller.js";
 import { setSupabaseSession } from "../middleware/supabase.middleware.js";
 
 const router = express.Router();
@@ -9,5 +9,8 @@ router.post("/save", setSupabaseSession, saveActivity);
 
 // Get activities for a user
 router.get("/", setSupabaseSession, getActivities);
+
+// Delete a specific activity
+router.delete("/:id", setSupabaseSession, deleteActivity);
 
 export default router;

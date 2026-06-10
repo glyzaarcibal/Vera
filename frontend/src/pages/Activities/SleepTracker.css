@@ -392,10 +392,24 @@
   opacity: 0.8;
 }
 
+.insight-age {
+  font-size: 0.95rem;
+  font-weight: 600;
+  opacity: 0.92;
+  margin-bottom: 10px;
+}
+
 .insight-text {
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.4;
+}
+
+.insight-source {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  opacity: 0.78;
 }
 
 /* ── TIME PICKER MODAL ── */

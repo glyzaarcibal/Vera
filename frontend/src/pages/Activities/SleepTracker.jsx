@@ -12,12 +12,87 @@ import ReusableModal from "../../components/ReusableModal";
 
 import "./SleepTracker.css";
 
+const formatLocalDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDate = (value) => {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+  return new Date(value);
+};
+
+const getAgeFromBirthday = (birthday) => {
+  if (!birthday) return null;
+  const birthDate = parseLocalDate(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age -= 1;
+  }
+  return age;
+};
+
+const getSleepRangeForAge = (age) => {
+  if (age >= 14 && age <= 17) return { min: 480, max: 600 };
+  if (age >= 65) return { min: 420, max: 480 };
+  return { min: 420, max: 540 };
+};
+
+const hasPersistentInsufficientSleep = (logs, minimumMinutes, requiredDays = 15) => {
+  const logsByDate = new Map();
+  logs.forEach((log) => {
+    if (log.date) logsByDate.set(formatLocalDate(parseLocalDate(log.date)), log);
+  });
+
+  const sortedDates = [...logsByDate.keys()]
+    .map(parseLocalDate)
+    .sort((a, b) => b - a);
+
+  let consecutiveDays = 0;
+  for (let index = 0; index < sortedDates.length; index += 1) {
+    const date = sortedDates[index];
+    const log = logsByDate.get(formatLocalDate(date));
+    if (!log || (log.totalMinutes || 0) >= minimumMinutes) break;
+
+    if (index > 0) {
+      const previousDate = sortedDates[index - 1];
+      const dayDifference = Math.round((previousDate - date) / 86400000);
+      if (dayDifference !== 1) break;
+    }
+
+    consecutiveDays += 1;
+    if (consecutiveDays >= requiredDays) return true;
+  }
+
+  return false;
+};
+
 const SleepTracker = () => {
   const user = useSelector(selectUser);
   const userId = user?.id;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const MotionDiv = motion.div;
+  const sleepRange = useMemo(
+    () => getSleepRangeForAge(getAgeFromBirthday(user?.birthday)),
+    [user?.birthday]
+  );
+
+  const userAge = useMemo(
+    () => getAgeFromBirthday(user?.birthday),
+    [user?.birthday]
+  );
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -43,23 +118,49 @@ const SleepTracker = () => {
 
   const weeklyInsight = useMemo(() => {
     if (sleepData.length === 0) return "Start logging your sleep to see your weekly performance trends here.";
-    
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
-    const thisWeekLogs = sleepData.filter(log => new Date(log.date) >= oneWeekAgo);
-    
+
+    const { min, max } = sleepRange;
+    const minHours = Math.floor(min / 60);
+    const maxHours = Math.floor(max / 60);
+    const now = new Date();
+    const oneWeekAgo = new Date(now);
+    oneWeekAgo.setDate(now.getDate() - 7);
+    const twoWeeksAgo = new Date(now);
+    twoWeeksAgo.setDate(now.getDate() - 14);
+
+    const thisWeekLogs = sleepData.filter(log => parseLocalDate(log.date) >= oneWeekAgo);
+    const previousWeekLogs = sleepData.filter((log) => {
+      const date = parseLocalDate(log.date);
+      return date >= twoWeeksAgo && date < oneWeekAgo;
+    });
+
     if (thisWeekLogs.length === 0) return "You haven't logged any sleep this week. Regular tracking helps identify healthy patterns.";
-    
+
     const avgMinutes = thisWeekLogs.reduce((acc, curr) => acc + (curr.totalMinutes || 0), 0) / thisWeekLogs.length;
-    const hours = Math.floor(avgMinutes / 60);
-    
-    if (avgMinutes >= 420) {
-      return `Amazing! You're averaging ${hours}h of sleep this week. Your REM recovery is likely in the optimal zone.`;
-    } else {
-      return `You're averaging ${hours}h of sleep. Try to hit the 7-hour mark to boost your cognitive focus tomorrow.`;
+
+    if (hasPersistentInsufficientSleep(sleepData, min)) {
+      return "Your sleep has been consistently insufficient for more than 2 weeks. We recommend speaking with a healthcare provider to explore possible causes.";
     }
-  }, [sleepData]);
+
+    if (avgMinutes >= min && avgMinutes <= max) {
+      return "Your sleep duration is within the healthy range. Keep maintaining this routine.";
+    }
+
+    if (avgMinutes < min && previousWeekLogs.length > 0) {
+      const previousAverage =
+        previousWeekLogs.reduce((sum, log) => sum + (log.totalMinutes || 0), 0) /
+        previousWeekLogs.length;
+      if (avgMinutes > previousAverage) {
+        return `Your sleep has been improving recently. Aim to maintain ${minHours}-${maxHours} hours consistently.`;
+      }
+    }
+
+    if (avgMinutes < min) {
+      return `Your sleep duration is below the recommended ${minHours} hours. Aim to increase gradually toward ${minHours}-${maxHours} hours nightly.`;
+    }
+
+    return `Your sleep duration exceeds ${maxHours} hours regularly. Excessive sleep may indicate fatigue or underlying health concerns. Consider tracking any related symptoms.`;
+  }, [sleepData, sleepRange]);
 
   const loadSleepData = async () => {
     if (!userId) return;
@@ -88,7 +189,7 @@ const SleepTracker = () => {
             totalMinutes
           };
         })
-        .sort((a, b) => new Date(b.date || b.timestamp) - new Date(a.date || a.timestamp));
+        .sort((a, b) => parseLocalDate(b.date || b.timestamp) - parseLocalDate(a.date || a.timestamp));
 
       setSleepData(history);
     } catch (error) {
@@ -121,8 +222,8 @@ const SleepTracker = () => {
   const { hours, minutes } = calculateDuration();
 
   const getStatusBadge = (totalMinutes) => {
-    if (totalMinutes >= 420 && totalMinutes <= 540) return "OPTIMAL";
-    if (totalMinutes < 420) return "LOW";
+    if (totalMinutes >= sleepRange.min && totalMinutes <= sleepRange.max) return "OPTIMAL";
+    if (totalMinutes < sleepRange.min) return "LOW";
     return "EXCESSIVE";
   };
 
@@ -132,7 +233,7 @@ const SleepTracker = () => {
       setIsSaving(true);
       const duration = calculateDuration();
       const newEntry = {
-        date: selectedDate.toISOString().split('T')[0],
+        date: formatLocalDate(selectedDate),
         sleep_time: `${sleepTime.hour}:${sleepTime.minute} ${sleepTime.period}`,
         wake_time: `${wakeTime.hour}:${wakeTime.minute} ${wakeTime.period}`,
         duration: `${duration.hours}h ${duration.minutes}m`,
@@ -170,9 +271,15 @@ const SleepTracker = () => {
     }
   };
 
-  const confirmDelete = (id) => {
-    setSleepData(sleepData.filter(e => e.id !== id));
-    setConfirmDeleteId(null);
+  const confirmDelete = async (id) => {
+    try {
+      await axiosInstance.delete(`/activities/${id}`);
+      setSleepData(prev => prev.filter(e => e.id !== id));
+    } catch (error) {
+      console.error("Error deleting sleep record:", error);
+    } finally {
+      setConfirmDeleteId(null);
+    }
   };
 
   // ── CALENDAR LOGIC ──
@@ -186,7 +293,7 @@ const SleepTracker = () => {
     >
       <div className="mood-icon">😴</div>
       <div className="log-details">
-        <div className="log-date">{new Date(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+        <div className="log-date">{parseLocalDate(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
         <div className="log-duration">{log.duration} Duration</div>
       </div>
       <div className="log-time-range">
@@ -375,7 +482,7 @@ const SleepTracker = () => {
                 >
                   <div className="mood-icon">😴</div>
                   <div className="log-details">
-                    <div className="log-date">{new Date(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                    <div className="log-date">{parseLocalDate(log.date).toLocaleDateString('default', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                     <div className="log-duration">{log.duration} Duration</div>
                   </div>
                   <div className="log-time-range" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
@@ -402,9 +509,14 @@ const SleepTracker = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="insight-label">WEEKLY INSIGHT</div>
+              {userAge !== null && (
+                <div className="insight-age">Age: {userAge}</div>
+              )}
               <div className="insight-text">
                 {weeklyInsight}
+              </div>
+              <div className="insight-source">
+                Basis: Hirshkowitz et al. (2015); persistent sleep concerns follow WHO mhGAP and DOH Philippines referral guidance.
               </div>
             </motion.div>
           </div>
