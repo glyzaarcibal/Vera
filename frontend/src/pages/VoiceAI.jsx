@@ -667,7 +667,6 @@ const VoiceAI = () => {
                   <div className="live-emotion-indicator">
                     <span className="emotion-icon">✨</span>
                     <div className="emotion-text">
-                      <span>{t("feeling")}: <strong>{detectedEmotion.emotion}</strong></span>
                       {detectedEmotion.topScores?.length > 0 && (
                         <div className="emotion-top-scores">
                           {detectedEmotion.topScores.map((item) => (
