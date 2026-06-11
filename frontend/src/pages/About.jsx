@@ -142,7 +142,7 @@ const About = () => {
                 <div className="member-image-wrapper">
                   <img src={arcibalPhoto} alt="Glyza Marie Parcibal" className="member-image" />
                 </div>
-                <p className="member-name">Glyza Marie Parcibal</p>
+                <p className="member-name">Glyza Marie Arcibal</p>
                 <p className="member-role">{t("about_fullstack")}</p>
               </div>
               <div className="team-member">
