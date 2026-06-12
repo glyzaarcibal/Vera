@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
 import ReusableModal from "../components/ReusableModal";
+import EmotionScoreChart from "../components/EmotionScoreChart";
+import useHumeEvi from "../hooks/useHumeEvi";
 import "./VoiceAI.css";
 
 const VOICES = [
@@ -59,18 +61,6 @@ const VOICES = [
   },
 ];
 
-const getTopEmotionScores = (voiceEmotion) => {
-  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
-    return voiceEmotion.topScores;
-  }
-
-  return Object.entries(voiceEmotion?.mappedScores || {})
-    .filter(([, score]) => typeof score === "number")
-    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-    .slice(0, 3)
-    .map(([emotion, score]) => ({ emotion, score }));
-};
-
 const getTtsErrorMessage = async (error) => {
   const data = error?.response?.data;
 
@@ -110,6 +100,7 @@ const VoiceAI = () => {
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0);
   const [speechError, setSpeechError] = useState(null);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+  const [conversationEngine, setConversationEngine] = useState("vera");
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -134,6 +125,18 @@ const VoiceAI = () => {
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const recognitionStartedRef = useRef(false);
+  const {
+    attachSession: attachEviSession,
+    error: eviError,
+    expressionScores: eviExpressionScores,
+    finalizeSession: finalizeEviSession,
+    isMuted: isEviMuted,
+    messages: eviMessages,
+    start: startEvi,
+    status: eviStatus,
+    stop: stopEvi,
+    toggleMute: toggleEviMute,
+  } = useHumeEvi();
 
   useEffect(() => {
     let interval;
@@ -308,7 +311,7 @@ const VoiceAI = () => {
               utterance.pitch = 1.2;
           } else {
               utterance.pitch = 0.9;
-          }
+            }
           
           utterance.onend = () => {
               setConversationMode("listening");
@@ -388,6 +391,27 @@ const VoiceAI = () => {
     }
   };
 
+  const handleEviCallToggle = async () => {
+    if (isCallActive) {
+      await finalizeEviSession();
+      stopEvi();
+      setIsCallActive(false);
+      setCallDuration(0);
+      return;
+    }
+
+    const session = sessionId === null ? await initializeSession() : true;
+    if (!session) return;
+
+    const activeSessionId = session.id || sessionId;
+    attachEviSession(activeSessionId);
+    const started = await startEvi(activeSessionId);
+    if (!started) return;
+
+    setSpeechError(null);
+    setIsCallActive(true);
+  };
+
   const proceedWithMic = async () => {
     setShowMicModal(false);
     localStorage.setItem(MIC_ACCESS_GUIDE_KEY, '1');
@@ -464,11 +488,15 @@ const VoiceAI = () => {
         }
 
         if (botResponse) {
-          if (voiceEmotion?.emotion || voiceEmotion?.error) {
+          if (
+            voiceEmotion?.emotion ||
+            voiceEmotion?.error ||
+            Object.keys(voiceEmotion?.rawScores || {}).length > 0
+          ) {
             setDetectedEmotion({
               emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
               score: voiceEmotion.score ?? 0,
-              topScores: getTopEmotionScores(voiceEmotion),
+              rawScores: voiceEmotion.rawScores || {},
               source: voiceEmotion.source || "Hume AI",
               error: voiceEmotion.error,
             });
@@ -532,6 +560,13 @@ const VoiceAI = () => {
     thinking: t("processing"),
     speaking: t("speaking"),
   };
+  const isEviMode = conversationEngine === "evi";
+  const activeMode = isEviMode ? eviStatus : conversationMode;
+  const activeModeLabel = modeLabel[activeMode] || (
+    activeMode === "connecting" ? "Connecting" : "Connected"
+  );
+  const toggleActiveCall = isEviMode ? handleEviCallToggle : handleCallToggle;
+  const activeError = isEviMode ? eviError : speechError;
 
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 2;
@@ -589,6 +624,33 @@ const VoiceAI = () => {
         ) : !isCallActive ? (
           /* ── Voice Selection Grid ── */
           <div className="voice-selection-layout">
+            <div className="voice-engine-selector" role="group" aria-label="Voice engine">
+              <button
+                type="button"
+                className={conversationEngine === "vera" ? "active" : ""}
+                onClick={() => setConversationEngine("vera")}
+              >
+                Vera pipeline
+                <small>ElevenLabs + Vera AI + Hume Prosody</small>
+              </button>
+              <button
+                type="button"
+                className={conversationEngine === "evi" ? "active" : ""}
+                onClick={() => setConversationEngine("evi")}
+              >
+                Hume EVI
+                <small>Real-time empathic speech-to-speech</small>
+              </button>
+            </div>
+
+            {isEviMode && (
+              <p className="evi-mode-note">
+                EVI handles listening, expression analysis, response generation, and
+                voice output as one live conversation. The voice configured in Hume is
+                used instead of the ElevenLabs voice below.
+              </p>
+            )}
+
             <div className="section-title-wrap">
               <h2 className="section-title">{t("select_companion")}</h2>
               <div className="title-divider"></div>
@@ -617,15 +679,25 @@ const VoiceAI = () => {
             </div>
 
             <div className="start-call-footer">
-              <button className="premium-start-btn" onClick={handleCallToggle}>
+              <button className="premium-start-btn" onClick={toggleActiveCall}>
                 <div className="btn-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 12H8.5L7 14V10l1.5-2H11l1.5 2v4l-1.5 2zm7-3h-1v1h1v2h-2v-2h1v-1h-1V9h2v2h-1v1h1v2z"/>
                   </svg>
                 </div>
-                <span>{t("start_voice_session")}</span>
+                <span>
+                  {isEviMode && eviStatus === "connecting"
+                    ? "Connecting to Hume EVI..."
+                    : t("start_voice_session")}
+                </span>
               </button>
             </div>
+
+            {isEviMode && activeError && (
+              <div className="evi-start-error" role="alert">
+                {activeError}
+              </div>
+            )}
           </div>
         ) : (
           /* ── Immersive Call View ── */
@@ -635,7 +707,7 @@ const VoiceAI = () => {
                 <div className="live-tag">{t("live_session")}</div>
                 <div className="call-timer">{formatDuration(callDuration)}</div>
               </div>
-              <button className="end-session-btn" onClick={handleCallToggle}>
+              <button className="end-session-btn" onClick={toggleActiveCall}>
                 <PhoneOff size={18} />
                 <span>{t("end_session")}</span>
               </button>
@@ -644,12 +716,12 @@ const VoiceAI = () => {
             <div className="call-main-content">
               {/* Avatar Section */}
               <div className="avatar-interaction-zone">
-                <div className={`avatar-container ${conversationMode === "speaking" ? "is-speaking" : ""}`}>
+                <div className={`avatar-container ${activeMode === "speaking" ? "is-speaking" : ""}`}>
                   <div className="avatar-glow"></div>
                   <div className="avatar-image-mask">
                     <img src={VOICES[selectedVoiceIndex].avatar} alt={VOICES[selectedVoiceIndex].name} />
                   </div>
-                  {conversationMode === "speaking" && (
+                  {activeMode === "speaking" && (
                     <div className="voice-waves">
                       <span></span><span></span><span></span><span></span>
                     </div>
@@ -659,25 +731,22 @@ const VoiceAI = () => {
                 <div className="companion-meta">
                   <h2 className="companion-name">{VOICES[selectedVoiceIndex].name}</h2>
                   <p className="companion-status">
-                    {modeLabel[conversationMode] || "Connected"}
+                    {activeModeLabel}
                   </p>
                 </div>
 
-                {detectedEmotion?.emotion && (
+                {(isEviMode
+                  ? Object.keys(eviExpressionScores).length > 0
+                  : Object.keys(detectedEmotion?.rawScores || {}).length > 0) && (
                   <div className="live-emotion-indicator">
                     <span className="emotion-icon">✨</span>
                     <div className="emotion-text">
-                      {detectedEmotion.topScores?.length > 0 && (
-                        <div className="emotion-top-scores">
-                          {detectedEmotion.topScores.map((item) => (
-                            <span key={item.emotion}>
-                              {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <EmotionScoreChart
+                        scores={isEviMode ? eviExpressionScores : detectedEmotion.rawScores}
+                      />
                       <small className="emotion-disclaimer">
-                        Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                        Hume analyzes vocal expression. Scores are model estimates, not
+                        verified emotion or diagnostic results.
                       </small>
                     </div>
                   </div>
@@ -689,15 +758,33 @@ const VoiceAI = () => {
                 <div className="transcript-container">
                   <div className="transcript-label">Live Transcription</div>
                   <div className="transcript-content">
-                    {transcript ? (
+                    {isEviMode && eviMessages.length > 0 ? (
+                      <div className="evi-transcript-list">
+                        {eviMessages.slice(-6).map((message) => (
+                          <p
+                            key={message.id}
+                            className={`evi-transcript-message ${message.role} ${
+                              message.interim ? "interim" : ""
+                            }`}
+                          >
+                            <strong>{message.role === "user" ? "You" : "Vera"}:</strong>{" "}
+                            {message.text}
+                          </p>
+                        ))}
+                      </div>
+                    ) : transcript && !isEviMode ? (
                       <p className="active-transcript">{transcript}</p>
                     ) : (
                       <p className="transcript-placeholder">
-                        {conversationMode === "thinking" ? t("processing") : t("listening")}
+                        {activeMode === "connecting"
+                          ? "Connecting to Hume EVI..."
+                          : activeMode === "thinking"
+                            ? t("processing")
+                            : t("listening")}
                       </p>
                     )}
                   </div>
-                  {conversationMode === "thinking" && (
+                  {activeMode === "thinking" && (
                     <div className="thinking-loader">
                       <span></span><span></span><span></span>
                     </div>
@@ -706,20 +793,24 @@ const VoiceAI = () => {
 
                 <div className="call-controls">
                   <button 
-                    className={`circle-btn mute ${isMuted ? 'active' : ''}`} 
-                    onClick={handleMuteToggle}
-                    title={isMuted ? "Unmute" : "Mute"}
+                    className={`circle-btn mute ${(isEviMode ? isEviMuted : isMuted) ? 'active' : ''}`}
+                    onClick={isEviMode ? toggleEviMute : handleMuteToggle}
+                    title={(isEviMode ? isEviMuted : isMuted) ? "Unmute" : "Mute"}
                   >
-                    {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                    {(isEviMode ? isEviMuted : isMuted) ? <MicOff size={24} /> : <Mic size={24} />}
                   </button>
 
                   <button 
-                    className={`main-action-btn ${isRecording ? 'is-recording' : ''}`}
-                    onClick={handleRecordingToggle}
-                    disabled={conversationMode === "thinking" || conversationMode === "speaking"}
+                    className={`main-action-btn ${(isEviMode || isRecording) ? 'is-recording' : ''}`}
+                    onClick={isEviMode ? undefined : handleRecordingToggle}
+                    disabled={isEviMode || conversationMode === "thinking" || conversationMode === "speaking"}
                   >
                     <div className="btn-inner">
-                      {isRecording ? (
+                      {isEviMode ? (
+                        <div className="mic-pulse">
+                          <Mic size={32} />
+                        </div>
+                      ) : isRecording ? (
                         <div className="stop-square"></div>
                       ) : (
                         <div className="mic-pulse">
@@ -727,7 +818,13 @@ const VoiceAI = () => {
                         </div>
                       )}
                     </div>
-                    <span className="btn-label">{isRecording ? t("stop_process") : t("tap_to_speak")}</span>
+                    <span className="btn-label">
+                      {isEviMode
+                        ? activeModeLabel
+                        : isRecording
+                          ? t("stop_process")
+                          : t("tap_to_speak")}
+                    </span>
                   </button>
 
                   <div className="volume-indicator">
@@ -739,9 +836,9 @@ const VoiceAI = () => {
               </div>
             </div>
 
-            {speechError && (
+            {activeError && (
               <div className="call-error-toast">
-                <span>⚠️</span> {speechError}
+                <span>⚠️</span> {activeError}
               </div>
             )}
           </div>

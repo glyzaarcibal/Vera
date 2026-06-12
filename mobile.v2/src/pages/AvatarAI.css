@@ -770,6 +770,12 @@
   min-height: 0;
 }
 
+.didagent-session-container.has-emotion-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  align-items: stretch;
+}
+
 .didagent-video-wrap {
   flex: 1;
   background: #000;
@@ -779,10 +785,45 @@
   min-height: 150px;
 }
 
+.didagent-emotion-panel {
+  min-width: 0;
+  padding: 18px;
+  overflow-y: auto;
+  background: linear-gradient(160deg, #f5f3ff, #fdf2f8);
+  border: 1px solid rgba(124, 58, 237, 0.16);
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(76, 29, 149, 0.1);
+}
+
+.didagent-emotion-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6d28d9;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.didagent-emotion-panel .emotion-state-panel {
+  width: 100%;
+}
+
+.didagent-emotion-panel .didagent-emotion-disclaimer {
+  display: block;
+  max-width: none;
+  margin-top: 10px;
+  color: #64748b;
+}
+
 .didagent-video {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
+  transform: translateY(-6%) scale(1.08);
+  transform-origin: center;
 }
 
 .didagent-hud {
@@ -849,6 +890,21 @@
   animation: slideInLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   z-index: 10;
   pointer-events: none;
+}
+
+@media (max-width: 1100px) {
+  .didagent-session-container.has-emotion-panel {
+    display: flex;
+    overflow-y: auto;
+  }
+
+  .didagent-session-container.has-emotion-panel .didagent-video-wrap {
+    flex: 0 0 min(58vh, 520px);
+  }
+
+  .didagent-emotion-panel {
+    overflow: visible;
+  }
 }
 
 .didagent-emotion-content {

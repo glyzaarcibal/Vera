@@ -341,7 +341,13 @@ export async function getEmotionFromAudio(audioBase64) {
     const dominant = getDominantEmotion(humeEmotions);
 
     if (!dominant) {
-      return { emotion: null, score: 0, topScores: [], mappedScores: humeEmotions };
+      return {
+        emotion: null,
+        score: 0,
+        topScores: [],
+        mappedScores: mapHumeEmotionsToDb(humeEmotions),
+        rawScores: humeEmotions,
+      };
     }
 
     const emotionScores = mapHumeEmotionsToDb(humeEmotions);
@@ -350,6 +356,7 @@ export async function getEmotionFromAudio(audioBase64) {
       score: dominant.score,
       topScores: getTopEmotionScores(emotionScores),
       mappedScores: emotionScores,
+      rawScores: humeEmotions,
     };
   } catch (error) {
     const status = error.response?.status;

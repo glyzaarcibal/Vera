@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import './AvatarAI.css';
 import ReusableModal from "../components/ReusableModal";
+import EmotionScoreChart from '../components/EmotionScoreChart';
 
 // Assets
 import americanGirlVideo from '../assets/american-girl.mp4';
@@ -46,18 +47,6 @@ import FilipinoBoy2Img from '../assets/filipino-boy-2.png';
 import FilipinoBoy3Img from '../assets/filipino-boy-3.png';
 
 import axiosInstance from '../utils/axios.instance';
-
-const getTopEmotionScores = (voiceEmotion) => {
-  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
-    return voiceEmotion.topScores;
-  }
-
-  return Object.entries(voiceEmotion?.mappedScores || {})
-    .filter(([, score]) => typeof score === "number")
-    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-    .slice(0, 3)
-    .map(([emotion, score]) => ({ emotion, score }));
-};
 
 export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const [selectedAgent, setSelectedAgent] = useState(null);
@@ -219,20 +208,6 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
     });
   };
 
-  const inferEmotionFromText = (text) => {
-    const normalized = (text || '').toLowerCase();
-    const happyKeywords = ['happy', 'joy', 'joyful', 'excited', 'glad', 'cheerful', 'masaya', 'saya', 'tuwang-tuwa'];
-    const sadKeywords = ['sad', 'down', 'lonely', 'depressed', 'malungkot'];
-    const angryKeywords = ['angry', 'mad', 'furious', 'galit', 'inis'];
-    const anxiousKeywords = ['anxious', 'nervous', 'worried', 'stressed', 'kabado', 'balisa'];
-
-    if (happyKeywords.some((w) => normalized.includes(w))) return 'joyful';
-    if (sadKeywords.some((w) => normalized.includes(w))) return 'sad';
-    if (angryKeywords.some((w) => normalized.includes(w))) return 'angry';
-    if (anxiousKeywords.some((w) => normalized.includes(w))) return 'anxious';
-    return null;
-  };
-
   const transcribeAudio = async (blob) => {
     setIsProcessing(true);
     try {
@@ -247,8 +222,6 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
       });
       const data = res.data;
       if (data.text) {
-        const textEmotion = inferEmotionFromText(data.text);
-
         onTranscript?.(data.text, { author: 'User', source: 'did' });
         
         const newUserMessage = { role: 'user', content: data.text, text: data.text, type: 'user' };
@@ -268,19 +241,12 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
           const voiceLabel = voiceEmotion?.emotion;
           const voiceDisplayLabel = voiceEmotion?.toneLabel || voiceLabel;
           const voiceScore = voiceEmotion?.score ?? 0;
-          const shouldUseTextEmotion =
-            !!textEmotion &&
-            (
-              !voiceLabel ||
-              voiceLabel.toLowerCase() === 'neutral' ||
-              voiceScore < 0.45
-            );
 
           setDetectedEmotion({
-            emotion: shouldUseTextEmotion ? textEmotion : (voiceDisplayLabel || textEmotion || 'neutral'),
-            score: shouldUseTextEmotion ? 0.85 : voiceScore,
-            topScores: shouldUseTextEmotion ? [] : getTopEmotionScores(voiceEmotion),
-            source: shouldUseTextEmotion ? "Text + Voice" : (voiceEmotion?.source || "Hume AI"),
+            emotion: voiceDisplayLabel || 'neutral',
+            score: voiceScore,
+            rawScores: voiceEmotion?.rawScores || {},
+            source: voiceEmotion?.source || "Hume AI",
             error: voiceEmotion?.error
           });
 
@@ -449,7 +415,13 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
           </div>
         </div>
       ) : (
-        <div className="didagent-session-container">
+        <div
+          className={`didagent-session-container ${
+            Object.keys(detectedEmotion?.rawScores || {}).length > 0
+              ? 'has-emotion-panel'
+              : ''
+          }`}
+        >
           <div className="didagent-video-wrap">
             <video
               ref={videoRef}
@@ -477,27 +449,6 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
                 </div>
               </div>
 
-              {detectedEmotion && (
-                <div className="didagent-emotion-indicator">
-                  <Sparkles size={14} />
-                  <div className="didagent-emotion-content">
-                    <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
-                    {detectedEmotion.topScores?.length > 0 && (
-                      <div className="didagent-emotion-top-scores">
-                        {detectedEmotion.topScores.map((item) => (
-                          <span key={item.emotion}>
-                            {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <small className="didagent-emotion-disclaimer">
-                      Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
-                    </small>
-                  </div>
-                </div>
-              )}
-
               <button className="didagent-change-btn" onClick={() => { setIsSessionActive(false); setSessionId(null); setSessionStarted(false); setDetectedEmotion(null); }}>
                 Change Agent
               </button>
@@ -518,6 +469,19 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
               </button>
             </div>
           </div>
+
+          {Object.keys(detectedEmotion?.rawScores || {}).length > 0 && (
+            <aside className="didagent-emotion-panel">
+              <div className="didagent-emotion-panel-title">
+                <Sparkles size={16} />
+                <span>Voice Emotion Analysis</span>
+              </div>
+              <EmotionScoreChart scores={detectedEmotion.rawScores} />
+              <small className="didagent-emotion-disclaimer">
+                Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+              </small>
+            </aside>
+          )}
 
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>
