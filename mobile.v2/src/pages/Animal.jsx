@@ -13,18 +13,7 @@ import MonkeyImg from '../assets/monkey.jpg';
 import PandaImg from '../assets/panda.png';
 import axiosInstance from '../utils/axios.instance';
 import ReusableModal from "../components/ReusableModal";
-
-const getTopEmotionScores = (voiceEmotion) => {
-  if (Array.isArray(voiceEmotion?.topScores) && voiceEmotion.topScores.length > 0) {
-    return voiceEmotion.topScores;
-  }
-
-  return Object.entries(voiceEmotion?.mappedScores || {})
-    .filter(([, score]) => typeof score === "number")
-    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-    .slice(0, 3)
-    .map(([emotion, score]) => ({ emotion, score }));
-};
+import EmotionScoreChart from '../components/EmotionScoreChart';
 
 export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [animalType, setAnimalType] = useState(null); 
@@ -228,11 +217,15 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
 
           const aiMsg = sanitizeAnimalReply(aiRes?.data?.response);
           const voiceEmotion = aiRes?.data?.voiceEmotion;
-          if (voiceEmotion?.emotion || voiceEmotion?.error) {
+          if (
+            voiceEmotion?.emotion ||
+            voiceEmotion?.error ||
+            Object.keys(voiceEmotion?.rawScores || {}).length > 0
+          ) {
             setDetectedEmotion({
               emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
               score: voiceEmotion.score ?? 0,
-              topScores: getTopEmotionScores(voiceEmotion),
+              rawScores: voiceEmotion.rawScores || {},
               source: voiceEmotion.source || "Hume AI",
               error: voiceEmotion.error,
             });
@@ -398,7 +391,13 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
           </div>
         </div>
       ) : (
-        <div className="didagent-session-container">
+        <div
+          className={`didagent-session-container ${
+            Object.keys(detectedEmotion?.rawScores || {}).length > 0
+              ? 'has-emotion-panel'
+              : ''
+          }`}
+        >
           <div className="didagent-video-wrap">
             <video
               ref={videoRef}
@@ -422,27 +421,6 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
                 </div>
               </div>
 
-              {detectedEmotion && (
-                <div className="didagent-emotion-indicator">
-                  <Sparkles size={14} />
-                  <div className="didagent-emotion-content">
-                    <span>Feeling: <strong>{detectedEmotion.emotion}</strong></span>
-                    {detectedEmotion.topScores?.length > 0 && (
-                      <div className="didagent-emotion-top-scores">
-                        {detectedEmotion.topScores.map((item) => (
-                          <span key={item.emotion}>
-                            {item.emotion}: {((item.score || 0) * 100).toFixed(0)}%
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <small className="didagent-emotion-disclaimer">
-                      Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
-                    </small>
-                  </div>
-                </div>
-              )}
-
               <button className="didagent-change-btn" onClick={() => { setAnimalType(null); setSessionId(null); setSessionStarted(false); setDetectedEmotion(null); }}>
                 Change Companion
               </button>
@@ -464,6 +442,19 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
               </button>
             </div>
           </div>
+
+          {Object.keys(detectedEmotion?.rawScores || {}).length > 0 && (
+            <aside className="didagent-emotion-panel">
+              <div className="didagent-emotion-panel-title">
+                <Sparkles size={16} />
+                <span>Voice Emotion Analysis</span>
+              </div>
+              <EmotionScoreChart scores={detectedEmotion.rawScores} />
+              <small className="didagent-emotion-disclaimer">
+                Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+              </small>
+            </aside>
+          )}
 
           <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
         </div>

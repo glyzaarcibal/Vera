@@ -1,9 +1,12 @@
 import {
   createSession,
   fetchMessagesBySessionId,
+  fetchSessionInfoById,
   fetchSessionsByUserId,
+  updateSessionAnalysis,
 } from "../../service/Chat/Session.service.js";
 import { deductToken } from "../../service/Auth/Token.service.js";
+import { fetchPermissions } from "../../service/Auth/Permissions.service.js";
 
 export const initSession = async (req, res) => {
   try {
@@ -89,5 +92,35 @@ export const getChatMessages = async (req, res) => {
   } catch (e) {
     console.log(e);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const analyzeSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const session = await fetchSessionInfoById(sessionId);
+
+    if (session.user_id !== req.userId) {
+      return res.status(403).json({ message: "Not allowed to analyze this session" });
+    }
+
+    const permissions = await fetchPermissions(req.userId);
+    if (permissions.permit_analyze === false) {
+      return res.status(200).json({
+        analyzed: false,
+        reason: "Analysis disabled in privacy settings",
+      });
+    }
+
+    const updatedSession = await updateSessionAnalysis(sessionId);
+    return res.status(200).json({
+      analyzed: true,
+      session: updatedSession,
+    });
+  } catch (error) {
+    console.error("[analyzeSession]", error);
+    return res.status(500).json({
+      message: error.message || "Failed to analyze session",
+    });
   }
 };

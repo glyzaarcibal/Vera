@@ -50,6 +50,7 @@ export const emotionFromVoice = async (req, res) => {
       score: result.score ?? 0,
       topScores: result.topScores || [],
       mappedScores: result.mappedScores || {},
+      rawScores: result.rawScores || {},
       source: "Hume AI",
       model: "hume-ai-prosody",
       emotions: BASIC_EMOTIONS,

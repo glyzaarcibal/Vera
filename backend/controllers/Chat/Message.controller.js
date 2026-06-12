@@ -5,6 +5,8 @@ import {
   saveMessage,
 } from "../../service/Chat/Message.service.js";
 import { transcribeAudio } from "../../service/Chat/SpeechToText.service.js";
+import { saveEmotionData } from "../../service/Chat/Emotion.service.js";
+import { mapHumeEmotionsToDb } from "../../service/Chat/SpeechToText.service.js";
 
 // Number of previous messages to include as context
 const CONTEXT_MESSAGE_COUNT = 5;
@@ -89,5 +91,58 @@ export const processMessage = async (req, res) => {
   } catch (e) {
     console.log(e);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const saveEviMessage = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { sessionId } = req.params;
+    const { content, role, emotionScores } = req.body;
+
+    if (!content?.trim() || !["user", "assistant"].includes(role)) {
+      return res.status(400).json({ message: "Invalid EVI message payload" });
+    }
+
+    const permissions = await fetchPermissions(userId);
+    if (!permissions.permit_store) {
+      return res.status(200).json({ saved: false, reason: "Storage disabled" });
+    }
+
+    const savedMessage = await saveMessage({
+      session_id: sessionId,
+      content: content.trim(),
+      sent_by: role === "user" ? "user" : "bot",
+    });
+
+    if (
+      role === "user" &&
+      emotionScores &&
+      typeof emotionScores === "object"
+    ) {
+      try {
+        const mappedScores = mapHumeEmotionsToDb(emotionScores);
+        await saveEmotionData({
+          message_id: savedMessage.id,
+          ...mappedScores,
+          model: "hume-evi-prosody",
+        });
+      } catch (emotionError) {
+        console.warn(
+          "[saveEviMessage] Message saved without emotion data:",
+          emotionError.message
+        );
+      }
+    }
+
+    return res.status(201).json({
+      saved: true,
+      messageId: savedMessage.id,
+    });
+  } catch (error) {
+    console.error("[saveEviMessage]", error);
+    return res.status(500).json({
+      message: error.message || "Failed to save EVI message",
+    });
   }
 };

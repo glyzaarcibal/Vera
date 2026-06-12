@@ -10,6 +10,7 @@ import DoctorRoutes from "./Doctor.routes.js";
 import ResourceRoutes from "./Resource.routes.js";
 import FeedbackRoutes from "./Feedback/Feedback.route.js";
 import ElevenLabsRoutes from "./ElevenLabs.routes.js";
+import HumeRoutes from "./Hume.routes.js";
 
 export default function registerRoutes(app) {
   app.use("/api/auth", AuthRoutes);
@@ -24,6 +25,7 @@ export default function registerRoutes(app) {
   app.use("/api/resources", ResourceRoutes);
   app.use("/api/feedback", FeedbackRoutes);
   app.use("/api/elevenlabs", ElevenLabsRoutes);
+  app.use("/api/hume", HumeRoutes);
 
   app.use("/", (req, res) => {
     res.send("Server is Up!");

@@ -71,6 +71,66 @@
   animation: fadeIn 0.6s ease-out;
 }
 
+.voice-engine-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto 18px;
+  padding: 8px;
+  background: rgba(124, 58, 237, 0.06);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 22px;
+}
+
+.voice-engine-selector button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  color: var(--voice-text-muted);
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  border: 0;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: 180ms ease;
+}
+
+.voice-engine-selector button small {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.voice-engine-selector button.active {
+  color: var(--voice-text);
+  background: white;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.12);
+}
+
+.evi-mode-note {
+  max-width: 680px;
+  margin: 0 auto 28px;
+  color: var(--voice-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.evi-start-error {
+  max-width: 680px;
+  margin: 18px auto 0;
+  padding: 12px 16px;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+}
+
 .section-title-wrap {
   display: flex;
   flex-direction: column;
@@ -744,4 +804,36 @@
   font-size: 0.9rem;
   color: #94a3b8;
   font-weight: 500;
+}
+
+.evi-transcript-list {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.evi-transcript-message {
+  margin: 0;
+  padding: 10px 12px;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.evi-transcript-message.assistant {
+  background: #f5f3ff;
+}
+
+.evi-transcript-message.interim {
+  opacity: 0.62;
+}
+
+@media (max-width: 640px) {
+  .voice-engine-selector {
+    grid-template-columns: 1fr;
+  }
 }

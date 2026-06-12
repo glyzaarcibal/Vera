@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "axios": "^1.13.2",
     "framer-motion": "^12.38.0",
+    "hume": "^0.15.17",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lottie-web": "^5.13.0",
