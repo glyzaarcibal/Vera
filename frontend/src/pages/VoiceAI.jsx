@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axios.instance";
-import { Mic, MicOff, PhoneOff, Zap } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Sparkles, Zap } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTokens } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
@@ -340,6 +340,7 @@ const VoiceAI = () => {
       setIsListening(true);
       setTranscript("");
       setSpeechError(null);
+      setDetectedEmotion(null);
       if (recognition) {
         try {
           if (!recognitionStartedRef.current) {
@@ -521,6 +522,7 @@ const VoiceAI = () => {
       }
     } else {
       setSpeechError(null);
+      setDetectedEmotion(null);
       try {
         if (!recognitionStartedRef.current) {
           recognition.start();
@@ -567,6 +569,10 @@ const VoiceAI = () => {
   );
   const toggleActiveCall = isEviMode ? handleEviCallToggle : handleCallToggle;
   const activeError = isEviMode ? eviError : speechError;
+  const emotionScores = isEviMode
+    ? eviExpressionScores
+    : detectedEmotion?.rawScores || {};
+  const hasEmotionScores = Object.keys(emotionScores).length > 0;
 
   const tokens = user?.tokens ?? 0;
   const SESSION_COST = 2;
@@ -735,22 +741,6 @@ const VoiceAI = () => {
                   </p>
                 </div>
 
-                {(isEviMode
-                  ? Object.keys(eviExpressionScores).length > 0
-                  : Object.keys(detectedEmotion?.rawScores || {}).length > 0) && (
-                  <div className="live-emotion-indicator">
-                    <span className="emotion-icon">✨</span>
-                    <div className="emotion-text">
-                      <EmotionScoreChart
-                        scores={isEviMode ? eviExpressionScores : detectedEmotion.rawScores}
-                      />
-                      <small className="emotion-disclaimer">
-                        Hume analyzes vocal expression. Scores are model estimates, not
-                        verified emotion or diagnostic results.
-                      </small>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Interaction Panel */}
@@ -790,6 +780,45 @@ const VoiceAI = () => {
                     </div>
                   )}
                 </div>
+
+                <section
+                  className={`voice-emotion-panel ${hasEmotionScores ? "has-results" : ""}`}
+                  aria-live="polite"
+                >
+                  <div className="voice-emotion-panel-header">
+                    <div className="voice-emotion-panel-title">
+                      <Sparkles size={17} />
+                      <span>Voice Emotion Analysis</span>
+                    </div>
+                    <span className="voice-emotion-provider">Hume AI</span>
+                  </div>
+
+                  {hasEmotionScores ? (
+                    <EmotionScoreChart scores={emotionScores} />
+                  ) : !isEviMode && detectedEmotion?.error ? (
+                    <p className="voice-emotion-message error" role="alert">
+                      {detectedEmotion.error}
+                    </p>
+                  ) : activeMode === "thinking" ? (
+                    <div className="voice-emotion-analyzing">
+                      <span></span><span></span><span></span>
+                      <p>Analyzing your vocal expression...</p>
+                    </div>
+                  ) : (
+                    <p className="voice-emotion-message">
+                      {isEviMode
+                        ? "Start speaking to see live vocal expression scores."
+                        : isRecording
+                          ? "Listening now. Tap Stop & Analyze when you finish speaking."
+                          : "Tap the microphone, speak naturally, then tap Stop & Analyze to view the result."}
+                    </p>
+                  )}
+
+                  <small className="emotion-disclaimer">
+                    Hume analyzes voice patterns only. Results are model estimates,
+                    not verified emotions or diagnostic findings.
+                  </small>
+                </section>
 
                 <div className="call-controls">
                   <button 
