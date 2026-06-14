@@ -42,14 +42,37 @@ export const processMessage = async (req, res) => {
       const messageId = await saveMessage(userMessage);
       savedMessageId = messageId.id;
       console.log("[processMessage] Saved user message with ID:", savedMessageId);
-      if (audioBase64 && typeof audioBase64 === "string" && audioBase64.length > 100 && savedMessageId != null) {
-        console.log("[processMessage] Audio base64 received (len=" + audioBase64.length + "), transcribing and detecting emotions...");
-        try {
-          voiceEmotion = await transcribeAudio(audioBase64, savedMessageId);
-          console.log("[processMessage] Emotion detection completed for message:", savedMessageId);
-        } catch (err) {
-          console.warn("[processMessage] Transcribe/emotion detection failed (non-fatal):", err.message);
-        }
+    }
+
+    const hasAudio =
+      typeof audioBase64 === "string" && audioBase64.length > 100;
+    if (hasAudio && permissions.permit_analyze === false) {
+      voiceEmotion = {
+        emotion: null,
+        score: 0,
+        rawScores: {},
+        source: "Hume AI",
+        error: "Voice emotion analysis is disabled in Privacy Settings.",
+      };
+    } else if (hasAudio) {
+      console.log(
+        `[processMessage] Audio received (len=${audioBase64.length}); detecting emotions${savedMessageId ? " and saving scores" : " without storage"}...`
+      );
+      try {
+        voiceEmotion = await transcribeAudio(audioBase64, savedMessageId);
+        console.log("[processMessage] Emotion detection completed.");
+      } catch (err) {
+        console.warn(
+          "[processMessage] Emotion detection failed (non-fatal):",
+          err.message
+        );
+        voiceEmotion = {
+          emotion: null,
+          score: 0,
+          rawScores: {},
+          source: "Hume AI",
+          error: err.message || "Voice emotion analysis failed.",
+        };
       }
     }
 

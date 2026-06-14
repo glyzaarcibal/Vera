@@ -48,7 +48,7 @@ import FilipinoBoy3Img from '../assets/filipino-boy-3.png';
 
 import axiosInstance from '../utils/axios.instance';
 
-export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
+export default function DIDAgent({ onTranscript, onEnd, setSessionStarted, onEmotionChange }) {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [selectedOutfit, setSelectedOutfit] = useState('default');
   const [isSessionActive, setIsSessionActive] = useState(false);
@@ -60,6 +60,10 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+
+  useEffect(() => {
+    onEmotionChange?.(detectedEmotion);
+  }, [detectedEmotion, onEmotionChange]);
   
   const dispatch = useDispatch();
   const audioRef = useRef(null);

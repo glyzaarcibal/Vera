@@ -275,7 +275,13 @@ export async function transcribeAudio(audioBase64, messageId) {
     const apiKey = getHumeApiKey();
     if (!apiKey) {
       console.warn("[SpeechToText] HUME_API_KEY missing in backend/.env. Add HUME_API_KEY=your_key and restart the server.");
-      return null;
+      return {
+        emotion: null,
+        score: 0,
+        rawScores: {},
+        source: "Hume AI",
+        error: "Hume AI API key is not configured on the server.",
+      };
     }
 
     const humeEmotions = await callHumeEmotionModel(audioBase64);
@@ -317,7 +323,16 @@ export async function transcribeAudio(audioBase64, messageId) {
     console.error("[SpeechToText] Emotion error:", data || error.message);
 
     console.warn("[SpeechToText] Emotion failed (non-fatal):", error.message);
-    return null;
+    return {
+      emotion: null,
+      score: 0,
+      rawScores: {},
+      source: "Hume AI",
+      error:
+        status === 401
+          ? "The Hume AI API key is invalid or expired."
+          : data?.error || data?.message || error.message || "Hume AI request failed.",
+    };
   }
 }
 
