@@ -3,17 +3,32 @@ import { Link } from "react-router-dom";
 import { MdDownload, MdArrowBack } from "react-icons/md";
 
 const DownloadApk = () => {
-  const [downloadStarted, setDownloadStarted] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState("idle");
 
-  const triggerDownload = () => {
-    setDownloadStarted(true);
+  const triggerDownload = async () => {
     const downloadUrl = "/VERA.apk";
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.setAttribute("download", "VERA.apk");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    try {
+      setDownloadStatus("checking");
+      const response = await fetch(downloadUrl, { method: "HEAD" });
+      const contentType = response.headers.get("content-type") || "";
+      const contentLength = Number(response.headers.get("content-length") || 0);
+      const isHtml = contentType.includes("text/html");
+
+      if (!response.ok || isHtml || (contentLength > 0 && contentLength < 1_000_000)) {
+        throw new Error("APK file is unavailable");
+      }
+
+      setDownloadStatus("downloading");
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.setAttribute("download", "VERA.apk");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      setDownloadStatus("error");
+    }
   };
 
   useEffect(() => {
@@ -51,11 +66,23 @@ const DownloadApk = () => {
           className="w-full py-4.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mb-4 group cursor-pointer"
         >
           <MdDownload className="text-xl group-hover:translate-y-0.5 transition-transform" />
-          <span>{downloadStarted ? "Downloading Started..." : "Download VERA.apk"}</span>
+          <span>
+            {downloadStatus === "checking"
+              ? "Checking APK..."
+              : downloadStatus === "downloading"
+                ? "Download Started..."
+                : "Download VERA.apk"}
+          </span>
         </button>
 
+        {downloadStatus === "error" && (
+          <p className="text-xs text-red-300 mb-4">
+            The APK is unavailable on this deployment. Please try again after the site is redeployed.
+          </p>
+        )}
+
         <p className="text-xs text-slate-500 mb-8">
-          File Size: ~74 MB • Version: Stable Build
+          File Size: ~77 MB &bull; Version: Stable Build
         </p>
 
         {/* Installation Steps Guide */}
