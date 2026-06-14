@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, PawPrint, MessageSquare, PhoneOff, Zap, ArrowRight, CheckCircle2, MoveLeft } from 'lucide-react';
+import { User, PawPrint, MessageSquare, PhoneOff, Zap, ArrowRight, CheckCircle2, MoveLeft, Sparkles } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import DIDAgent from './DIDAgent';
@@ -7,6 +7,7 @@ import AnimalAI from './Animal';
 import PullToRefresh from "../components/PullToRefresh.jsx";
 import { useLanguage } from "../context/LanguageContext";
 import ReusableModal from '../components/ReusableModal.jsx';
+import EmotionScoreChart from '../components/EmotionScoreChart';
 import './AvatarAI.css';
 
 // Import local images
@@ -36,6 +37,7 @@ export default function AvatarAI() {
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
   const [transcripts, setTranscripts] = useState([]);
+  const [latestEmotion, setLatestEmotion] = useState(null);
 
   if (!user) {
     return (
@@ -100,6 +102,7 @@ export default function AvatarAI() {
     setSelectedAvatar(null);
     setIsSessionStarted(false);
     setTranscripts([]);
+    setLatestEmotion(null);
   };
 
   const conversationEndRef = useRef(null);
@@ -193,9 +196,11 @@ export default function AvatarAI() {
                   onTranscript={handleTranscript} 
                   onEnd={endCall} 
                   setSessionStarted={setIsSessionStarted}
+                  onEmotionChange={setLatestEmotion}
                 />
               </div>
             </div>
+            <div className="avatarai-session-details">
 
             {/* Right — Conversation panel (Only shown if session started) */}
             {isSessionStarted && (
@@ -245,6 +250,30 @@ export default function AvatarAI() {
                 </div>
               </div>
             )}
+
+            {isSessionStarted && (
+              <aside className="avatarai-mobile-emotion-panel didagent-emotion-panel">
+                <div className="didagent-emotion-panel-title">
+                  <Sparkles size={16} />
+                  <span>Voice Emotion Analysis</span>
+                </div>
+                {Object.keys(latestEmotion?.rawScores || {}).length > 0 ? (
+                  <EmotionScoreChart scores={latestEmotion.rawScores} />
+                ) : latestEmotion?.error ? (
+                  <p className="didagent-emotion-waiting error">
+                    {latestEmotion.error}
+                  </p>
+                ) : (
+                  <p className="didagent-emotion-waiting">
+                    Waiting for a voice sample to analyze.
+                  </p>
+                )}
+                <small className="didagent-emotion-disclaimer">
+                  Hume AI analyzes voice patterns only. This is not 100% accurate and does not detect your true emotion.
+                </small>
+              </aside>
+            )}
+            </div>
           </div>
         )}
       </div>

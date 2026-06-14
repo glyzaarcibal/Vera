@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, PhoneOff, PawPrint, Heart, Sparkles, MoveLeft } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
@@ -15,7 +15,7 @@ import axiosInstance from '../utils/axios.instance';
 import ReusableModal from "../components/ReusableModal";
 import EmotionScoreChart from '../components/EmotionScoreChart';
 
-export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
+export default function AnimalAI({ onTranscript, onEnd, setSessionStarted, onEmotionChange }) {
   const [animalType, setAnimalType] = useState(null); 
   const [showMicModal, setShowMicModal] = useState(false);
   const MIC_ACCESS_GUIDE_KEY = 'vera_mic_access_guide_seen';
@@ -28,6 +28,10 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [detectedEmotion, setDetectedEmotion] = useState(null);
+
+  useEffect(() => {
+    onEmotionChange?.(detectedEmotion);
+  }, [detectedEmotion, onEmotionChange]);
   
   const dispatch = useDispatch();
   const audioRef = useRef(null);
