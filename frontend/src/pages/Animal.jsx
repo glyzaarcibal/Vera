@@ -9,6 +9,10 @@ import CatImg from '../assets/cat_companion.png';
 import DogImg from '../assets/dog_companion.png';
 import axiosInstance from '../utils/axios.instance';
 import EmotionScoreChart from '../components/EmotionScoreChart';
+import {
+  clampEmotionScore,
+  clampEmotionScores,
+} from '../utils/emotionHierarchy';
 
 export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
   const [animalType, setAnimalType] = useState(null); 
@@ -167,8 +171,8 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
           ) {
             setDetectedEmotion({
               emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
-              score: voiceEmotion.score ?? 0,
-              rawScores: voiceEmotion.rawScores || {},
+              score: clampEmotionScore(voiceEmotion.score ?? 0),
+              rawScores: clampEmotionScores(voiceEmotion.rawScores || {}),
               source: voiceEmotion.source || "Hume AI",
               error: voiceEmotion.error,
             });

@@ -118,16 +118,35 @@ export function getTopEmotionScores(emotionScores, limit = 3) {
     .map(([emotion, score]) => ({ emotion, score }));
 }
 
+/**
+ * Ensure the highest score doesn't exceed `maxTop` by scaling all scores
+ * proportionally when needed (e.g., cap top score at 0.7 / 70%).
+ */
+function clampTopScore(scores, maxTop = 0.7) {
+  if (!scores || typeof scores !== "object") return scores;
+  const numeric = Object.values(scores).filter((v) => typeof v === "number");
+  if (numeric.length === 0) return scores;
+  const maxScore = Math.max(...numeric);
+  if (maxScore <= maxTop) return scores;
+  const scale = maxTop / maxScore;
+  const scaled = {};
+  Object.entries(scores).forEach(([k, v]) => {
+    scaled[k] = typeof v === "number" ? v * scale : v;
+  });
+  return scaled;
+}
+
 /** Get dominant emotion from Hume AI response. Returns { label, score }. */
 function getDominantEmotion(humeEmotions) {
   if (!humeEmotions || typeof humeEmotions !== "object") return null;
 
   // Map to the app's five basic emotions first to avoid noise from raw Hume tags.
   const mapped = mapHumeEmotionsToDb(humeEmotions);
+  const scaled = clampTopScore(mapped, 0.78);
   let maxScore = 0;
   let dominantLabel = null;
 
-  Object.entries(mapped).forEach(([label, score]) => {
+  Object.entries(scaled).forEach(([label, score]) => {
     // Only consider emotions with a decent confidence score to avoid defaulting to noise
     if (typeof score === "number" && score > maxScore && score > 0.15) {
       maxScore = score;
@@ -285,16 +304,18 @@ export async function transcribeAudio(audioBase64, messageId) {
     }
 
     const humeEmotions = await callHumeEmotionModel(audioBase64);
-    const emotionScores = mapHumeEmotionsToDb(humeEmotions);
+    const scaledRaw = clampTopScore(humeEmotions, 0.78);
+    const emotionScores = mapHumeEmotionsToDb(scaledRaw);
+    const scaledEmotionScores = clampTopScore(emotionScores, 0.78);
 
-    console.log("[SpeechToText] Mapped emotion scores:", emotionScores);
+    console.log("[SpeechToText] Mapped emotion scores:", scaledEmotionScores);
     console.log("[SpeechToText] Message ID for emotion save:", messageId);
 
     if (messageId) {
       try {
         await saveEmotionData({
           message_id: messageId,
-          ...emotionScores,
+          ...scaledEmotionScores,
           model: "hume-ai-prosody",
         });
         console.log("[SpeechToText] Emotion data saved successfully for message:", messageId);
@@ -306,15 +327,15 @@ export async function transcribeAudio(audioBase64, messageId) {
       console.warn("[SpeechToText] No messageId provided, skipping emotion save");
     }
 
-    const dominant = getDominantEmotion(humeEmotions);
+    const dominant = getDominantEmotion(scaledRaw);
 
     return {
       emotion: dominant?.label ?? null,
       score: dominant?.score ?? 0,
       toneLabel: dominant?.toneLabel,
-      topScores: getTopEmotionScores(emotionScores),
-      mappedScores: emotionScores,
-      rawScores: humeEmotions,
+      topScores: getTopEmotionScores(scaledEmotionScores),
+      mappedScores: scaledEmotionScores,
+      rawScores: scaledRaw,
       source: "Hume AI",
     };
   } catch (error) {
@@ -353,25 +374,29 @@ export async function getEmotionFromAudio(audioBase64) {
     }
 
     const humeEmotions = await callHumeEmotionModel(audioBase64);
-    const dominant = getDominantEmotion(humeEmotions);
+    const scaledRaw = clampTopScore(humeEmotions, 0.78);
+    const dominant = getDominantEmotion(scaledRaw);
 
     if (!dominant) {
+      const mapped = mapHumeEmotionsToDb(humeEmotions);
+      const scaled = clampTopScore(mapped, 0.78);
       return {
         emotion: null,
         score: 0,
         topScores: [],
-        mappedScores: mapHumeEmotionsToDb(humeEmotions),
-        rawScores: humeEmotions,
+        mappedScores: scaled,
+        rawScores: scaledRaw,
       };
     }
 
-    const emotionScores = mapHumeEmotionsToDb(humeEmotions);
+    const emotionScores = mapHumeEmotionsToDb(scaledRaw);
+    const scaledEmotionScores = clampTopScore(emotionScores, 0.78);
     return {
       emotion: dominant.label,
       score: dominant.score,
-      topScores: getTopEmotionScores(emotionScores),
-      mappedScores: emotionScores,
-      rawScores: humeEmotions,
+      topScores: getTopEmotionScores(scaledEmotionScores),
+      mappedScores: scaledEmotionScores,
+      rawScores: scaledRaw,
     };
   } catch (error) {
     const status = error.response?.status;

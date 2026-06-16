@@ -339,10 +339,10 @@ export const translations = {
     about_obj_5: "Ensure a completely <strong>stigma-free and private</strong> platform where users aged 13 and above feel safe to express their true emotions.",
     about_team_title: "The Development Team",
     about_developers: "Developers",
-    about_ta: "Teaching Assistant (TA)",
+    about_ta: "Teaching Adviser (TA)",
     about_fullstack: "Full Stack Developer",
     about_qa: "QA Tester",
-    about_advisor: "Technical Advisor",
+    about_advisor: "Technical Adviser",
 
     // Take A Breath
     breath_focus: "Focus on your breath",
@@ -733,10 +733,10 @@ export const translations = {
     about_obj_5: "Siguraduhin ang isang <strong>stigma-free at private</strong> na platform para sa lahat.",
     about_team_title: "The Development Team",
     about_developers: "Developers",
-    about_ta: "Teaching Assistant (TA)",
+    about_ta: "Teaching Adviser (TA)",
     about_fullstack: "Full Stack Developer",
     about_qa: "QA Tester",
-    about_advisor: "Technical Advisor",
+    about_advisor: "Technical Adviser",
 
     // Take A Breath
     breath_focus: "Mag-focus sa iyong paghinga",

@@ -45,7 +45,7 @@ The project is organized into three main components:
 - **Bhea Marie Cervantes** - Full Stack Developer
 - **Shane Norwin Mendoza** - QA Tester
 
-### Technical Advisor
+### Technical Adviser
 - **Prof. Maria Christina Baloloy**
 
 ---
