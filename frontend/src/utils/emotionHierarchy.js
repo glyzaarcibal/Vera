@@ -27,7 +27,7 @@ const EMOTION_HIERARCHY = {
   entrancement: ["Happy", "Interested"],
   envy: ["Angry", "Bitter"],
   excitement: ["Surprised", "Excited"],
-  fear: ["Fearful", "Scared"],
+  fear: ["Fear", "Scared"],
   guilt: ["Sad", "Guilty"],
   horror: ["Fearful", "Threatened"],
   interest: ["Happy", "Interested"],
@@ -54,6 +54,19 @@ export const formatEmotionName = (name) =>
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+export const MAX_EMOTION_SCORE = 0.78;
+
+export const clampEmotionScore = (score) =>
+  Math.max(0, Math.min(MAX_EMOTION_SCORE, Number(score) || 0));
+
+export const clampEmotionScores = (scores = {}) =>
+  Object.fromEntries(
+    Object.entries(scores).map(([emotion, score]) => [
+      emotion,
+      clampEmotionScore(score),
+    ])
+  );
 
 const normalizeEmotionKey = (name) =>
   String(name || "")

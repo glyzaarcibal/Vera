@@ -27,7 +27,7 @@ const EMOTION_HIERARCHY = {
   entrancement: ["Happy", "Interested"],
   envy: ["Angry", "Bitter"],
   excitement: ["Surprised", "Excited"],
-  fear: ["Fearful", "Scared"],
+  fear: ["Fear", "Scared"],
   guilt: ["Sad", "Guilty"],
   horror: ["Fearful", "Threatened"],
   interest: ["Happy", "Interested"],

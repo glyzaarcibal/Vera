@@ -7,6 +7,7 @@ import { updateTokens } from "../store/slices/authSlice";
 import { useLanguage } from "../context/LanguageContext";
 import ReusableModal from "../components/ReusableModal";
 import EmotionScoreChart from "../components/EmotionScoreChart";
+import { clampEmotionScore, clampEmotionScores } from "../utils/emotionHierarchy";
 import useHumeEvi from "../hooks/useHumeEvi";
 import "./VoiceAI.css";
 
@@ -496,8 +497,8 @@ const VoiceAI = () => {
           ) {
             setDetectedEmotion({
               emotion: voiceEmotion.toneLabel || voiceEmotion.emotion || null,
-              score: voiceEmotion.score ?? 0,
-              rawScores: voiceEmotion.rawScores || {},
+              score: clampEmotionScore(voiceEmotion.score ?? 0),
+              rawScores: clampEmotionScores(voiceEmotion.rawScores || {}),
               source: voiceEmotion.source || "Hume AI",
               error: voiceEmotion.error,
             });

@@ -3,6 +3,7 @@ import feelingsChart from "../assets/images/Feelings Chart.jpg";
 import {
   formatEmotionName,
   getDominantEmotionState,
+  clampEmotionScore,
 } from "../utils/emotionHierarchy";
 import "./EmotionScoreChart.css";
 
@@ -10,18 +11,20 @@ export default function EmotionScoreChart({ scores }) {
   const [showAll, setShowAll] = useState(false);
   const [showWheel, setShowWheel] = useState(false);
 
-  const sortedScores = useMemo(
+  const clampedScores = useMemo(
     () =>
       Object.entries(scores || {})
         .filter(([, score]) => Number.isFinite(score))
+        .map(([emotion, score]) => [emotion, clampEmotionScore(score)])
         .sort(([, scoreA], [, scoreB]) => scoreB - scoreA),
     [scores]
   );
 
-  if (sortedScores.length === 0) return null;
+  if (clampedScores.length === 0) return null;
 
-  const dominant = getDominantEmotionState(scores);
-  const visibleScores = showAll ? sortedScores : sortedScores.slice(0, 8);
+  const dominant = getDominantEmotionState(Object.fromEntries(clampedScores));
+  const visibleScores = showAll ? clampedScores : clampedScores.slice(0, 8);
+  const expressionCount = clampedScores.length;
 
   return (
     <div className="emotion-state-panel">
@@ -52,7 +55,7 @@ export default function EmotionScoreChart({ scores }) {
       <div className="hume-score-chart">
         <div className="hume-score-chart-header">
           <strong>Hume expression scores</strong>
-          <span>{sortedScores.length} expressions</span>
+          <span>{clampedScores.length} expressions</span>
         </div>
 
         <div className={`hume-score-bars ${showAll ? "show-all" : ""}`}>
@@ -82,13 +85,13 @@ export default function EmotionScoreChart({ scores }) {
         </div>
 
         <div className="hume-score-actions">
-          {sortedScores.length > 8 && (
+          {clampedScores.length > 8 && (
             <button
               type="button"
               className="hume-score-toggle"
               onClick={() => setShowAll((current) => !current)}
             >
-              {showAll ? "Show top 8" : `Show all ${sortedScores.length}`}
+              {showAll ? "Show top 8" : `Show all ${clampedScores.length}`}
             </button>
           )}
           <button

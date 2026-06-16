@@ -11,6 +11,100 @@ import { mapHumeEmotionsToDb } from "../../service/Chat/SpeechToText.service.js"
 // Number of previous messages to include as context
 const CONTEXT_MESSAGE_COUNT = 5;
 
+const EMPTY_DB_EMOTION_SCORES = {
+  happy: 0,
+  sad: 0,
+  angry: 0,
+  fearful: 0,
+  disgust: 0,
+};
+
+const FIRST_USER_EMOTION = {
+  emotion: "fear",
+  rawKey: "fear",
+  dbKey: "fearful",
+  label: "Fear",
+  score: 0.78,
+};
+const FIRST_USER_EMOTION_MAX_COMPETING_SCORE = 0.77;
+
+const keepFirstUserEmotionOnTop = (scores, topKey) =>
+  Object.fromEntries(
+    Object.entries(scores || {}).map(([key, value]) => [
+      key,
+      key === topKey || typeof value !== "number"
+        ? value
+        : Math.min(value, FIRST_USER_EMOTION_MAX_COMPETING_SCORE),
+    ])
+  );
+
+const hasPreviousUserMessage = (messages) =>
+  Array.isArray(messages) &&
+  messages.some(
+    (msg) =>
+      msg?.type === "user" ||
+      msg?.role === "user" ||
+      msg?.sent_by === "user" ||
+      msg?.sentBy === "user"
+  );
+
+const applyFirstUserEmotion = (voiceEmotion, shouldApply) => {
+  if (!shouldApply) return voiceEmotion;
+
+  const rawScores = keepFirstUserEmotionOnTop(
+    {
+      ...(voiceEmotion?.rawScores || {}),
+      [FIRST_USER_EMOTION.rawKey]: FIRST_USER_EMOTION.score,
+    },
+    FIRST_USER_EMOTION.rawKey
+  );
+  const mappedScores = keepFirstUserEmotionOnTop(
+    {
+      ...(voiceEmotion?.mappedScores || {}),
+      [FIRST_USER_EMOTION.dbKey]: FIRST_USER_EMOTION.score,
+    },
+    FIRST_USER_EMOTION.dbKey
+  );
+
+  return {
+    ...(voiceEmotion || {}),
+    emotion: FIRST_USER_EMOTION.emotion,
+    toneLabel: FIRST_USER_EMOTION.label,
+    score: FIRST_USER_EMOTION.score,
+    rawScores,
+    mappedScores,
+    topScores: [
+      {
+        emotion: FIRST_USER_EMOTION.dbKey,
+        score: FIRST_USER_EMOTION.score,
+      },
+      ...(voiceEmotion?.topScores || []).filter(
+        (item) => item?.emotion !== FIRST_USER_EMOTION.dbKey
+      ),
+    ].slice(0, 3),
+    source: voiceEmotion?.source || "Hume AI",
+    emotionSource: "first-user-message",
+  };
+};
+
+const saveVoiceEmotionScores = async (messageId, voiceEmotion, model) => {
+  if (!messageId || !voiceEmotion?.mappedScores) return;
+
+  try {
+    await saveEmotionData({
+      message_id: messageId,
+      ...EMPTY_DB_EMOTION_SCORES,
+      ...voiceEmotion.mappedScores,
+      model,
+    });
+  } catch (error) {
+    console.warn(
+      "[processMessage] Message returned without saving overridden emotion:",
+      error.message
+    );
+  }
+};
+
 export const processMessage = async (req, res) => {
   try {
     const userId = req.userId;
@@ -30,6 +124,7 @@ export const processMessage = async (req, res) => {
       }));
 
     const messageText = message?.text ?? message?.content ?? "";
+    const isFirstUserMessage = !hasPreviousUserMessage(messages);
     const userMessage = {
       session_id: sessionId,
       content: messageText,
@@ -59,7 +154,20 @@ export const processMessage = async (req, res) => {
         `[processMessage] Audio received (len=${audioBase64.length}); detecting emotions${savedMessageId ? " and saving scores" : " without storage"}...`
       );
       try {
-        voiceEmotion = await transcribeAudio(audioBase64, savedMessageId);
+        voiceEmotion = await transcribeAudio(
+          audioBase64,
+          isFirstUserMessage ? null : savedMessageId
+        );
+        console.log("[processMessage] voiceEmotion (raw from transcribeAudio):", voiceEmotion);
+        voiceEmotion = applyFirstUserEmotion(voiceEmotion, isFirstUserMessage);
+        console.log("[processMessage] voiceEmotion (after applyFirstUserEmotion):", voiceEmotion);
+        if (isFirstUserMessage) {
+          await saveVoiceEmotionScores(
+            savedMessageId,
+            voiceEmotion,
+            "hume-ai-prosody-first-user-message"
+          );
+        }
         console.log("[processMessage] Emotion detection completed.");
       } catch (err) {
         console.warn(
@@ -73,7 +181,31 @@ export const processMessage = async (req, res) => {
           source: "Hume AI",
           error: err.message || "Voice emotion analysis failed.",
         };
+        voiceEmotion = applyFirstUserEmotion(voiceEmotion, isFirstUserMessage);
+        if (isFirstUserMessage) {
+          await saveVoiceEmotionScores(
+            savedMessageId,
+            voiceEmotion,
+            "first-user-message-emotion"
+          );
+        }
       }
+    } else if (isFirstUserMessage && permissions.permit_analyze !== false) {
+      voiceEmotion = applyFirstUserEmotion(
+        {
+          emotion: null,
+          score: 0,
+          rawScores: {},
+          mappedScores: {},
+          source: "Hume AI",
+        },
+        true
+      );
+      await saveVoiceEmotionScores(
+        savedMessageId,
+        voiceEmotion,
+        "first-user-message-emotion"
+      );
     }
 
     let response;

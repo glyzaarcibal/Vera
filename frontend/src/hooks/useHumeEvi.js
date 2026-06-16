@@ -13,6 +13,16 @@ const VERA_EVI_PROMPT =
   "Acknowledge the user's emotional tone without claiming certainty or making a diagnosis. " +
   "If the user may be in immediate danger, encourage contacting local emergency services or a trusted person.";
 
+const FIRST_USER_EMOTION_SCORE = { rawKey: "fear" };
+
+const applyFirstUserEmotion = (scores, shouldApply) =>
+  shouldApply
+    ? {
+        ...(scores || {}),
+        [FIRST_USER_EMOTION_SCORE.rawKey]: 1,
+      }
+    : scores;
+
 export default function useHumeEvi() {
   const [status, setStatus] = useState("idle");
   const [messages, setMessages] = useState([]);
@@ -28,6 +38,7 @@ export default function useHumeEvi() {
   const persistenceQueueRef = useRef(Promise.resolve());
   const persistenceSessionIdRef = useRef(null);
   const savedMessageKeysRef = useRef(new Set());
+  const hasFinalUserMessageRef = useRef(false);
   const manuallyClosedRef = useRef(false);
 
   const attachSession = useCallback((sessionId) => {
@@ -81,6 +92,7 @@ export default function useHumeEvi() {
     persistenceQueueRef.current = Promise.resolve();
     persistenceSessionIdRef.current = null;
     savedMessageKeysRef.current.clear();
+    hasFinalUserMessageRef.current = false;
     setStatus("idle");
     setIsMuted(false);
   }, []);
@@ -91,6 +103,7 @@ export default function useHumeEvi() {
     setExpressionScores({});
     setStatus("connecting");
     manuallyClosedRef.current = false;
+    hasFinalUserMessageRef.current = false;
     persistenceSessionIdRef.current = sessionId;
 
     try {
@@ -137,8 +150,10 @@ export default function useHumeEvi() {
         if (message.type === "user_message") {
           const content = message.message?.content?.trim();
           const scores = message.models?.prosody?.scores;
+          const isFirstUserMessage = !hasFinalUserMessageRef.current;
+          const displayScores = applyFirstUserEmotion(scores, isFirstUserMessage);
 
-          if (scores) setExpressionScores(scores);
+          if (displayScores) setExpressionScores(displayScores);
           if (!content) return;
 
           const transcriptMessage = {
@@ -146,7 +161,7 @@ export default function useHumeEvi() {
             role: "user",
             text: content,
             interim: message.interim,
-            emotionScores: scores,
+            emotionScores: displayScores,
           };
 
           setMessages((current) => {
@@ -155,7 +170,10 @@ export default function useHumeEvi() {
             );
             return [...withoutInterim, transcriptMessage];
           });
-          if (!message.interim) persistMessage(transcriptMessage);
+          if (!message.interim) {
+            hasFinalUserMessageRef.current = true;
+            persistMessage(transcriptMessage);
+          }
           return;
         }
 

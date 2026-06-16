@@ -3,6 +3,10 @@ import { Mic, MicOff, PhoneOff, ShieldCheck, Heart, Sparkles, User, Shirt, Check
 import { useDispatch } from 'react-redux';
 import { updateTokens } from '../store/slices/authSlice';
 import EmotionScoreChart from '../components/EmotionScoreChart';
+import {
+  clampEmotionScore,
+  clampEmotionScores,
+} from '../utils/emotionHierarchy';
 import './AvatarAI.css';
 
 // Assets
@@ -215,12 +219,12 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
           const voiceEmotion = aiRes?.data?.voiceEmotion;
           const voiceLabel = voiceEmotion?.emotion;
           const voiceDisplayLabel = voiceEmotion?.toneLabel || voiceLabel;
-          const voiceScore = voiceEmotion?.score ?? 0;
+          const voiceScore = clampEmotionScore(voiceEmotion?.score ?? 0);
 
           setDetectedEmotion({
             emotion: voiceDisplayLabel || 'neutral',
             score: voiceScore,
-            rawScores: voiceEmotion?.rawScores || {},
+            rawScores: clampEmotionScores(voiceEmotion?.rawScores || {}),
             source: voiceEmotion?.source || "Hume AI",
             error: voiceEmotion?.error
           });
