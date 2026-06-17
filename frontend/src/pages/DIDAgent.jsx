@@ -213,7 +213,7 @@ export default function DIDAgent({ onTranscript, onEnd, setSessionStarted }) {
             message: { text: data.text },
             audioBase64,
             messages: updatedMessages // provide context
-          });
+          }, { timeout: 90000 });
 
           const aiMsg = aiRes?.data?.response;
           const voiceEmotion = aiRes?.data?.voiceEmotion;

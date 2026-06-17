@@ -253,7 +253,8 @@ const VoiceAI = () => {
     try {
       const res = await axiosInstance.post(
         `/messages/process-message/${sessionId}`,
-        { message, messages, audioBase64 }
+        { message, messages, audioBase64 },
+        { timeout: 90000 }
       );
       return res.data;
     } catch (e) {

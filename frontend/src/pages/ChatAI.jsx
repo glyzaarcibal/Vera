@@ -103,7 +103,8 @@ const ChatAI = () => {
     try {
       const res = await axiosInstance.post(
         `/messages/process-message/${tempId}`,
-        { message, messages }
+        { message, messages },
+        { timeout: 90000 }
       );
       const { response } = res.data;
       return response;
