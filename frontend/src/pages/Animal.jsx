@@ -160,7 +160,7 @@ export default function AnimalAI({ onTranscript, onEnd, setSessionStarted }) {
             audioBase64,
             messages: updatedMessages,
             systemPrompt: ANIMAL_GUIDES.find(g => g.id === animalType)?.personality
-          });
+          }, { timeout: 90000 });
 
           const aiMsg = sanitizeAnimalReply(aiRes?.data?.response);
           const voiceEmotion = aiRes?.data?.voiceEmotion;
